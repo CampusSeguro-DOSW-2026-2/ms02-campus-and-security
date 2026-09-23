@@ -24,13 +24,13 @@ No se podrá eliminar un edificio, espacio o zona segura referenciado por una ru
 **RF-07 · Exponer información vía API**
 Los cambios sobre edificios, espacios, zonas seguras y rutas deberán estar disponibles inmediatamente para MS03 y MS04 mediante API documentada.
 
-## Historias de usuario (mapeadas a su RF)
+## Historias de usuario
 
 | Historia | RF asociados | Puntos |
 |---|---|---|
 | HU-1 · Consultar ruta de evacuación por ubicación | RF-05, RF-04 | 5 |
-| HU-2a · CRUD de edificios, pisos y espacios | RF-01, RF-02, RF-06, RF-07 | 5 |
-| HU-2b · Gestión de zonas seguras / puntos de encuentro | RF-03, RF-06, RF-07 | 5 |
+| HU-2 · CRUD de edificios, pisos y espacios | RF-01, RF-02, RF-06, RF-07 | 5 |
+| HU-3 · Gestión de zonas seguras / puntos de encuentro | RF-03, RF-06, RF-07 | 5 |
 
 ## Modelo de dominio
 
