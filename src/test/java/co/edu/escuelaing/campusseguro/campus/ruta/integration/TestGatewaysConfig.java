@@ -4,17 +4,17 @@ import co.edu.escuelaing.campusseguro.campus.ruta.port.EdificioGateway;
 import co.edu.escuelaing.campusseguro.campus.ruta.port.EspacioGateway;
 import co.edu.escuelaing.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import co.edu.escuelaing.campusseguro.campus.ruta.port.ZonaSeguraGateway;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.Optional;
 
-// Gateways falsos para los tests. Son @Primary para que sigan ganando
-// cuando las implementaciones reales de Persona 1 y 2 existan.
-@Configuration
-class TestGatewaysConfig {
+// Gateways falsos solo para RutaIntegrationTest. Al ser @TestConfiguration,
+// Spring no los escanea en los tests de las Personas 1 y 2: hay que importarlos con @Import.
+@TestConfiguration
+public class TestGatewaysConfig {
 
     @Bean
     EnMemoriaCampus enMemoriaCampus() {
