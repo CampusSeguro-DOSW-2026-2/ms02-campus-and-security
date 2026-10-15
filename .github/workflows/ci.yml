@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # SonarCloud necesita el historial completo
+          fetch-depth: 0   
 
       - name: Java 21
         uses: actions/setup-java@v4
@@ -37,6 +37,6 @@ jobs:
             target/site/jacoco
 
       - name: Análisis SonarCloud
-        # Se omite si no hay SONAR_TOKEN (aún sin configurar, o PR desde un fork).
+        # Se omite si no hay SONAR_TOKEN (
         if: env.SONAR_TOKEN != ''
         run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
