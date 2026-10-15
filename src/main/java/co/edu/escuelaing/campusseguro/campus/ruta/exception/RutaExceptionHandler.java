@@ -1,5 +1,7 @@
 package co.edu.escuelaing.campusseguro.campus.ruta.exception;
 
+import co.edu.escuelaing.campusseguro.campus.ruta.controller.ConsultaRutaController;
+import co.edu.escuelaing.campusseguro.campus.ruta.controller.RutaController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,7 +15,8 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+// Limitado a los controllers de rutas para no chocar con el manejador global del servicio.
+@RestControllerAdvice(assignableTypes = {RutaController.class, ConsultaRutaController.class})
 public class RutaExceptionHandler {
 
     public record ApiError(int status, String error, String mensaje,
