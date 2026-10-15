@@ -1,0 +1,51 @@
+package co.edu.escuelaing.campusseguro.campus.ruta.integration;
+
+import co.edu.escuelaing.campusseguro.campus.ruta.port.EdificioGateway;
+import co.edu.escuelaing.campusseguro.campus.ruta.port.EspacioGateway;
+import co.edu.escuelaing.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
+import co.edu.escuelaing.campusseguro.campus.ruta.port.ZonaSeguraGateway;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+import java.util.List;
+import java.util.Optional;
+
+// Gateways falsos para los tests. Son @Primary para que sigan ganando
+// cuando las implementaciones reales de Persona 1 y 2 existan.
+@Configuration
+class TestGatewaysConfig {
+
+    @Bean
+    EnMemoriaCampus enMemoriaCampus() {
+        return new EnMemoriaCampus();
+    }
+
+    @Bean
+    @Primary
+    EdificioGateway edificioGatewayDePrueba(EnMemoriaCampus datos) {
+        return datos::buscarEdificio;
+    }
+
+    @Bean
+    @Primary
+    ZonaSeguraGateway zonaGatewayDePrueba(EnMemoriaCampus datos) {
+        return datos::buscarZona;
+    }
+
+    @Bean
+    @Primary
+    EspacioGateway espacioGatewayDePrueba(EnMemoriaCampus datos) {
+        return new EspacioGateway() {
+            @Override
+            public Optional<EspacioInfo> buscarPorId(Long id) {
+                return datos.buscarEspacio(id);
+            }
+
+            @Override
+            public List<EspacioInfo> listarPorEdificio(Long edificioId) {
+                return datos.espaciosDe(edificioId);
+            }
+        };
+    }
+}
