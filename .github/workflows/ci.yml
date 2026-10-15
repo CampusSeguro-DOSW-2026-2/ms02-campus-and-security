@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,8 +37,6 @@ jobs:
             target/site/jacoco
 
       - name: Análisis SonarCloud
-        # Los PR desde forks no reciben secretos, por eso se omite en ese caso.
-        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B org.sonarsource.scanner.maven:sonar-mav-plugin:sonar
+        # Se omite si no hay SONAR_TOKEN (aún sin configurar, o PR desde un fork).
+        if: env.SONAR_TOKEN != ''
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
