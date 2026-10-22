@@ -8,7 +8,7 @@
 		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>co.edu.escuelaing.campusseguro</groupId>
+	<groupId>edu.eci.dosw.campusseguro.campus</groupId>
 	<artifactId>ms02-campus-and-security</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
