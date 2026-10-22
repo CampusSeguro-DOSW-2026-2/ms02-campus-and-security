@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.integration;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.port.EdificioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
@@ -38,12 +40,12 @@ public class TestGatewaysConfig {
     EspacioGateway espacioGatewayDePrueba(EnMemoriaCampus datos) {
         return new EspacioGateway() {
             @Override
-            public Optional<EspacioInfo> buscarPorId(Long id) {
+            public Optional<EspacioInfo> buscarPorId(UUID id) {
                 return datos.buscarEspacio(id);
             }
 
             @Override
-            public List<EspacioInfo> listarPorEdificio(Long edificioId) {
+            public List<EspacioInfo> listarPorEdificio(UUID edificioId) {
                 return datos.espaciosDe(edificioId);
             }
         };

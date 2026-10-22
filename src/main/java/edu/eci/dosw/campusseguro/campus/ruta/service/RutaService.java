@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.service;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
@@ -76,7 +78,7 @@ public class RutaService {
     }
 
     @Transactional
-    public RutaResponse cambiarEstado(Long id, EstadoRuta nuevoEstado) {
+    public RutaResponse cambiarEstado(UUID id, EstadoRuta nuevoEstado) {
         RutaEvacuacion ruta = buscar(id);
         EstadoRuta anterior = ruta.getEstado();
         ruta.setEstado(nuevoEstado);
@@ -86,7 +88,7 @@ public class RutaService {
     }
 
     @Transactional(readOnly = true)
-    public RutaResponse obtener(Long id) {
+    public RutaResponse obtener(UUID id) {
         return RutaResponse.desde(buscar(id));
     }
 
@@ -95,7 +97,7 @@ public class RutaService {
         return rutaRepository.findAll().stream().map(RutaResponse::desde).toList();
     }
 
-    private RutaEvacuacion buscar(Long id) {
+    private RutaEvacuacion buscar(UUID id) {
         return rutaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("La ruta " + id + " no existe"));
     }

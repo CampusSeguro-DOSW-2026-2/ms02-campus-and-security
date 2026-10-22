@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.service.ConsultaRutaService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,12 +20,12 @@ public class ConsultaRutaController {
     }
 
     @GetMapping("/api/v1/spaces/{spaceId}/evacuation-route")
-    public RutaConsultadaResponse porEspacio(@PathVariable Long spaceId) {
+    public RutaConsultadaResponse porEspacio(@PathVariable UUID spaceId) {
         return consultaService.consultarPorEspacio(spaceId);
     }
 
     @GetMapping("/api/v1/buildings/{buildingId}/evacuation-routes")
-    public List<RutaConsultadaResponse> porEdificio(@PathVariable Long buildingId) {
+    public List<RutaConsultadaResponse> porEdificio(@PathVariable UUID buildingId) {
         return consultaService.consultarPorEdificio(buildingId);
     }
 }

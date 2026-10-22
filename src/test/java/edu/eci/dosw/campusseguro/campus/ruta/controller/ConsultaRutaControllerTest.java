@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
+import java.util.UUID;
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
@@ -28,8 +31,8 @@ class ConsultaRutaControllerTest {
     @MockitoBean
     private ConsultaRutaService consultaService;
 
-    private final Long espacioId = 10L;
-    private final Long zonaId = 11L;
+    private final UUID espacioId = uuid(10);
+    private final UUID zonaId = uuid(11);
 
     private RutaConsultadaResponse conRuta() {
         return new RutaConsultadaResponse(espacioId, "Salón 101", true, zonaId,
@@ -64,7 +67,7 @@ class ConsultaRutaControllerTest {
 
     @Test
     void porEdificio_devuelveUnaRutaPorEspacio() throws Exception {
-        Long edificioId = 12L;
+        UUID edificioId = uuid(12);
         when(consultaService.consultarPorEdificio(edificioId)).thenReturn(List.of(conRuta()));
 
         mockMvc.perform(get("/api/v1/buildings/{buildingId}/evacuation-routes", edificioId))
@@ -74,7 +77,7 @@ class ConsultaRutaControllerTest {
 
     @Test
     void porEdificio_sinEspaciosDevuelveListaVacia() throws Exception {
-        Long edificioId = 13L;
+        UUID edificioId = uuid(13);
         when(consultaService.consultarPorEdificio(edificioId)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/buildings/{buildingId}/evacuation-routes", edificioId))

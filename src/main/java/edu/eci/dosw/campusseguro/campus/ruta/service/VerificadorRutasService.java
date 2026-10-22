@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.service;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
@@ -22,18 +24,18 @@ public class VerificadorRutasService implements VerificadorRutas {
     }
 
     @Override
-    public boolean tieneRutaEspacio(Long espacioId) {
+    public boolean tieneRutaEspacio(UUID espacioId) {
         return rutaRepository.existsByEspacioOrigenId(espacioId);
     }
 
     @Override
-    public boolean tieneRutaZonaSegura(Long zonaSeguraId) {
+    public boolean tieneRutaZonaSegura(UUID zonaSeguraId) {
         return rutaRepository.existsByZonaSeguraDestinoId(zonaSeguraId);
     }
 
     @Override
-    public boolean tieneRutaEdificio(Long edificioId) {
-        List<Long> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
+    public boolean tieneRutaEdificio(UUID edificioId) {
+        List<UUID> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
                 .map(EspacioInfo::id)
                 .toList();
         return !espacios.isEmpty() && rutaRepository.existsByEspacioOrigenIdIn(espacios);

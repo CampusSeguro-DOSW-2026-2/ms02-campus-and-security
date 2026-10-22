@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CambiarEstadoRequest;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaResponse;
@@ -34,13 +36,13 @@ public class RutaController {
     }
 
     @PatchMapping("/{id}/status")
-    public RutaResponse cambiarEstado(@PathVariable Long id,
+    public RutaResponse cambiarEstado(@PathVariable UUID id,
                                       @Valid @RequestBody CambiarEstadoRequest request) {
         return rutaService.cambiarEstado(id, request.estado());
     }
 
     @GetMapping("/{id}")
-    public RutaResponse obtener(@PathVariable Long id) {
+    public RutaResponse obtener(@PathVariable UUID id) {
         return rutaService.obtener(id);
     }
 

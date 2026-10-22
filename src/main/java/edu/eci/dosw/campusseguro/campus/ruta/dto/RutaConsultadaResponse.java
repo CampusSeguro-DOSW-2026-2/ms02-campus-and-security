@@ -1,13 +1,15 @@
 package edu.eci.dosw.campusseguro.campus.ruta.dto;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 
 
 public record RutaConsultadaResponse(
-        Long espacioId,
+        UUID espacioId,
         String espacioNombre,
         boolean tieneRuta,
-        Long zonaSeguraId,
+        UUID zonaSeguraId,
         String zonaSeguraNombre,
         String zonaSeguraUbicacion,
         String recorrido,

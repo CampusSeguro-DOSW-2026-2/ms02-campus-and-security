@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.gateway;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EdificioGateway;
@@ -15,7 +17,7 @@ public class EdificioGatewayImpl implements EdificioGateway {
     private final EdificioRepository edificioRepository;
 
     @Override
-    public Optional<EdificioInfo> buscarPorId(Long id) {
+    public Optional<EdificioInfo> buscarPorId(UUID id) {
         return edificioRepository.findById(id)
                 .map(e -> new EdificioInfo(
                         e.getId(),

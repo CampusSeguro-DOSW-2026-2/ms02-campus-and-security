@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
@@ -26,14 +28,14 @@ public class ZonaSeguraService {
     }
 
     @Transactional
-    public ZonaSeguraResponse modificar(Long id, ZonaSeguraRequest request) {
+    public ZonaSeguraResponse modificar(UUID id, ZonaSeguraRequest request) {
         ZonaSegura zona = buscar(id);
         copiarDatos(zona, request);
         return aRespuesta(zonaSeguraRepository.save(zona));
     }
 
     @Transactional
-    public ZonaSeguraResponse inactivar(Long id) {
+    public ZonaSeguraResponse inactivar(UUID id) {
         ZonaSegura zona = buscar(id);
         zona.setEstado(Estado.INACTIVO);
         return aRespuesta(zonaSeguraRepository.save(zona));
@@ -47,11 +49,11 @@ public class ZonaSeguraService {
     }
 
     @Transactional(readOnly = true)
-    public ZonaSeguraResponse obtener(Long id) {
+    public ZonaSeguraResponse obtener(UUID id) {
         return aRespuesta(buscar(id));
     }
 
-    private ZonaSegura buscar(Long id) {
+    private ZonaSegura buscar(UUID id) {
         return zonaSeguraRepository.findById(id)
                 .orElseThrow(() -> new ZonaSeguraNoEncontradaException(id));
     }

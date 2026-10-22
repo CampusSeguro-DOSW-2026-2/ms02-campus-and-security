@@ -1,5 +1,5 @@
 CREATE TABLE edificio (
-    id          BIGSERIAL PRIMARY KEY,
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     codigo      VARCHAR(50)  NOT NULL UNIQUE,
     nombre      VARCHAR(100) NOT NULL,
     descripcion TEXT,
@@ -7,7 +7,7 @@ CREATE TABLE edificio (
 );
 
 CREATE TABLE zona_segura (
-    id          BIGSERIAL PRIMARY KEY,
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nombre      VARCHAR(100) NOT NULL,
     ubicacion   VARCHAR(255) NOT NULL,
     descripcion TEXT         NOT NULL,
