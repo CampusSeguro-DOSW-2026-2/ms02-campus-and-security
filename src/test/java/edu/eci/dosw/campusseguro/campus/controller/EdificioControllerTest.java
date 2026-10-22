@@ -65,8 +65,8 @@ class EdificioControllerTest {
         mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"codigo\":\"\",\"nombre\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.campos.codigo").exists())
-                .andExpect(jsonPath("$.campos.nombre").exists());
+                .andExpect(jsonPath("$.errores[?(@.campo == 'codigo')]").exists())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists());
     }
 
     @Test
@@ -74,7 +74,7 @@ class EdificioControllerTest {
         mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "a".repeat(101))))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.campos.nombre").exists());
+                .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists());
     }
 
     @Test
@@ -85,7 +85,7 @@ class EdificioControllerTest {
         mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "Bloque H")))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.campo").value("codigo"));
+                .andExpect(jsonPath("$.errores[0].campo").value("codigo"));
     }
 
     @Test

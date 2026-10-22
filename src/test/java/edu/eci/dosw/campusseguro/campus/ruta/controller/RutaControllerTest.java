@@ -69,10 +69,10 @@ class RutaControllerTest {
         mockMvc.perform(post("/api/v1/evacuation-routes").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"descripcion\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.campos.espacioOrigenId").exists())
-                .andExpect(jsonPath("$.campos.zonaSeguraDestinoId").exists())
-                .andExpect(jsonPath("$.campos.descripcion").exists())
-                .andExpect(jsonPath("$.campos.estado").exists());
+                .andExpect(jsonPath("$.errores[?(@.campo == 'espacioOrigenId')]").exists())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'zonaSeguraDestinoId')]").exists())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'descripcion')]").exists())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'estado')]").exists());
     }
 
     @Test
@@ -118,7 +118,7 @@ class RutaControllerTest {
         mockMvc.perform(patch("/api/v1/evacuation-routes/{id}/status", rutaId).contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.campos.estado").exists());
+                .andExpect(jsonPath("$.errores[?(@.campo == 'estado')]").exists());
     }
 
     @Test
