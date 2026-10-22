@@ -62,7 +62,7 @@ class ConsultaRutaControllerTest {
     void porEspacio_conIdMalFormadoDevuelve400() throws Exception {
         mockMvc.perform(get("/api/v1/spaces/{spaceId}/evacuation-route", "no-es-numero"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.campos.spaceId").exists());
+                .andExpect(jsonPath("$.errores[?(@.campo == 'spaceId')]").exists());
     }
 
     @Test
