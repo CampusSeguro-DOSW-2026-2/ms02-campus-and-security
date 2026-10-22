@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.service;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
@@ -45,18 +47,18 @@ public class ConsultaRutaService {
         this.zonaGateway = zonaGateway;
     }
 
-    public RutaConsultadaResponse consultarPorEspacio(Long espacioId) {
+    public RutaConsultadaResponse consultarPorEspacio(UUID espacioId) {
         EspacioInfo espacio = espacioGateway.buscarPorId(espacioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "El espacio " + espacioId + " no existe"));
         return consultar(espacio.edificioId(), espacioId).get(0);
     }
 
-    public List<RutaConsultadaResponse> consultarPorEdificio(Long edificioId) {
+    public List<RutaConsultadaResponse> consultarPorEdificio(UUID edificioId) {
         return consultar(edificioId, null);
     }
 
-    public List<RutaConsultadaResponse> consultar(Long edificioId, Long espacioId) {
+    public List<RutaConsultadaResponse> consultar(UUID edificioId, UUID espacioId) {
         EdificioInfo edificio = edificioGateway.buscarPorId(edificioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "El edificio " + edificioId + " no existe"));
@@ -82,7 +84,7 @@ public class ConsultaRutaService {
         if (espacios.isEmpty()) {
             return List.of();
         }
-        Map<Long, RutaEvacuacion> rutasPorEspacio = rutaRepository
+        Map<UUID, RutaEvacuacion> rutasPorEspacio = rutaRepository
                 .findByEspacioOrigenIdIn(espacios.stream().map(EspacioInfo::id).toList())
                 .stream()
                 .collect(Collectors.toMap(RutaEvacuacion::getEspacioOrigenId, Function.identity()));

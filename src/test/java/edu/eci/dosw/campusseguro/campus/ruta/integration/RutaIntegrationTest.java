@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.integration;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.port.EdificioGateway.EdificioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
@@ -58,23 +60,23 @@ class RutaIntegrationTest {
         plazoleta = campus.zona("Plazoleta", true);
     }
 
-    private String cuerpoRuta(Long espacioId, Long zonaId, String estado, Long alternativa) {
-        String alt = alternativa == null ? "" : ",\"rutaAlternativaId\":" + alternativa;
-        return "{\"espacioOrigenId\":" + espacioId + ",\"zonaSeguraDestinoId\":" + zonaId
-                + ",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\"" + alt + "}";
+    private String cuerpoRuta(UUID espacioId, UUID zonaId, String estado, UUID alternativa) {
+    String alt = alternativa == null ? "" : ",\"rutaAlternativaId\":\"" + alternativa + "\"";
+    return "{\"espacioOrigenId\":\"" + espacioId + "\",\"zonaSeguraDestinoId\":\"" + zonaId
+            + "\",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\"" + alt + "}";
     }
 
-    private Long crearRuta(EspacioInfo espacio, String estado) throws Exception {
+    private UUID crearRuta(EspacioInfo espacio, String estado) throws Exception {
         return crearRuta(espacio, estado, null);
     }
 
-    private Long crearRuta(EspacioInfo espacio, String estado, Long alternativa) throws Exception {
+    private UUID crearRuta(EspacioInfo espacio, String estado, UUID alternativa) throws Exception {
         MvcResult resultado = mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpoRuta(espacio.id(), plazoleta.id(), estado, alternativa)))
                 .andExpect(status().isCreated())
                 .andReturn();
-        Number id = JsonPath.read(resultado.getResponse().getContentAsString(), "$.id");
-        return id.longValue();
+        String id = JsonPath.read(resultado.getResponse().getContentAsString(), "$.id");
+        return UUID.fromString(id);
     }
 
     @Test
@@ -109,17 +111,17 @@ class RutaIntegrationTest {
 
     @Test
     void sePuedeGuardarUnaRutaAlternativa() throws Exception {
-        Long principal = crearRuta(salon, "DISPONIBLE");
+        UUID principal = crearRuta(salon, "DISPONIBLE");
 
         mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpoRuta(laboratorio.id(), plazoleta.id(), "DISPONIBLE", principal)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.rutaAlternativaId").value(principal.intValue()));
+                .andExpect(jsonPath("$.rutaAlternativaId").value(principal.toString()));
     }
 
     @Test
     void cambiarElEstadoSeVeReflejadoEnLaConsulta() throws Exception {
-        Long id = crearRuta(salon, "DISPONIBLE");
+        UUID id = crearRuta(salon, "DISPONIBLE");
 
         mockMvc.perform(patch(RUTAS + "/{id}/status", id).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"BLOQUEADA\"}"))

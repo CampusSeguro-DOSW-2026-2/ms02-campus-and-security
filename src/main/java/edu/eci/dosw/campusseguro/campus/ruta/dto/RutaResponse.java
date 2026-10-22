@@ -1,15 +1,17 @@
 package edu.eci.dosw.campusseguro.campus.ruta.dto;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 
 import java.time.Instant;
 
 public record RutaResponse(
-        Long id,
-        Long espacioOrigenId,
-        Long zonaSeguraDestinoId,
-        Long rutaAlternativaId,
+        UUID id,
+        UUID espacioOrigenId,
+        UUID zonaSeguraDestinoId,
+        UUID rutaAlternativaId,
         String descripcion,
         EstadoRuta estado,
         Instant actualizadaEn) {

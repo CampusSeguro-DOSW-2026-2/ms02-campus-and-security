@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.service.ZonaSeguraService;
@@ -24,13 +26,13 @@ public class ZonaSeguraController {
     }
 
     @PutMapping("/{id}")
-    public ZonaSeguraResponse modificar(@PathVariable Long id,
+    public ZonaSeguraResponse modificar(@PathVariable UUID id,
                                         @Valid @RequestBody ZonaSeguraRequest request) {
         return zonaSeguraService.modificar(id, request);
     }
 
     @PatchMapping("/{id}/deactivate")
-    public ZonaSeguraResponse inactivar(@PathVariable Long id) {
+    public ZonaSeguraResponse inactivar(@PathVariable UUID id) {
         return zonaSeguraService.inactivar(id);
     }
 
@@ -40,7 +42,7 @@ public class ZonaSeguraController {
     }
 
     @GetMapping("/{id}")
-    public ZonaSeguraResponse obtener(@PathVariable Long id) {
+    public ZonaSeguraResponse obtener(@PathVariable UUID id) {
         return zonaSeguraService.obtener(id);
     }
 }

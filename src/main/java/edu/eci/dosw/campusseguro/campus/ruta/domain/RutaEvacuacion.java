@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.domain;
 
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,17 +23,17 @@ import java.time.Instant;
 public class RutaEvacuacion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "espacio_origen_id", nullable = false)
-    private Long espacioOrigenId;
+    private UUID espacioOrigenId;
 
     @Column(name = "zona_segura_destino_id", nullable = false)
-    private Long zonaSeguraDestinoId;
+    private UUID zonaSeguraDestinoId;
 
     @Column(name = "ruta_alternativa_id")
-    private Long rutaAlternativaId;
+    private UUID rutaAlternativaId;
 
     @Column(nullable = false, length = 1000)
     private String descripcion;
@@ -50,7 +52,7 @@ public class RutaEvacuacion {
         // requerido por JPA
     }
 
-    public RutaEvacuacion(Long espacioOrigenId, Long zonaSeguraDestinoId, Long rutaAlternativaId,
+    public RutaEvacuacion(UUID espacioOrigenId, UUID zonaSeguraDestinoId, UUID rutaAlternativaId,
                           String descripcion, EstadoRuta estado) {
         this.espacioOrigenId = espacioOrigenId;
         this.zonaSeguraDestinoId = zonaSeguraDestinoId;
@@ -71,19 +73,19 @@ public class RutaEvacuacion {
         this.updatedAt = Instant.now();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public Long getEspacioOrigenId() {
+    public UUID getEspacioOrigenId() {
         return espacioOrigenId;
     }
 
-    public Long getZonaSeguraDestinoId() {
+    public UUID getZonaSeguraDestinoId() {
         return zonaSeguraDestinoId;
     }
 
-    public Long getRutaAlternativaId() {
+    public UUID getRutaAlternativaId() {
         return rutaAlternativaId;
     }
 

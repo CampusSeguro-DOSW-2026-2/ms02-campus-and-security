@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
 import edu.eci.dosw.campusseguro.campus.service.EdificioService;
@@ -24,13 +26,13 @@ public class EdificioController {
     }
 
     @PutMapping("/{id}")
-    public EdificioResponse modificar(@PathVariable Long id,
+    public EdificioResponse modificar(@PathVariable UUID id,
                                       @Valid @RequestBody EdificioRequest request) {
         return edificioService.modificar(id, request);
     }
 
     @PatchMapping("/{id}/deactivate")
-    public EdificioResponse inactivar(@PathVariable Long id) {
+    public EdificioResponse inactivar(@PathVariable UUID id) {
         return edificioService.inactivar(id);
     }
 
@@ -40,7 +42,7 @@ public class EdificioController {
     }
 
     @GetMapping("/{id}")
-    public EdificioResponse obtener(@PathVariable Long id) {
+    public EdificioResponse obtener(@PathVariable UUID id) {
         return edificioService.obtener(id);
     }
 }

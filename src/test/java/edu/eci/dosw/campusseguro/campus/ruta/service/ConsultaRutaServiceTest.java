@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.ruta.service;
 
+import java.util.UUID;
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
@@ -39,9 +42,9 @@ class ConsultaRutaServiceTest {
 
     private ConsultaRutaService service;
 
-    private final Long edificioId = 10L;
-    private final Long espacioId = 11L;
-    private final Long zonaId = 12L;
+    private final UUID edificioId = uuid(10);
+    private final UUID espacioId = uuid(11);
+    private final UUID zonaId = uuid(12);
 
     @BeforeEach
     void setUp() {
@@ -184,7 +187,7 @@ class ConsultaRutaServiceTest {
     void consultar_fallaSiElEspacioPerteneceAOtroEdificio() {
         edificio(true);
         when(espacioGateway.buscarPorId(espacioId))
-                .thenReturn(Optional.of(new EspacioInfo(espacioId, 13L, "Salón 101", true)));
+                .thenReturn(Optional.of(new EspacioInfo(espacioId, uuid(13), "Salón 101", true)));
 
         assertThatThrownBy(() -> service.consultar(edificioId, espacioId))
                 .isInstanceOf(ReglaNegocioException.class)
@@ -193,8 +196,8 @@ class ConsultaRutaServiceTest {
 
     @Test
     void consultar_soloConEdificioDevuelveUnResultadoPorEspacioActivo() {
-        Long otroEspacio = 14L;
-        Long inactivo = 15L;
+        UUID otroEspacio = uuid(14);
+        UUID inactivo = uuid(15);
         edificio(true);
         when(espacioGateway.listarPorEdificio(edificioId)).thenReturn(List.of(
                 new EspacioInfo(espacioId, edificioId, "Salón 101", true),

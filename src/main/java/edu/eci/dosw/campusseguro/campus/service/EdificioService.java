@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import java.util.UUID;
+
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
@@ -33,7 +35,7 @@ public class EdificioService {
     }
 
     @Transactional
-    public EdificioResponse modificar(Long id, EdificioRequest request) {
+    public EdificioResponse modificar(UUID id, EdificioRequest request) {
         Edificio edificio = buscar(id);
         String codigo = request.codigo().trim();
         if (edificioRepository.existsByCodigoAndIdNot(codigo, id)) {
@@ -46,7 +48,7 @@ public class EdificioService {
     }
 
     @Transactional
-    public EdificioResponse inactivar(Long id) {
+    public EdificioResponse inactivar(UUID id) {
         Edificio edificio = buscar(id);
         edificio.setEstado(Estado.INACTIVO);
         return aRespuesta(edificioRepository.save(edificio));
@@ -60,11 +62,11 @@ public class EdificioService {
     }
 
     @Transactional(readOnly = true)
-    public EdificioResponse obtener(Long id) {
+    public EdificioResponse obtener(UUID id) {
         return aRespuesta(buscar(id));
     }
 
-    private Edificio buscar(Long id) {
+    private Edificio buscar(UUID id) {
         return edificioRepository.findById(id)
                 .orElseThrow(() -> new EdificioNoEncontradoException(id));
     }

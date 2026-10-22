@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
@@ -39,7 +41,7 @@ class EdificioControllerTest {
     private EdificioService edificioService;
 
     private EdificioResponse respuesta(Estado estado) {
-        return new EdificioResponse(1L, "ED-1", "Bloque H", "Descripción", estado);
+        return new EdificioResponse(uuid(1), "ED-1", "Bloque H", "Descripción", estado);
     }
 
     private String json(String codigo, String nombre) {
@@ -88,10 +90,10 @@ class EdificioControllerTest {
 
     @Test
     void modificar_devuelve200ConLosDatosActualizados() throws Exception {
-        when(edificioService.modificar(eq(1L), any(EdificioRequest.class)))
+        when(edificioService.modificar(eq(uuid(1)), any(EdificioRequest.class)))
                 .thenReturn(respuesta(Estado.ACTIVO));
 
-        mockMvc.perform(put(BASE + "/{id}", 1L).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(put(BASE + "/{id}", uuid(1)).contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "Bloque H")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Bloque H"));
@@ -99,28 +101,28 @@ class EdificioControllerTest {
 
     @Test
     void modificar_noExiste_devuelve404() throws Exception {
-        when(edificioService.modificar(eq(99L), any(EdificioRequest.class)))
-                .thenThrow(new EdificioNoEncontradoException(99L));
+        when(edificioService.modificar(eq(uuid(99)), any(EdificioRequest.class)))
+                .thenThrow(new EdificioNoEncontradoException(uuid(99)));
 
-        mockMvc.perform(put(BASE + "/{id}", 99L).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(put(BASE + "/{id}", uuid(99)).contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "Bloque H")))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void inactivar_devuelveElEdificioInactivo() throws Exception {
-        when(edificioService.inactivar(1L)).thenReturn(respuesta(Estado.INACTIVO));
+        when(edificioService.inactivar(uuid(1))).thenReturn(respuesta(Estado.INACTIVO));
 
-        mockMvc.perform(patch(BASE + "/{id}/deactivate", 1L))
+        mockMvc.perform(patch(BASE + "/{id}/deactivate", uuid(1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("INACTIVO"));
     }
 
     @Test
     void inactivar_noExiste_devuelve404() throws Exception {
-        when(edificioService.inactivar(99L)).thenThrow(new EdificioNoEncontradoException(99L));
+        when(edificioService.inactivar(uuid(99))).thenThrow(new EdificioNoEncontradoException(uuid(99)));
 
-        mockMvc.perform(patch(BASE + "/{id}/deactivate", 99L))
+        mockMvc.perform(patch(BASE + "/{id}/deactivate", uuid(99)))
                 .andExpect(status().isNotFound());
     }
 
@@ -135,18 +137,18 @@ class EdificioControllerTest {
 
     @Test
     void obtener_devuelveElEdificio() throws Exception {
-        when(edificioService.obtener(1L)).thenReturn(respuesta(Estado.ACTIVO));
+        when(edificioService.obtener(uuid(1))).thenReturn(respuesta(Estado.ACTIVO));
 
-        mockMvc.perform(get(BASE + "/{id}", 1L))
+        mockMvc.perform(get(BASE + "/{id}", uuid(1)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
+                .andExpect(jsonPath("$.id").value(uuid(1).toString()));
     }
 
     @Test
     void obtener_noExiste_devuelve404() throws Exception {
-        when(edificioService.obtener(99L)).thenThrow(new EdificioNoEncontradoException(99L));
+        when(edificioService.obtener(uuid(99))).thenThrow(new EdificioNoEncontradoException(uuid(99)));
 
-        mockMvc.perform(get(BASE + "/{id}", 99L))
+        mockMvc.perform(get(BASE + "/{id}", uuid(99)))
                 .andExpect(status().isNotFound());
     }
 

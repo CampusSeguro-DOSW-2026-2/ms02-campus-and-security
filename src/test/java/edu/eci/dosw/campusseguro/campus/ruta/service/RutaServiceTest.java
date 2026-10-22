@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.ruta.service;
 
+import java.util.UUID;
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
@@ -42,9 +45,9 @@ class RutaServiceTest {
 
     private RutaService service;
 
-    private final Long edificioId = 10L;
-    private final Long espacioId = 11L;
-    private final Long zonaId = 12L;
+    private final UUID edificioId = uuid(10);
+    private final UUID espacioId = uuid(11);
+    private final UUID zonaId = uuid(12);
 
     @BeforeEach
     void setUp() {
@@ -145,7 +148,7 @@ class RutaServiceTest {
     @Test
     void cambiarEstado_actualizaLaRuta() {
         RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Ruta", EstadoRuta.DISPONIBLE);
-        ReflectionTestUtils.setField(ruta, "id", 7L);
+        ReflectionTestUtils.setField(ruta, "id", uuid(7));
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
         when(rutaRepository.save(ruta)).thenReturn(ruta);
 
@@ -157,7 +160,7 @@ class RutaServiceTest {
 
     @Test
     void cambiarEstado_fallaSiLaRutaNoExiste() {
-        Long id = 13L;
+        UUID id = uuid(13);
         when(rutaRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.cambiarEstado(id, EstadoRuta.RESTRINGIDA))
@@ -167,7 +170,7 @@ class RutaServiceTest {
     @Test
     void obtener_devuelveLaRuta() {
         RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Ruta", EstadoRuta.RESTRINGIDA);
-        ReflectionTestUtils.setField(ruta, "id", 8L);
+        ReflectionTestUtils.setField(ruta, "id", uuid(8));
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
 
         assertThat(service.obtener(ruta.getId()).estado()).isEqualTo(EstadoRuta.RESTRINGIDA);
@@ -177,14 +180,14 @@ class RutaServiceTest {
     void listar_devuelveTodasLasRutas() {
         when(rutaRepository.findAll()).thenReturn(List.of(
                 new RutaEvacuacion(espacioId, zonaId, null, "A", EstadoRuta.DISPONIBLE),
-                new RutaEvacuacion(14L, zonaId, null, "B", EstadoRuta.BLOQUEADA)));
+                new RutaEvacuacion(uuid(14), zonaId, null, "B", EstadoRuta.BLOQUEADA)));
 
         assertThat(service.listar()).hasSize(2);
     }
 
     @Test
     void crear_aceptaUnaRutaAlternativaExistente() {
-        Long alternativa = 15L;
+        UUID alternativa = uuid(15);
         espacioActivo(true);
         zonaActiva(true);
         when(rutaRepository.existsById(alternativa)).thenReturn(true);
@@ -199,7 +202,7 @@ class RutaServiceTest {
 
     @Test
     void crear_fallaSiLaRutaAlternativaNoExiste() {
-        Long alternativa = 16L;
+        UUID alternativa = uuid(16);
         espacioActivo(true);
         zonaActiva(true);
         when(rutaRepository.existsById(alternativa)).thenReturn(false);

@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
+import java.util.UUID;
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaResponse;
@@ -37,17 +40,17 @@ class RutaControllerTest {
     @MockitoBean
     private RutaService rutaService;
 
-    private final Long rutaId = 10L;
-    private final Long espacioId = 11L;
-    private final Long zonaId = 12L;
+    private final UUID rutaId = uuid(10);
+    private final UUID espacioId = uuid(11);
+    private final UUID zonaId = uuid(12);
 
     private RutaResponse respuesta(EstadoRuta estado) {
         return new RutaResponse(rutaId, espacioId, zonaId, null, "Por la puerta norte", estado, Instant.now());
     }
 
-    private String json(Long espacio, Long zona, String descripcion) {
-        return "{\"espacioOrigenId\":" + espacio + ",\"zonaSeguraDestinoId\":" + zona
-                + ",\"descripcion\":\"" + descripcion + "\",\"estado\":\"DISPONIBLE\"}";
+    private String json(UUID espacio, UUID zona, String descripcion) {
+    return "{\"espacioOrigenId\":\"" + espacio + "\",\"zonaSeguraDestinoId\":\"" + zona
+            + "\",\"descripcion\":\"" + descripcion + "\",\"estado\":\"DISPONIBLE\"}";
     }
 
     @Test
@@ -74,8 +77,8 @@ class RutaControllerTest {
 
     @Test
     void crear_conEstadoNoPermitidoDevuelve400() throws Exception {
-        String cuerpo = "{\"espacioOrigenId\":" + espacioId + ",\"zonaSeguraDestinoId\":" + zonaId
-                + ",\"descripcion\":\"x\",\"estado\":\"CERRADA\"}";
+        String cuerpo = "{\"espacioOrigenId\":\"" + espacioId + "\",\"zonaSeguraDestinoId\":\"" + zonaId
+        + "\",\"descripcion\":\"x\",\"estado\":\"CERRADA\"}";
 
         mockMvc.perform(post("/api/v1/evacuation-routes").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
                 .andExpect(status().isBadRequest());
@@ -138,6 +141,6 @@ class RutaControllerTest {
 
         mockMvc.perform(get("/api/v1/evacuation-routes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(rutaId.intValue()));
+                .andExpect(jsonPath("$[0].id").value(rutaId.toString()));
     }
 }

@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import java.util.UUID;
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
@@ -32,7 +35,7 @@ class EdificioServiceTest {
     @InjectMocks
     private EdificioService edificioService;
 
-    private Edificio nuevoEdificio(Long id, String codigo, String nombre) {
+    private Edificio nuevoEdificio(UUID id, String codigo, String nombre) {
         Edificio e = new Edificio();
         e.setId(id);
         e.setCodigo(codigo);
@@ -45,14 +48,14 @@ class EdificioServiceTest {
         when(edificioRepository.existsByCodigo("ED-1")).thenReturn(false);
         when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> {
             Edificio e = inv.getArgument(0);
-            e.setId(1L);
+            e.setId(uuid(1));
             return e;
         });
 
         EdificioResponse respuesta = edificioService.crear(
                 new EdificioRequest(" ED-1 ", " Bloque H ", "Descripción"));
 
-        assertThat(respuesta.id()).isEqualTo(1L);
+        assertThat(respuesta.id()).isEqualTo(uuid(1));
         assertThat(respuesta.codigo()).isEqualTo("ED-1");
         assertThat(respuesta.nombre()).isEqualTo("Bloque H");
         assertThat(respuesta.estado()).isEqualTo(Estado.ACTIVO);
@@ -71,13 +74,13 @@ class EdificioServiceTest {
 
     @Test
     void modificar_actualizaLosCampos() {
-        when(edificioRepository.findById(1L))
-                .thenReturn(Optional.of(nuevoEdificio(1L, "ED-1", "Viejo")));
-        when(edificioRepository.existsByCodigoAndIdNot("ED-2", 1L)).thenReturn(false);
+        when(edificioRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Viejo")));
+        when(edificioRepository.existsByCodigoAndIdNot("ED-2", uuid(1))).thenReturn(false);
         when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> inv.getArgument(0));
 
         EdificioResponse respuesta = edificioService.modificar(
-                1L, new EdificioRequest("ED-2", "Nuevo", "Otra descripción"));
+                uuid(1), new EdificioRequest("ED-2", "Nuevo", "Otra descripción"));
 
         assertThat(respuesta.codigo()).isEqualTo("ED-2");
         assertThat(respuesta.nombre()).isEqualTo("Nuevo");
@@ -86,12 +89,12 @@ class EdificioServiceTest {
 
     @Test
     void modificar_codigoDeOtroEdificio_lanzaExcepcion() {
-        when(edificioRepository.findById(1L))
-                .thenReturn(Optional.of(nuevoEdificio(1L, "ED-1", "Viejo")));
-        when(edificioRepository.existsByCodigoAndIdNot("ED-2", 1L)).thenReturn(true);
+        when(edificioRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Viejo")));
+        when(edificioRepository.existsByCodigoAndIdNot("ED-2", uuid(1))).thenReturn(true);
 
         assertThatThrownBy(() -> edificioService.modificar(
-                1L, new EdificioRequest("ED-2", "Nuevo", null)))
+                uuid(1), new EdificioRequest("ED-2", "Nuevo", null)))
                 .isInstanceOf(CodigoDuplicadoException.class);
 
         verify(edificioRepository, never()).save(any());
@@ -99,54 +102,54 @@ class EdificioServiceTest {
 
     @Test
     void modificar_noExiste_lanzaExcepcion() {
-        when(edificioRepository.findById(99L)).thenReturn(Optional.empty());
+        when(edificioRepository.findById(uuid(99))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> edificioService.modificar(
-                99L, new EdificioRequest("ED-2", "Nuevo", null)))
+                uuid(99), new EdificioRequest("ED-2", "Nuevo", null)))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 
     @Test
     void inactivar_cambiaElEstadoAInactivo() {
-        when(edificioRepository.findById(1L))
-                .thenReturn(Optional.of(nuevoEdificio(1L, "ED-1", "Bloque H")));
+        when(edificioRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Bloque H")));
         when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        EdificioResponse respuesta = edificioService.inactivar(1L);
+        EdificioResponse respuesta = edificioService.inactivar(uuid(1));
 
         assertThat(respuesta.estado()).isEqualTo(Estado.INACTIVO);
     }
 
     @Test
     void inactivar_noExiste_lanzaExcepcion() {
-        when(edificioRepository.findById(99L)).thenReturn(Optional.empty());
+        when(edificioRepository.findById(uuid(99))).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> edificioService.inactivar(99L))
+        assertThatThrownBy(() -> edificioService.inactivar(uuid(99)))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 
     @Test
     void listar_devuelveTodosLosEdificios() {
         when(edificioRepository.findAll()).thenReturn(List.of(
-                nuevoEdificio(1L, "ED-1", "Bloque H"),
-                nuevoEdificio(2L, "ED-2", "Bloque B")));
+                nuevoEdificio(uuid(1), "ED-1", "Bloque H"),
+                nuevoEdificio(uuid(2), "ED-2", "Bloque B")));
 
         assertThat(edificioService.listar()).hasSize(2);
     }
 
     @Test
     void obtener_existente_devuelveElEdificio() {
-        when(edificioRepository.findById(1L))
-                .thenReturn(Optional.of(nuevoEdificio(1L, "ED-1", "Bloque H")));
+        when(edificioRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Bloque H")));
 
-        assertThat(edificioService.obtener(1L).codigo()).isEqualTo("ED-1");
+        assertThat(edificioService.obtener(uuid(1)).codigo()).isEqualTo("ED-1");
     }
 
     @Test
     void obtener_noExiste_lanzaExcepcion() {
-        when(edificioRepository.findById(99L)).thenReturn(Optional.empty());
+        when(edificioRepository.findById(uuid(99))).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> edificioService.obtener(99L))
+        assertThatThrownBy(() -> edificioService.obtener(uuid(99)))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 }

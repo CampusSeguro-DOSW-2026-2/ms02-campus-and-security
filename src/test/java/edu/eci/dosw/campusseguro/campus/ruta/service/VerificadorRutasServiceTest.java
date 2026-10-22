@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.ruta.service;
 
+import java.util.UUID;
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
@@ -27,9 +30,9 @@ class VerificadorRutasServiceTest {
 
     private VerificadorRutasService verificador;
 
-    private final Long edificioId = 10L;
-    private final Long espacioId = 11L;
-    private final Long zonaId = 12L;
+    private final UUID edificioId = uuid(10);
+    private final UUID espacioId = uuid(11);
+    private final UUID zonaId = uuid(12);
 
     @BeforeEach
     void setUp() {
