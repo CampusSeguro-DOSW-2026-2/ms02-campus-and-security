@@ -26,6 +26,7 @@ public class ManejadorGlobalErrores {
 
     @ExceptionHandler({EdificioNoEncontradoException.class,
             ZonaSeguraNoEncontradaException.class,
+            PisoNoEncontradoException.class,
             RecursoNoEncontradoException.class})
     public ResponseEntity<ErrorResponse> noEncontrado(RuntimeException e, HttpServletRequest request) {
         return respuesta(HttpStatus.NOT_FOUND, "NO_ENCONTRADO", e.getMessage(), List.of(), request);
@@ -35,6 +36,13 @@ public class ManejadorGlobalErrores {
     public ResponseEntity<ErrorResponse> codigoDuplicado(CodigoDuplicadoException e, HttpServletRequest request) {
         List<ErrorResponse.CampoError> errores =
                 List.of(new ErrorResponse.CampoError("codigo", "Ya existe un edificio con ese código."));
+        return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
+    }
+
+    @ExceptionHandler(PisoDuplicadoException.class)
+    public ResponseEntity<ErrorResponse> pisoDuplicado(PisoDuplicadoException e, HttpServletRequest request) {
+        List<ErrorResponse.CampoError> errores =
+                List.of(new ErrorResponse.CampoError("numero", "Ya existe un piso con ese número en el edificio."));
         return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
     }
 
