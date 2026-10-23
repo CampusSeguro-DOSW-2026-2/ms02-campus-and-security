@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.entity.Espacio;
+import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EspacioRepository extends JpaRepository<Espacio, UUID> {
@@ -11,6 +12,8 @@ public interface EspacioRepository extends JpaRepository<Espacio, UUID> {
     List<Espacio> findByEdificioId(UUID edificioId);
 
     List<Espacio> findByPisoId(UUID pisoId);
+
+    boolean existsByPisoIdAndEstado(UUID pisoId, Estado estado);
 
     boolean existsByEdificioIdAndCodigo(UUID edificioId, String codigo);
 
