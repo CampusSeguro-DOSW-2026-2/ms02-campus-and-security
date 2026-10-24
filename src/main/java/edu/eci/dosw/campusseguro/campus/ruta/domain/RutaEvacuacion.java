@@ -32,9 +32,6 @@ public class RutaEvacuacion {
     @Column(name = "zona_segura_destino_id", nullable = false)
     private UUID zonaSeguraDestinoId;
 
-    @Column(name = "ruta_alternativa_id")
-    private UUID rutaAlternativaId;
-
     @Column(nullable = false, length = 1000)
     private String descripcion;
 
@@ -52,11 +49,10 @@ public class RutaEvacuacion {
         // requerido por JPA
     }
 
-    public RutaEvacuacion(UUID espacioOrigenId, UUID zonaSeguraDestinoId, UUID rutaAlternativaId,
+    public RutaEvacuacion(UUID espacioOrigenId, UUID zonaSeguraDestinoId,
                           String descripcion, EstadoRuta estado) {
         this.espacioOrigenId = espacioOrigenId;
         this.zonaSeguraDestinoId = zonaSeguraDestinoId;
-        this.rutaAlternativaId = rutaAlternativaId;
         this.descripcion = descripcion;
         this.estado = estado;
     }
@@ -87,10 +83,6 @@ public class RutaEvacuacion {
 
     public void setZonaSeguraDestinoId(UUID zonaSeguraDestinoId) {
         this.zonaSeguraDestinoId = zonaSeguraDestinoId;
-    }
-
-    public UUID getRutaAlternativaId() {
-        return rutaAlternativaId;
     }
 
     public String getDescripcion() {

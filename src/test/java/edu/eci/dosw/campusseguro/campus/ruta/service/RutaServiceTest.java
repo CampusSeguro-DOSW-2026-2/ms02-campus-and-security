@@ -56,7 +56,8 @@ class RutaServiceTest {
     }
 
     private CrearRutaRequest request() {
-        return new CrearRutaRequest(espacioId, zonaId, "  Salir por la puerta norte  ", EstadoRuta.DISPONIBLE, null);
+        return new CrearRutaRequest(
+                espacioId, zonaId, "  Salir por la puerta norte  ", EstadoRuta.DISPONIBLE);
     }
 
     private void espacioActivo(boolean activo) {
@@ -150,7 +151,7 @@ class RutaServiceTest {
      void actualizar_modificaDescripcionYDestino() {
         UUID nuevaZonaId = uuid(20);
         RutaEvacuacion ruta = new RutaEvacuacion(
-                espacioId, zonaId, null, "Ruta anterior", EstadoRuta.DISPONIBLE);
+                espacioId, zonaId, "Ruta anterior", EstadoRuta.DISPONIBLE);
         ReflectionTestUtils.setField(ruta, "id", uuid(19));
 
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
@@ -185,7 +186,7 @@ class RutaServiceTest {
     void actualizar_fallaSiLaZonaNoExiste() {
         UUID rutaId = uuid(22);
         RutaEvacuacion ruta = new RutaEvacuacion(
-                espacioId, zonaId, null, "Ruta anterior", EstadoRuta.DISPONIBLE);
+                espacioId, zonaId, "Ruta anterior", EstadoRuta.DISPONIBLE);
         ReflectionTestUtils.setField(ruta, "id", rutaId);
 
         UUID zonaInexistente = uuid(23);
@@ -203,7 +204,7 @@ class RutaServiceTest {
     void actualizar_fallaSiLaZonaEstaInactiva() {
         UUID rutaId = uuid(24);
         RutaEvacuacion ruta = new RutaEvacuacion(
-                espacioId, zonaId, null, "Ruta anterior", EstadoRuta.DISPONIBLE);
+                espacioId, zonaId, "Ruta anterior", EstadoRuta.DISPONIBLE);
         ReflectionTestUtils.setField(ruta, "id", rutaId);
 
         UUID zonaInactiva = uuid(25);
@@ -222,7 +223,7 @@ class RutaServiceTest {
 
     @Test
     void cambiarEstado_actualizaLaRuta() {
-        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Ruta", EstadoRuta.DISPONIBLE);
+        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, "Ruta", EstadoRuta.DISPONIBLE);
         ReflectionTestUtils.setField(ruta, "id", uuid(7));
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
         when(rutaRepository.save(ruta)).thenReturn(ruta);
@@ -244,7 +245,7 @@ class RutaServiceTest {
 
     @Test
     void obtener_devuelveLaRuta() {
-        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Ruta", EstadoRuta.RESTRINGIDA);
+        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, "Ruta", EstadoRuta.RESTRINGIDA);
         ReflectionTestUtils.setField(ruta, "id", uuid(8));
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
 
@@ -254,38 +255,9 @@ class RutaServiceTest {
     @Test
     void listar_devuelveTodasLasRutas() {
         when(rutaRepository.findAll()).thenReturn(List.of(
-                new RutaEvacuacion(espacioId, zonaId, null, "A", EstadoRuta.DISPONIBLE),
-                new RutaEvacuacion(uuid(14), zonaId, null, "B", EstadoRuta.BLOQUEADA)));
+                new RutaEvacuacion(espacioId, zonaId, "A", EstadoRuta.DISPONIBLE),
+                new RutaEvacuacion(uuid(14), zonaId, "B", EstadoRuta.BLOQUEADA)));
 
         assertThat(service.listar()).hasSize(2);
-    }
-
-    @Test
-    void crear_aceptaUnaRutaAlternativaExistente() {
-        UUID alternativa = uuid(15);
-        espacioActivo(true);
-        zonaActiva(true);
-        when(rutaRepository.existsById(alternativa)).thenReturn(true);
-        when(rutaRepository.existsByEspacioOrigenId(espacioId)).thenReturn(false);
-        when(rutaRepository.saveAndFlush(any(RutaEvacuacion.class))).thenAnswer(i -> i.getArgument(0));
-
-        RutaResponse respuesta = service.crear(
-                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.DISPONIBLE, alternativa));
-
-        assertThat(respuesta.rutaAlternativaId()).isEqualTo(alternativa);
-    }
-
-    @Test
-    void crear_fallaSiLaRutaAlternativaNoExiste() {
-        UUID alternativa = uuid(16);
-        espacioActivo(true);
-        zonaActiva(true);
-        when(rutaRepository.existsById(alternativa)).thenReturn(false);
-
-        assertThatThrownBy(() -> service.crear(
-                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.DISPONIBLE, alternativa)))
-                .isInstanceOf(RecursoNoEncontradoException.class)
-                .hasMessageContaining("alternativa");
-        verify(rutaRepository, never()).saveAndFlush(any());
     }
 }

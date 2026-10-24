@@ -47,7 +47,7 @@ class RutaControllerTest {
     private final UUID zonaId = uuid(12);
 
     private RutaResponse respuesta(EstadoRuta estado) {
-        return new RutaResponse(rutaId, espacioId, zonaId, null, "Por la puerta norte", estado, Instant.now());
+        return new RutaResponse(rutaId, espacioId, zonaId, "Por la puerta norte", estado, Instant.now());
     }
 
     private String json(UUID espacio, UUID zona, String descripcion) {
@@ -114,7 +114,6 @@ class RutaControllerTest {
                         rutaId,
                         espacioId,
                         zonaId,
-                        null,
                         "Nueva ruta por la salida sur",
                         EstadoRuta.DISPONIBLE,
                         Instant.now()));

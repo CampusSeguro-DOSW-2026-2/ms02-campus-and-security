@@ -20,7 +20,5 @@ public record CrearRutaRequest(
         String descripcion,
 
         @NotNull(message = "El estado es obligatorio")
-        EstadoRuta estado,
-
-        UUID rutaAlternativaId) {
+        EstadoRuta estado) {
 }

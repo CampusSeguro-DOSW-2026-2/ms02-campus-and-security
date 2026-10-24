@@ -56,17 +56,15 @@ public class RutaService {
             throw new ReglaNegocioException("La zona segura '" + zona.nombre() + "' está inactiva");
         }
 
-        if (request.rutaAlternativaId() != null && !rutaRepository.existsById(request.rutaAlternativaId())) {
-            throw new RecursoNoEncontradoException(
-                    "La ruta alternativa " + request.rutaAlternativaId() + " no existe");
-        }
-
         if (rutaRepository.existsByEspacioOrigenId(request.espacioOrigenId())) {
             throw new RutaDuplicadaException(request.espacioOrigenId());
         }
 
-        RutaEvacuacion ruta = new RutaEvacuacion(request.espacioOrigenId(), request.zonaSeguraDestinoId(),
-                request.rutaAlternativaId(), request.descripcion().trim(), request.estado());
+        RutaEvacuacion ruta = new RutaEvacuacion(
+                request.espacioOrigenId(),
+                request.zonaSeguraDestinoId(),
+                request.descripcion().trim(),
+                request.estado());
         try {
             ruta = rutaRepository.saveAndFlush(ruta);
         } catch (DataIntegrityViolationException e) {

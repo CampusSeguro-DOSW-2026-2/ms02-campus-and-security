@@ -60,23 +60,20 @@ class RutaIntegrationTest {
         plazoleta = campus.zona("Plazoleta", true);
     }
 
-    private String cuerpoRuta(UUID espacioId, UUID zonaId, String estado, UUID alternativa) {
-    String alt = alternativa == null ? "" : ",\"rutaAlternativaId\":\"" + alternativa + "\"";
-    return "{\"espacioOrigenId\":\"" + espacioId + "\",\"zonaSeguraDestinoId\":\"" + zonaId
-            + "\",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\"" + alt + "}";
+    private String cuerpoRuta(UUID espacioId, UUID zonaId, String estado) {
+        return "{\"espacioOrigenId\":\"" + espacioId + "\",\"zonaSeguraDestinoId\":\"" + zonaId
+            + "\",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\"}";
     }
 
     private UUID crearRuta(EspacioInfo espacio, String estado) throws Exception {
-        return crearRuta(espacio, estado, null);
-    }
-
-    private UUID crearRuta(EspacioInfo espacio, String estado, UUID alternativa) throws Exception {
-        MvcResult resultado = mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(espacio.id(), plazoleta.id(), estado, alternativa)))
+        MvcResult resultado = mockMvc.perform(post(RUTAS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(cuerpoRuta(espacio.id(), plazoleta.id(), estado)))
                 .andExpect(status().isCreated())
                 .andReturn();
-        String id = JsonPath.read(resultado.getResponse().getContentAsString(), "$.id");
-        return UUID.fromString(id);
+
+        return UUID.fromString(
+                JsonPath.read(resultado.getResponse().getContentAsString(), "$.id"));
     }
 
     @Test
@@ -96,7 +93,7 @@ class RutaIntegrationTest {
         crearRuta(salon, "DISPONIBLE");
 
         mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(salon.id(), plazoleta.id(), "DISPONIBLE", null)))
+                        .content(cuerpoRuta(salon.id(), plazoleta.id(), "DISPONIBLE")))
                 .andExpect(status().isConflict());
     }
 
@@ -105,18 +102,8 @@ class RutaIntegrationTest {
         ZonaInfo inactiva = campus.zona("Cancha", false);
 
         mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(salon.id(), inactiva.id(), "DISPONIBLE", null)))
+                        .content(cuerpoRuta(salon.id(), inactiva.id(), "DISPONIBLE")))
                 .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
-    void sePuedeGuardarUnaRutaAlternativa() throws Exception {
-        UUID principal = crearRuta(salon, "DISPONIBLE");
-
-        mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(laboratorio.id(), plazoleta.id(), "DISPONIBLE", principal)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.rutaAlternativaId").value(principal.toString()));
     }
 
     @Test

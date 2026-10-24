@@ -11,7 +11,6 @@ public record RutaResponse(
         UUID id,
         UUID espacioOrigenId,
         UUID zonaSeguraDestinoId,
-        UUID rutaAlternativaId,
         String descripcion,
         EstadoRuta estado,
         Instant actualizadaEn) {
@@ -21,7 +20,6 @@ public record RutaResponse(
                 ruta.getId(),
                 ruta.getEspacioOrigenId(),
                 ruta.getZonaSeguraDestinoId(),
-                ruta.getRutaAlternativaId(),
                 ruta.getDescripcion(),
                 ruta.getEstado(),
                 ruta.getUpdatedAt());
