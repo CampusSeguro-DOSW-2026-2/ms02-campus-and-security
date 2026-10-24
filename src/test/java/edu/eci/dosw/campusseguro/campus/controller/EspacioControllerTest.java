@@ -49,7 +49,8 @@ class EspacioControllerTest {
     private EspacioService espacioService;
 
     private EspacioResponse respuesta(Estado estado) {
-        return new EspacioResponse(ESPACIO, EDIFICIO, PISO, "G-101", "Salón 101", TipoEspacio.SALON, estado);
+        return new EspacioResponse(ESPACIO, EDIFICIO, PISO, "G-101", "Salón 101", TipoEspacio.SALON, estado,
+                estado == Estado.ACTIVO);
     }
 
     @Test
@@ -106,7 +107,7 @@ class EspacioControllerTest {
 
     @Test
     void listarPorPiso_devuelveLosEspacios() throws Exception {
-        when(espacioService.listarPorPiso(PISO)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
+        when(espacioService.listarPorPiso(PISO, false)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get("/api/v1/floors/{id}/spaces", PISO))
                 .andExpect(status().isOk())
@@ -115,7 +116,7 @@ class EspacioControllerTest {
 
     @Test
     void listarPorEdificio_devuelveLosEspacios() throws Exception {
-        when(espacioService.listarPorEdificio(EDIFICIO)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
+        when(espacioService.listarPorEdificio(EDIFICIO, false)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get("/api/v1/buildings/{id}/spaces", EDIFICIO))
                 .andExpect(status().isOk())
@@ -178,5 +179,14 @@ class EspacioControllerTest {
         mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", ESPACIO))
                 .andExpect(status().is(422))
                 .andExpect(jsonPath("$.codigo").value("REGLA_NEGOCIO"));
+    }
+
+    @Test
+    void listarPorEdificio_conIncluirInactivos_pasaElFiltro() throws Exception {
+        when(espacioService.listarPorEdificio(EDIFICIO, true)).thenReturn(List.of(respuesta(Estado.INACTIVO)));
+
+        mockMvc.perform(get("/api/v1/buildings/{id}/spaces", EDIFICIO).param("incluirInactivos", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].disponible").value(false));
     }
 }

@@ -109,7 +109,7 @@ class PisoControllerTest {
 
     @Test
     void listarPorEdificio_devuelveLosPisos() throws Exception {
-        when(pisoService.listarPorEdificio(EDIFICIO)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
+        when(pisoService.listarPorEdificio(EDIFICIO, false)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get("/api/v1/buildings/{id}/floors", EDIFICIO))
                 .andExpect(status().isOk())
@@ -169,5 +169,14 @@ class PisoControllerTest {
         mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", PISO))
                 .andExpect(status().is(422))
                 .andExpect(jsonPath("$.mensaje").value("El edificio está inactivo: debe reactivarse primero"));
+    }
+
+    @Test
+    void listarPorEdificio_conIncluirInactivos_pasaElFiltro() throws Exception {
+        when(pisoService.listarPorEdificio(EDIFICIO, true)).thenReturn(List.of(respuesta(Estado.INACTIVO)));
+
+        mockMvc.perform(get("/api/v1/buildings/{id}/floors", EDIFICIO).param("incluirInactivos", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].estado").value("INACTIVO"));
     }
 }
