@@ -56,7 +56,7 @@ class RutaServiceTest {
     }
 
     private CrearRutaRequest request() {
-        return new CrearRutaRequest(espacioId, zonaId, "  Salir por la puerta norte  ", EstadoRuta.DISPONIBLE, null);
+        return new CrearRutaRequest(espacioId, zonaId, "  Salir por la puerta norte  ", EstadoRuta.DISPONIBLE, null, null);
     }
 
     private void espacioActivo(boolean activo) {
@@ -227,9 +227,10 @@ class RutaServiceTest {
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
         when(rutaRepository.save(ruta)).thenReturn(ruta);
 
-        RutaResponse respuesta = service.cambiarEstado(ruta.getId(), EstadoRuta.BLOQUEADA);
+        RutaResponse respuesta = service.cambiarEstado(ruta.getId(), EstadoRuta.BLOQUEADA, "  Obra en la escalera  ");
 
         assertThat(respuesta.estado()).isEqualTo(EstadoRuta.BLOQUEADA);
+        assertThat(respuesta.motivo()).isEqualTo("Obra en la escalera");
         verify(rutaRepository).save(ruta);
     }
 
@@ -238,8 +239,85 @@ class RutaServiceTest {
         UUID id = uuid(13);
         when(rutaRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.cambiarEstado(id, EstadoRuta.RESTRINGIDA))
+        assertThatThrownBy(() -> service.cambiarEstado(id, EstadoRuta.RESTRINGIDA, "Paso parcial"))
                 .isInstanceOf(RecursoNoEncontradoException.class);
+    }
+
+    private RutaEvacuacion rutaBloqueada() {
+        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Ruta", EstadoRuta.DISPONIBLE);
+        ruta.cambiarEstado(EstadoRuta.BLOQUEADA, "Obra en la escalera");
+        ReflectionTestUtils.setField(ruta, "id", uuid(9));
+        when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
+        return ruta;
+    }
+
+    @Test
+    void cambiarEstado_aBloqueadaSinMotivo_seRechaza() {
+        RutaEvacuacion ruta = rutaBloqueada();
+
+        assertThatThrownBy(() -> service.cambiarEstado(ruta.getId(), EstadoRuta.BLOQUEADA, "  "))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("motivo");
+        verify(rutaRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarEstado_aDisponible_borraElMotivo() {
+        RutaEvacuacion ruta = rutaBloqueada();
+        espacioActivo(true);
+        zonaActiva(true);
+        when(rutaRepository.save(ruta)).thenReturn(ruta);
+
+        RutaResponse respuesta = service.cambiarEstado(ruta.getId(), EstadoRuta.DISPONIBLE, "se ignora");
+
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.DISPONIBLE);
+        assertThat(respuesta.motivo()).isNull();
+    }
+
+    @Test
+    void cambiarEstado_aDisponibleConEspacioNoDisponible_seRechaza() {
+        RutaEvacuacion ruta = rutaBloqueada();
+        espacioActivo(false);
+
+        assertThatThrownBy(() -> service.cambiarEstado(ruta.getId(), EstadoRuta.DISPONIBLE, null))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("espacio de origen no está disponible");
+        verify(rutaRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarEstado_aRestringidaConZonaInactiva_seRechaza() {
+        RutaEvacuacion ruta = rutaBloqueada();
+        espacioActivo(true);
+        zonaActiva(false);
+
+        assertThatThrownBy(() -> service.cambiarEstado(ruta.getId(), EstadoRuta.RESTRINGIDA, "Paso parcial"))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("zona segura de destino está inactiva");
+        verify(rutaRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarEstado_aBloqueada_noRevisaEspacioNiZona() {
+        RutaEvacuacion ruta = rutaBloqueada();
+        when(rutaRepository.save(ruta)).thenReturn(ruta);
+
+        service.cambiarEstado(ruta.getId(), EstadoRuta.BLOQUEADA, "Sismo");
+
+        verify(espacioGateway, never()).buscarPorId(any());
+        verify(zonaGateway, never()).buscarPorId(any());
+    }
+
+    @Test
+    void crear_bloqueadaSinMotivo_seRechaza() {
+        espacioActivo(true);
+        zonaActiva(true);
+
+        assertThatThrownBy(() -> service.crear(
+                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.BLOQUEADA, null, null)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("motivo");
+        verify(rutaRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -270,7 +348,7 @@ class RutaServiceTest {
         when(rutaRepository.saveAndFlush(any(RutaEvacuacion.class))).thenAnswer(i -> i.getArgument(0));
 
         RutaResponse respuesta = service.crear(
-                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.DISPONIBLE, alternativa));
+                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.DISPONIBLE, null, alternativa));
 
         assertThat(respuesta.rutaAlternativaId()).isEqualTo(alternativa);
     }
@@ -283,7 +361,7 @@ class RutaServiceTest {
         when(rutaRepository.existsById(alternativa)).thenReturn(false);
 
         assertThatThrownBy(() -> service.crear(
-                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.DISPONIBLE, alternativa)))
+                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.DISPONIBLE, null, alternativa)))
                 .isInstanceOf(RecursoNoEncontradoException.class)
                 .hasMessageContaining("alternativa");
         verify(rutaRepository, never()).saveAndFlush(any());

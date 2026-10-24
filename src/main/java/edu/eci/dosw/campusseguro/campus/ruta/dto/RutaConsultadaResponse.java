@@ -14,6 +14,7 @@ public record RutaConsultadaResponse(
         String zonaSeguraUbicacion,
         String recorrido,
         EstadoRuta estado,
+        String motivo,
         boolean destinoActivo,
         String mensaje) {
 }

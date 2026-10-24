@@ -14,6 +14,7 @@ public record RutaResponse(
         UUID rutaAlternativaId,
         String descripcion,
         EstadoRuta estado,
+        String motivo,
         Instant actualizadaEn) {
 
     public static RutaResponse desde(RutaEvacuacion ruta) {
@@ -24,6 +25,7 @@ public record RutaResponse(
                 ruta.getRutaAlternativaId(),
                 ruta.getDescripcion(),
                 ruta.getEstado(),
+                ruta.getMotivo(),
                 ruta.getUpdatedAt());
     }
 }
