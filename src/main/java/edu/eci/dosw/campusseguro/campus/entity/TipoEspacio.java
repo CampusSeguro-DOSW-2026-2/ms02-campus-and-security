@@ -4,5 +4,6 @@ public enum TipoEspacio {
     SALON,
     LABORATORIO,
     AUDITORIO,
-    OFICINA
+    OFICINA,
+    ESPACIO_COMUN
 }
