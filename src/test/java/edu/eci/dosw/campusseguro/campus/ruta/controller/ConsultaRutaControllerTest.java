@@ -36,7 +36,7 @@ class ConsultaRutaControllerTest {
 
     private RutaConsultadaResponse conRuta() {
         return new RutaConsultadaResponse(espacioId, "Salón 101", true, zonaId,
-                "Plazoleta", "Frente al edificio A", "Por la puerta norte", EstadoRuta.DISPONIBLE, true, null);
+                "Plazoleta", "Frente al edificio A", "Por la puerta norte", EstadoRuta.DISPONIBLE, null, true, null);
     }
 
     @Test
