@@ -6,6 +6,7 @@ import edu.eci.dosw.campusseguro.campus.ruta.dto.CambiarEstadoRequest;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.service.RutaService;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.ActualizarRutaRequest;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.net.URI;
 import java.util.List;
@@ -37,6 +39,19 @@ public class RutaController {
     public ResponseEntity<RutaResponse> crear(@Valid @RequestBody CrearRutaRequest request) {
         RutaResponse creada = rutaService.crear(request);
         return ResponseEntity.created(URI.create("/api/v1/evacuation-routes/" + creada.id())).body(creada);
+    }
+
+    @Operation(
+            summary = "Actualizar ruta",
+            description = "Actualiza la descripción y la zona segura de destino. "
+                    + "La nueva zona debe existir y estar activa."
+    )
+
+    @PutMapping("/{id}")
+    public RutaResponse actualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ActualizarRutaRequest request) {
+        return rutaService.actualizar(id, request);
     }
 
     @Operation(summary = "Cambiar estado de una ruta", description = "ADMIN o COORDINADOR. Estados: DISPONIBLE, BLOQUEADA o RESTRINGIDA.")
