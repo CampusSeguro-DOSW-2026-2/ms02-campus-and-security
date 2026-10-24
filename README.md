@@ -6,33 +6,30 @@ MS02 - Buildings, spaces, safe zones, meeting points, and evacuation routes serv
 **RF-01 · Gestionar edificios**
 El administrador podrá crear, modificar e inactivar edificios.
 
-**RF-02 · Gestionar pisos y espacios**
-El administrador podrá registrar pisos y espacios (salones, laboratorios, auditorios, oficinas) asociados a un edificio.
+**RF-02 · Gestionar pisos**
+El administrador podrá registrar pisos asociados a un edificio.
 
-**RF-03 · Gestionar zonas seguras / puntos de encuentro**
-El administrador podrá registrar, modificar e inactivar zonas seguras, indicando ubicación, descripción, capacidad aproximada y estado.
+**RF-03 · Gestionar espacios**
+El administrador podrá registrar, modificar e inactivar espacios (salones, laboratorios, auditorios, oficinas y espacios comunes) asociados a un piso de un edificio. 
 
-**RF-04 · Gestionar rutas de evacuación**
+**RF-04 · Gestionar zonas seguras / puntos de encuentro**
+El administrador podrá egistrar, modificar e inactivar zonas seguras, indicando código, nombre, ubicación, descripción y capacidad aproximada. 
+
+**RF-05 · Gestionar rutas de evacuación**
 El administrador podrá asociar espacios con rutas recomendadas y definir su estado (disponible, bloqueada, restringida).
 
-**RF-05 · Consultar ruta de evacuación**
+**RF-06 · Consultar ruta de evacuación**
 El usuario podrá consultar la ruta recomendada según el edificio o espacio seleccionado.
 
-**RF-06 · Restricción de eliminación**
-No se podrá eliminar un edificio, espacio o zona segura referenciado por una ruta activa; solo podrá inactivarse.
+**RF-07 · Reactivar elementos del campus**
+El administrador podrá reactivar un edificio, piso, espacio o zona segura que fue inactivado, conservando todos sus datos.
 
-**RF-07 · Exponer información vía API**
-Los cambios sobre edificios, espacios, zonas seguras y rutas deberán estar disponibles inmediatamente para MS03 y MS04 mediante API documentada.
+**RF-08 · Gestionar información preventiva**
+El administrador podrá registrar, modificar e inactivar recomendaciones preventivas asociadas a un edificio o a un tipo de espacio, y al usuario consultarlas.
 
-## Historias de usuario
+**RF-09 · Consultar catálogo del campus**
+Los usuarios y otros servicios podrán consultar los edificios, pisos, espacios y zonas seguras del campus con sus identificadores y estado.
 
-| Historia | RF asociados | Puntos |
-|---|---|---|
-| HU-1 · Consultar ruta de evacuación por ubicación | RF-05, RF-04 | 5 |
-| HU-2 · CRUD de edificios, pisos y espacios | RF-01, RF-02, RF-06, RF-07 | 5 |
-| HU-3 · Gestión de zonas seguras / puntos de encuentro | RF-03, RF-06, RF-07 | 5 |
-
-## Modelo de dominio
 
 ```
 Edificio (1) ──< (N) Piso (1) ──< (N) Espacio
@@ -49,20 +46,8 @@ Espacio (1) ──< (N) RutaEvacuacion >── (N) ZonaSegura (destino)
 **Regla de dominio:** `Edificio`, `Espacio` y `ZonaSegura` no se eliminan (hard delete) si tienen una `RutaEvacuacion` con estado distinto de inactiva referenciándolos — solo se inactivan.
 
 ## Contratos API
+https://editor.swagger.io/
 
-| Método | Endpoint | HU / RF |
-|---|---|---|
-| POST | `/api/v1/buildings` | HU-2a / RF-01 |
-| PUT | `/api/v1/buildings/{id}` | HU-2a / RF-01 |
-| PATCH | `/api/v1/buildings/{id}/status` | HU-2a / RF-06 |
-| POST | `/api/v1/buildings/{buildingId}/floors` | HU-2a / RF-02 |
-| POST | `/api/v1/floors/{floorId}/spaces` | HU-2a / RF-02 |
-| POST | `/api/v1/safe-zones` | HU-2b / RF-03 |
-| PUT | `/api/v1/safe-zones/{id}` | HU-2b / RF-03 |
-| PATCH | `/api/v1/safe-zones/{id}/status` | HU-2b / RF-06 |
-| GET | `/api/v1/safe-zones?buildingId=` | HU-2b / RF-07 (consumido por MS03, MS04) |
-| GET | `/api/v1/spaces/{spaceId}/evacuation-route` | HU-1 / RF-05 |
-| PUT | `/api/v1/evacuation-routes/{id}` | HU-1 / RF-04 |
-| PATCH | `/api/v1/evacuation-routes/{id}/status` | HU-1 / RF-04 |
+
 
 
