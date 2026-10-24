@@ -23,7 +23,5 @@ public record CrearRutaRequest(
         EstadoRuta estado,
 
         @Size(max = 255, message = "El motivo no puede superar 255 caracteres")
-        String motivo,
-
-        UUID rutaAlternativaId) {
+        String motivo) {
 }

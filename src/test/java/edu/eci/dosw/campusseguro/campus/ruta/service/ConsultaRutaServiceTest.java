@@ -71,7 +71,8 @@ class ConsultaRutaServiceTest {
 
     private void rutaDelEspacio(EstadoRuta estado) {
         when(rutaRepository.findByEspacioOrigenId(espacioId))
-                .thenReturn(Optional.of(new RutaEvacuacion(espacioId, zonaId, null, "Salir por la puerta norte", estado)));
+                .thenReturn(Optional.of(
+                        new RutaEvacuacion(espacioId, zonaId, "Salir por la puerta norte", estado)));
     }
 
     @Test
@@ -219,7 +220,7 @@ class ConsultaRutaServiceTest {
                 new EspacioInfo(otroEspacio, edificioId, "Lab 2", true),
                 new EspacioInfo(inactivo, edificioId, "Bodega", false)));
         when(rutaRepository.findByEspacioOrigenIdIn(List.of(espacioId, otroEspacio)))
-                .thenReturn(List.of(new RutaEvacuacion(espacioId, zonaId, null, "Por la puerta norte", EstadoRuta.DISPONIBLE)));
+                .thenReturn(List.of(new RutaEvacuacion(espacioId, zonaId, "Por la puerta norte", EstadoRuta.DISPONIBLE)));
         zona(true);
 
         List<RutaConsultadaResponse> resultado = service.consultar(edificioId, null);

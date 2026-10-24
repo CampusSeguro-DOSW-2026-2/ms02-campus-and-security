@@ -48,7 +48,7 @@ class VerificadorRutasServiceTest {
     }
 
     private RutaEvacuacion ruta() {
-        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Salir por la escalera", EstadoRuta.DISPONIBLE);
+        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, "Salir por la escalera", EstadoRuta.DISPONIBLE);
         ReflectionTestUtils.setField(ruta, "id", rutaId);
         return ruta;
     }
