@@ -32,6 +32,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error", "/actuator/health", "/actuator/health/**", "/actuator/info")
                         .permitAll()
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                        .permitAll()
 
                         // Rutas de evacuacion y su consulta
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/evacuation-routes",
