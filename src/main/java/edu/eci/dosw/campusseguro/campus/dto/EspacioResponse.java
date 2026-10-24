@@ -12,6 +12,7 @@ public record EspacioResponse(
         String codigo,
         String nombre,
         TipoEspacio tipo,
-        Estado estado
+        Estado estado,
+        boolean disponible
 ) {
 }

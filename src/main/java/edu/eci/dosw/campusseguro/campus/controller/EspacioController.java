@@ -31,16 +31,18 @@ public class EspacioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(espacioService.crear(pisoId, request));
     }
 
-    @Operation(summary = "Listar espacios de un piso", description = "Cualquier rol.")
+    @Operation(summary = "Listar espacios de un piso", description = "Cualquier rol. Por defecto solo los disponibles; incluirInactivos=true devuelve todos.")
     @GetMapping("/floors/{pisoId}/spaces")
-    public List<EspacioResponse> listarPorPiso(@PathVariable UUID pisoId) {
-        return espacioService.listarPorPiso(pisoId);
+    public List<EspacioResponse> listarPorPiso(@PathVariable UUID pisoId,
+                                               @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return espacioService.listarPorPiso(pisoId, incluirInactivos);
     }
 
-    @Operation(summary = "Listar espacios de un edificio", description = "Cualquier rol.")
+    @Operation(summary = "Listar espacios de un edificio", description = "Cualquier rol. Por defecto solo los disponibles; incluirInactivos=true devuelve todos.")
     @GetMapping("/buildings/{edificioId}/spaces")
-    public List<EspacioResponse> listarPorEdificio(@PathVariable UUID edificioId) {
-        return espacioService.listarPorEdificio(edificioId);
+    public List<EspacioResponse> listarPorEdificio(@PathVariable UUID edificioId,
+                                                   @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return espacioService.listarPorEdificio(edificioId, incluirInactivos);
     }
 
     @Operation(summary = "Consultar espacio", description = "Cualquier rol.")
