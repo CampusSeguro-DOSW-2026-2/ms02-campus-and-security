@@ -74,12 +74,15 @@ public class ConsultaRutaService {
                 throw new ReglaNegocioException(
                         "El espacio '" + espacio.nombre() + "' no pertenece al edificio seleccionado");
             }
+            if (!espacio.disponible()) {
+                throw new ReglaNegocioException("El espacio '" + espacio.nombre() + "' no está disponible");
+            }
             Optional<RutaEvacuacion> ruta = rutaRepository.findByEspacioOrigenId(espacioId);
             return List.of(armar(espacio, ruta.orElse(null)));
         }
 
         List<EspacioInfo> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
-                .filter(EspacioInfo::activo)
+                .filter(EspacioInfo::disponible)
                 .toList();
         if (espacios.isEmpty()) {
             return List.of();

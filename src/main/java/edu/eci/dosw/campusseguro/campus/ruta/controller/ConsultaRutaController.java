@@ -22,13 +22,13 @@ public class ConsultaRutaController {
         this.consultaService = consultaService;
     }
 
-    @Operation(summary = "Ruta de un espacio", description = "Cualquier rol. Devuelve la ruta con su estado o el aviso de que el espacio no tiene ruta.")
+    @Operation(summary = "Ruta de un espacio", description = "Cualquier rol. Devuelve la ruta con su estado y motivo, o el aviso de que el espacio no tiene ruta. 422 si el espacio no está disponible o su edificio está inactivo.")
     @GetMapping("/api/v1/spaces/{spaceId}/evacuation-route")
     public RutaConsultadaResponse porEspacio(@PathVariable UUID spaceId) {
         return consultaService.consultarPorEspacio(spaceId);
     }
 
-    @Operation(summary = "Rutas de un edificio", description = "Cualquier rol. Lista los espacios activos del edificio, cada uno con su ruta o el aviso de que no tiene. 422 si el edificio está inactivo.")
+    @Operation(summary = "Rutas de un edificio", description = "Cualquier rol. Lista los espacios disponibles del edificio, cada uno con su ruta o el aviso de que no tiene. 422 si el edificio está inactivo.")
     @GetMapping("/api/v1/buildings/{buildingId}/evacuation-routes")
     public List<RutaConsultadaResponse> porEdificio(@PathVariable UUID buildingId) {
         return consultaService.consultarPorEdificio(buildingId);

@@ -82,28 +82,28 @@ class EspacioGatewayImplTest {
     void buscarPorId_espacioPisoYEdificioActivos_estaDisponible() {
         dado(Estado.ACTIVO, Estado.ACTIVO, Estado.ACTIVO);
 
-        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::activo).isEqualTo(true);
+        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::disponible).isEqualTo(true);
     }
 
     @Test
     void buscarPorId_espacioInactivo_noEstaDisponible() {
         dado(Estado.INACTIVO, Estado.ACTIVO, Estado.ACTIVO);
 
-        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::activo).isEqualTo(false);
+        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::disponible).isEqualTo(false);
     }
 
     @Test
     void buscarPorId_pisoInactivo_noEstaDisponible() {
         dado(Estado.ACTIVO, Estado.INACTIVO, Estado.ACTIVO);
 
-        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::activo).isEqualTo(false);
+        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::disponible).isEqualTo(false);
     }
 
     @Test
     void buscarPorId_edificioInactivo_noEstaDisponible() {
         dado(Estado.ACTIVO, Estado.ACTIVO, Estado.INACTIVO);
 
-        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::activo).isEqualTo(false);
+        assertThat(gateway.buscarPorId(ESPACIO)).get().extracting(EspacioInfo::disponible).isEqualTo(false);
     }
 
     @Test
@@ -125,7 +125,7 @@ class EspacioGatewayImplTest {
 
         List<EspacioInfo> espacios = gateway.listarPorEdificio(EDIFICIO);
 
-        assertThat(espacios).extracting(EspacioInfo::id, EspacioInfo::activo).containsExactly(
+        assertThat(espacios).extracting(EspacioInfo::id, EspacioInfo::disponible).containsExactly(
                 tuple(uuid(10), true),
                 tuple(uuid(11), false),
                 tuple(uuid(12), false));
@@ -138,6 +138,6 @@ class EspacioGatewayImplTest {
         when(espacioRepository.findByEdificioId(EDIFICIO))
                 .thenReturn(List.of(espacio(uuid(10), PISO, Estado.ACTIVO)));
 
-        assertThat(gateway.listarPorEdificio(EDIFICIO)).extracting(EspacioInfo::activo).containsExactly(false);
+        assertThat(gateway.listarPorEdificio(EDIFICIO)).extracting(EspacioInfo::disponible).containsExactly(false);
     }
 }

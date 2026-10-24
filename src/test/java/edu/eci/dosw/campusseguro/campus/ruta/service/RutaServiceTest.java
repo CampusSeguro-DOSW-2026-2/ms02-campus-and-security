@@ -95,12 +95,12 @@ class RutaServiceTest {
     }
 
     @Test
-    void crear_fallaSiElEspacioEstaInactivo() {
+    void crear_fallaSiElEspacioNoEstaDisponible() {
         espacioActivo(false);
 
         assertThatThrownBy(() -> service.crear(request()))
                 .isInstanceOf(ReglaNegocioException.class)
-                .hasMessageContaining("inactivo");
+                .hasMessageContaining("no está disponible");
         verify(rutaRepository, never()).saveAndFlush(any());
     }
 
