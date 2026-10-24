@@ -59,7 +59,7 @@ class RutaServiceTest {
         return new CrearRutaRequest(
                 espacioId,
                 zonaId,
-                "  Salir por la puerta norte  ",
+                "Salir por la puerta norte",
                 EstadoRuta.DISPONIBLE,
                 null);
     }
@@ -249,7 +249,7 @@ class RutaServiceTest {
     }
 
     private RutaEvacuacion rutaBloqueada() {
-        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, null, "Ruta", EstadoRuta.DISPONIBLE);
+        RutaEvacuacion ruta = new RutaEvacuacion(espacioId, zonaId, "Ruta", EstadoRuta.DISPONIBLE);
         ruta.cambiarEstado(EstadoRuta.BLOQUEADA, "Obra en la escalera");
         ReflectionTestUtils.setField(ruta, "id", uuid(9));
         when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
@@ -319,7 +319,7 @@ class RutaServiceTest {
         zonaActiva(true);
 
         assertThatThrownBy(() -> service.crear(
-                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.BLOQUEADA, null, null)))
+                new CrearRutaRequest(espacioId, zonaId, "Por la puerta sur", EstadoRuta.BLOQUEADA, null)))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("motivo");
         verify(rutaRepository, never()).saveAndFlush(any());
@@ -342,13 +342,4 @@ class RutaServiceTest {
 
         assertThat(service.listar()).hasSize(2);
     }
-    @Test
-    void listar_devuelveTodasLasRutas() {
-        when(rutaRepository.findAll()).thenReturn(List.of(
-                new RutaEvacuacion(espacioId, zonaId, "A", EstadoRuta.DISPONIBLE),
-                new RutaEvacuacion(uuid(14), zonaId, "B", EstadoRuta.BLOQUEADA)));
-
-        assertThat(service.listar()).hasSize(2);
-    }
-}
 }
