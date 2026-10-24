@@ -80,9 +80,10 @@ public class PisoService {
     }
 
     @Transactional(readOnly = true)
-    public List<PisoResponse> listarPorEdificio(UUID edificioId) {
+    public List<PisoResponse> listarPorEdificio(UUID edificioId, boolean incluirInactivos) {
         buscarEdificio(edificioId);
         return pisoRepository.findByEdificioIdOrderByNumeroAsc(edificioId).stream()
+                .filter(p -> incluirInactivos || p.getEstado() == Estado.ACTIVO)
                 .map(this::aRespuesta)
                 .toList();
     }

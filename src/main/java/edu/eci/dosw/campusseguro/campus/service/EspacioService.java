@@ -23,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +56,7 @@ public class EspacioService {
         espacio.setCodigo(codigo);
         espacio.setNombre(request.nombre().trim());
         espacio.setTipo(request.tipo());
-        return aRespuesta(espacioRepository.save(espacio));
+        return aRespuesta(espacioRepository.save(espacio), true);
     }
 
     @Transactional
@@ -92,19 +95,23 @@ public class EspacioService {
     }
 
     @Transactional(readOnly = true)
-    public List<EspacioResponse> listarPorPiso(UUID pisoId) {
-        buscarPiso(pisoId);
-        return espacioRepository.findByPisoId(pisoId).stream()
-                .map(this::aRespuesta)
-                .toList();
+    public List<EspacioResponse> listarPorPiso(UUID pisoId, boolean incluirInactivos) {
+        Piso piso = buscarPiso(pisoId);
+        boolean contenedoresActivos = piso.getEstado() == Estado.ACTIVO
+                && buscarEdificio(piso.getEdificioId()).getEstado() == Estado.ACTIVO;
+        return filtrar(espacioRepository.findByPisoId(pisoId).stream()
+                .map(e -> aRespuesta(e, contenedoresActivos)), incluirInactivos);
     }
 
     @Transactional(readOnly = true)
-    public List<EspacioResponse> listarPorEdificio(UUID edificioId) {
-        buscarEdificio(edificioId);
-        return espacioRepository.findByEdificioId(edificioId).stream()
-                .map(this::aRespuesta)
-                .toList();
+    public List<EspacioResponse> listarPorEdificio(UUID edificioId, boolean incluirInactivos) {
+        boolean edificioActivo = buscarEdificio(edificioId).getEstado() == Estado.ACTIVO;
+        Set<UUID> pisosActivos = pisoRepository.findByEdificioIdOrderByNumeroAsc(edificioId).stream()
+                .filter(p -> p.getEstado() == Estado.ACTIVO)
+                .map(Piso::getId)
+                .collect(Collectors.toSet());
+        return filtrar(espacioRepository.findByEdificioId(edificioId).stream()
+                .map(e -> aRespuesta(e, edificioActivo && pisosActivos.contains(e.getPisoId()))), incluirInactivos);
     }
 
     @Transactional(readOnly = true)
@@ -127,8 +134,22 @@ public class EspacioService {
                 .orElseThrow(() -> new EdificioNoEncontradoException(id));
     }
 
+    private static List<EspacioResponse> filtrar(Stream<EspacioResponse> espacios, boolean incluirInactivos) {
+        return espacios.filter(e -> incluirInactivos || e.disponible()).toList();
+    }
+
     private EspacioResponse aRespuesta(Espacio e) {
+        boolean pisoActivo = pisoRepository.findById(e.getPisoId())
+                .map(p -> p.getEstado() == Estado.ACTIVO)
+                .orElse(false);
+        boolean edificioActivo = edificioRepository.findById(e.getEdificioId())
+                .map(ed -> ed.getEstado() == Estado.ACTIVO)
+                .orElse(false);
+        return aRespuesta(e, pisoActivo && edificioActivo);
+    }
+
+    private static EspacioResponse aRespuesta(Espacio e, boolean contenedoresActivos) {
         return new EspacioResponse(e.getId(), e.getEdificioId(), e.getPisoId(), e.getCodigo(),
-                e.getNombre(), e.getTipo(), e.getEstado());
+                e.getNombre(), e.getTipo(), e.getEstado(), contenedoresActivos && e.getEstado() == Estado.ACTIVO);
     }
 }
