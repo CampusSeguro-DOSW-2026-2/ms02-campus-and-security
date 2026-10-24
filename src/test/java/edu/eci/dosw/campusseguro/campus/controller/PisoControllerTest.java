@@ -151,4 +151,23 @@ class PisoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("INACTIVO"));
     }
+
+    @Test
+    void reactivar_devuelveElPisoActivo() throws Exception {
+        when(pisoService.reactivar(PISO)).thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", PISO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("ACTIVO"));
+    }
+
+    @Test
+    void reactivar_conEdificioInactivo_devuelve422() throws Exception {
+        when(pisoService.reactivar(PISO))
+                .thenThrow(new ReglaNegocioException("El edificio está inactivo: debe reactivarse primero"));
+
+        mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", PISO))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensaje").value("El edificio está inactivo: debe reactivarse primero"));
+    }
 }

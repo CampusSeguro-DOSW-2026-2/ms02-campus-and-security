@@ -85,4 +85,18 @@ class PisoSeguridadTest {
                         .header(USER, "USR-1").header(ROLE, "ADMIN"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void estudiante_noPuedeReactivarPisos() throws Exception {
+        mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", uuid(2))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void admin_puedeReactivarPisos() throws Exception {
+        mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", uuid(2))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
+                .andExpect(status().isOk());
+    }
 }

@@ -62,4 +62,10 @@ public class EspacioController {
     public EspacioResponse inactivar(@PathVariable UUID id) {
         return espacioService.inactivar(id);
     }
+
+    @Operation(summary = "Reactivar espacio", description = "Solo ADMIN. Su piso y su edificio deben estar activos.")
+    @PatchMapping("/spaces/{id}/reactivate")
+    public EspacioResponse reactivar(@PathVariable UUID id) {
+        return espacioService.reactivar(id);
+    }
 }

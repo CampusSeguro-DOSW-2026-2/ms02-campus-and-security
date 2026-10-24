@@ -107,4 +107,18 @@ class EspacioSeguridadTest {
                         .header(USER, "USR-1").header(ROLE, "ADMIN"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void estudiante_noPuedeReactivarEspacios() throws Exception {
+        mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", uuid(3))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void admin_puedeReactivarEspacios() throws Exception {
+        mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", uuid(3))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
+                .andExpect(status().isOk());
+    }
 }

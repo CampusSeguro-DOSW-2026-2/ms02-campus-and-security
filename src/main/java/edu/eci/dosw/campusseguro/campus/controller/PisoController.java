@@ -55,4 +55,10 @@ public class PisoController {
     public PisoResponse inactivar(@PathVariable UUID id) {
         return pisoService.inactivar(id);
     }
+
+    @Operation(summary = "Reactivar piso", description = "Solo ADMIN. El edificio debe estar activo; sus espacios conservan su estado.")
+    @PatchMapping("/floors/{id}/reactivate")
+    public PisoResponse reactivar(@PathVariable UUID id) {
+        return pisoService.reactivar(id);
+    }
 }

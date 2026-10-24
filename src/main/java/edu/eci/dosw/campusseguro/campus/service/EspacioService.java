@@ -76,6 +76,21 @@ public class EspacioService {
         return aRespuesta(espacioRepository.save(espacio));
     }
 
+    @Transactional
+    public EspacioResponse reactivar(UUID id) {
+        Espacio espacio = buscar(id);
+        if (espacio.getEstado() == Estado.ACTIVO) {
+            throw new ReglaNegocioException("El espacio ya está activo");
+        }
+        boolean pisoActivo = buscarPiso(espacio.getPisoId()).getEstado() == Estado.ACTIVO;
+        boolean edificioActivo = buscarEdificio(espacio.getEdificioId()).getEstado() == Estado.ACTIVO;
+        if (!pisoActivo || !edificioActivo) {
+            throw new ReglaNegocioException("El piso o el edificio está inactivo: debe reactivarse primero");
+        }
+        espacio.setEstado(Estado.ACTIVO);
+        return aRespuesta(espacioRepository.save(espacio));
+    }
+
     @Transactional(readOnly = true)
     public List<EspacioResponse> listarPorPiso(UUID pisoId) {
         buscarPiso(pisoId);

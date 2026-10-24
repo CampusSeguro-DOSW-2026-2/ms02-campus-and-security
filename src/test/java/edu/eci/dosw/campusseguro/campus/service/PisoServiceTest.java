@@ -193,4 +193,34 @@ class PisoServiceTest {
 
         assertThat(pisoService.obtener(PISO).numero()).isEqualTo(1);
     }
+
+    @Test
+    void reactivar_conEdificioActivo_loDejaActivo() {
+        piso().setEstado(Estado.INACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        assertThat(pisoService.reactivar(PISO).estado()).isEqualTo(Estado.ACTIVO);
+    }
+
+    @Test
+    void reactivar_pisoYaActivo_seRechaza() {
+        piso();
+
+        assertThatThrownBy(() -> pisoService.reactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya está activo");
+        verify(pisoRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_conEdificioInactivo_seRechaza() {
+        piso().setEstado(Estado.INACTIVO);
+        edificio(Estado.INACTIVO);
+
+        assertThatThrownBy(() -> pisoService.reactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("debe reactivarse primero");
+        verify(pisoRepository, never()).save(any());
+    }
 }
