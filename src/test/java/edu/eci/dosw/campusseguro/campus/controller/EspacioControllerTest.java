@@ -160,4 +160,23 @@ class EspacioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("INACTIVO"));
     }
+
+    @Test
+    void reactivar_devuelveElEspacioActivo() throws Exception {
+        when(espacioService.reactivar(ESPACIO)).thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", ESPACIO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("ACTIVO"));
+    }
+
+    @Test
+    void reactivar_conPisoInactivo_devuelve422() throws Exception {
+        when(espacioService.reactivar(ESPACIO))
+                .thenThrow(new ReglaNegocioException("El piso o el edificio está inactivo: debe reactivarse primero"));
+
+        mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", ESPACIO))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.codigo").value("REGLA_NEGOCIO"));
+    }
 }

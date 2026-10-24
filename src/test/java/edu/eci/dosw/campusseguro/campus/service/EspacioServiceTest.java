@@ -233,4 +233,55 @@ class EspacioServiceTest {
                 .hasMessageContaining(uuid(20).toString());
         verify(espacioRepository, never()).save(any());
     }
+
+    private Espacio espacioInactivo() {
+        Espacio e = espacioActivo();
+        e.setEstado(Estado.INACTIVO);
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(e));
+        return e;
+    }
+
+    @Test
+    void reactivar_conPisoYEdificioActivos_loDejaActivo() {
+        espacioInactivo();
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        assertThat(espacioService.reactivar(ESPACIO).estado()).isEqualTo(Estado.ACTIVO);
+    }
+
+    @Test
+    void reactivar_espacioYaActivo_seRechaza() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya está activo");
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_conPisoInactivo_seRechaza() {
+        espacioInactivo();
+        piso(Estado.INACTIVO);
+        edificio(Estado.ACTIVO);
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("debe reactivarse primero");
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_conEdificioInactivo_seRechaza() {
+        espacioInactivo();
+        piso(Estado.ACTIVO);
+        edificio(Estado.INACTIVO);
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("debe reactivarse primero");
+        verify(espacioRepository, never()).save(any());
+    }
 }
