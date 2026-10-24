@@ -14,6 +14,7 @@ import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.ActualizarRutaRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -75,6 +76,29 @@ public class RutaService {
         log.info("Ruta {} creada para el espacio {} con estado {}",
                 ruta.getId(), ruta.getEspacioOrigenId(), ruta.getEstado());
         return RutaResponse.desde(ruta);
+    }
+
+    @Transactional
+    public RutaResponse actualizar(UUID id, ActualizarRutaRequest request) {
+        RutaEvacuacion ruta = buscar(id);
+
+        ZonaInfo zona = zonaGateway.buscarPorId(request.zonaSeguraDestinoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                       "La zona segura " + request.zonaSeguraDestinoId() + " no existe"));
+
+        if (!zona.activa()) {
+            throw new ReglaNegocioException(
+                "La zona segura '" + zona.nombre() + "' está inactiva");
+        }
+
+        ruta.setZonaSeguraDestinoId(request.zonaSeguraDestinoId());
+        ruta.setDescripcion(request.descripcion().trim());
+
+        RutaEvacuacion actualizada = rutaRepository.save(ruta);
+
+        log.info("Ruta {} actualizada con destino {}", id, zona.id());
+
+        return RutaResponse.desde(actualizada);
     }
 
     @Transactional

@@ -2,6 +2,7 @@ package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
 import java.util.UUID;
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
@@ -10,6 +11,7 @@ import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoExcept
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.ruta.service.RutaService;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.ActualizarRutaRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -101,6 +103,32 @@ class RutaControllerTest {
                         .content(json(espacioId, zonaId, "x")))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.mensaje").value("El espacio está inactivo"));
+    }
+
+    @Test
+    void actualizar_devuelveLaRutaActualizada() throws Exception {
+        when(rutaService.actualizar(
+                org.mockito.ArgumentMatchers.eq(rutaId),
+                any(ActualizarRutaRequest.class)))
+                .thenReturn(new RutaResponse(
+                        rutaId,
+                        espacioId,
+                        zonaId,
+                        null,
+                        "Nueva ruta por la salida sur",
+                        EstadoRuta.DISPONIBLE,
+                        Instant.now()));
+
+        String cuerpo = "{\"zonaSeguraDestinoId\":\"" + zonaId
+                + "\",\"descripcion\":\"Nueva ruta por la salida sur\"}";
+
+        mockMvc.perform(put("/api/v1/evacuation-routes/{id}", rutaId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(cuerpo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.descripcion").value("Nueva ruta por la salida sur"))
+                .andExpect(jsonPath("$.zonaSeguraDestinoId").value(zonaId.toString()))
+                .andExpect(jsonPath("$.estado").value("DISPONIBLE"));
     }
 
     @Test

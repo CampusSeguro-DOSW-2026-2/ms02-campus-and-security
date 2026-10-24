@@ -85,12 +85,20 @@ public class RutaEvacuacion {
         return zonaSeguraDestinoId;
     }
 
+    public void setZonaSeguraDestinoId(UUID zonaSeguraDestinoId) {
+        this.zonaSeguraDestinoId = zonaSeguraDestinoId;
+    }
+
     public UUID getRutaAlternativaId() {
         return rutaAlternativaId;
     }
 
     public String getDescripcion() {
         return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
     public EstadoRuta getEstado() {

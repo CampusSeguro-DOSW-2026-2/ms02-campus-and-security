@@ -15,6 +15,7 @@ import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.ActualizarRutaRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -143,6 +144,80 @@ class RutaServiceTest {
 
         assertThatThrownBy(() -> service.crear(request()))
                 .isInstanceOf(RutaDuplicadaException.class);
+    }
+
+    @Test
+     void actualizar_modificaDescripcionYDestino() {
+        UUID nuevaZonaId = uuid(20);
+        RutaEvacuacion ruta = new RutaEvacuacion(
+                espacioId, zonaId, null, "Ruta anterior", EstadoRuta.DISPONIBLE);
+        ReflectionTestUtils.setField(ruta, "id", uuid(19));
+
+        when(rutaRepository.findById(ruta.getId())).thenReturn(Optional.of(ruta));
+        when(zonaGateway.buscarPorId(nuevaZonaId))
+                .thenReturn(Optional.of(new ZonaInfo(
+                        nuevaZonaId, "Patio central", "Bloque A", true)));
+        when(rutaRepository.save(ruta)).thenReturn(ruta);
+
+        RutaResponse respuesta = service.actualizar(
+                ruta.getId(),
+                new ActualizarRutaRequest(nuevaZonaId, "  Ruta actualizada  "));
+
+        assertThat(respuesta.zonaSeguraDestinoId()).isEqualTo(nuevaZonaId);
+        assertThat(respuesta.descripcion()).isEqualTo("Ruta actualizada");
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.DISPONIBLE);
+        assertThat(respuesta.espacioOrigenId()).isEqualTo(espacioId);
+    }
+
+    @Test
+    void actualizar_fallaSiLaRutaNoExiste() {
+        UUID rutaId = uuid(21);
+        when(rutaRepository.findById(rutaId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.actualizar(
+                rutaId, new ActualizarRutaRequest(zonaId, "Nueva descripción")))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+
+        verify(rutaRepository, never()).save(any());
+    }
+
+    @Test
+    void actualizar_fallaSiLaZonaNoExiste() {
+        UUID rutaId = uuid(22);
+        RutaEvacuacion ruta = new RutaEvacuacion(
+                espacioId, zonaId, null, "Ruta anterior", EstadoRuta.DISPONIBLE);
+        ReflectionTestUtils.setField(ruta, "id", rutaId);
+
+        UUID zonaInexistente = uuid(23);
+        when(rutaRepository.findById(rutaId)).thenReturn(Optional.of(ruta));
+        when(zonaGateway.buscarPorId(zonaInexistente)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.actualizar(
+                rutaId, new ActualizarRutaRequest(zonaInexistente, "Nueva descripción")))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+
+        verify(rutaRepository, never()).save(any());
+    }
+
+    @Test
+    void actualizar_fallaSiLaZonaEstaInactiva() {
+        UUID rutaId = uuid(24);
+        RutaEvacuacion ruta = new RutaEvacuacion(
+                espacioId, zonaId, null, "Ruta anterior", EstadoRuta.DISPONIBLE);
+        ReflectionTestUtils.setField(ruta, "id", rutaId);
+
+        UUID zonaInactiva = uuid(25);
+        when(rutaRepository.findById(rutaId)).thenReturn(Optional.of(ruta));
+        when(zonaGateway.buscarPorId(zonaInactiva))
+                .thenReturn(Optional.of(new ZonaInfo(
+                        zonaInactiva, "Zona cerrada", "Bloque B", false)));
+
+        assertThatThrownBy(() -> service.actualizar(
+                rutaId, new ActualizarRutaRequest(zonaInactiva, "Nueva descripción")))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("inactiva");
+
+        verify(rutaRepository, never()).save(any());
     }
 
     @Test
