@@ -60,11 +60,16 @@ public class RutaService {
             throw new RutaDuplicadaException(request.espacioOrigenId());
         }
 
+        String motivo = motivoPara(request.estado(), request.motivo());
+
         RutaEvacuacion ruta = new RutaEvacuacion(
                 request.espacioOrigenId(),
                 request.zonaSeguraDestinoId(),
                 request.descripcion().trim(),
                 request.estado());
+
+        ruta.cambiarEstado(request.estado(), motivo);
+
         try {
             ruta = rutaRepository.saveAndFlush(ruta);
         } catch (DataIntegrityViolationException e) {
@@ -100,10 +105,14 @@ public class RutaService {
     }
 
     @Transactional
-    public RutaResponse cambiarEstado(UUID id, EstadoRuta nuevoEstado) {
+    public RutaResponse cambiarEstado(UUID id, EstadoRuta nuevoEstado, String motivo) {
         RutaEvacuacion ruta = buscar(id);
+        String motivoValido = motivoPara(nuevoEstado, motivo);
+        if (nuevoEstado != EstadoRuta.BLOQUEADA) {
+            validarOrigenYDestinoUtilizables(ruta);
+        }
         EstadoRuta anterior = ruta.getEstado();
-        ruta.setEstado(nuevoEstado);
+        ruta.cambiarEstado(nuevoEstado, motivoValido);
         RutaEvacuacion guardada = rutaRepository.save(ruta);
         log.info("Ruta {} cambió de estado {} a {}", id, anterior, nuevoEstado);
         return RutaResponse.desde(guardada);
@@ -117,6 +126,31 @@ public class RutaService {
     @Transactional(readOnly = true)
     public List<RutaResponse> listar() {
         return rutaRepository.findAll().stream().map(RutaResponse::desde).toList();
+    }
+
+    private void validarOrigenYDestinoUtilizables(RutaEvacuacion ruta) {
+        boolean espacioDisponible = espacioGateway.buscarPorId(ruta.getEspacioOrigenId())
+                .map(EspacioInfo::activo)
+                .orElse(false);
+        if (!espacioDisponible) {
+            throw new ReglaNegocioException("El espacio de origen no está disponible; la ruta solo puede quedar bloqueada");
+        }
+        boolean zonaActiva = zonaGateway.buscarPorId(ruta.getZonaSeguraDestinoId())
+                .map(ZonaInfo::activa)
+                .orElse(false);
+        if (!zonaActiva) {
+            throw new ReglaNegocioException("La zona segura de destino está inactiva; la ruta solo puede quedar bloqueada");
+        }
+    }
+
+    private static String motivoPara(EstadoRuta estado, String motivo) {
+        if (estado == EstadoRuta.DISPONIBLE) {
+            return null;
+        }
+        if (motivo == null || motivo.isBlank()) {
+            throw new ReglaNegocioException("El motivo es obligatorio cuando la ruta queda bloqueada o restringida");
+        }
+        return motivo.trim();
     }
 
     private RutaEvacuacion buscar(UUID id) {

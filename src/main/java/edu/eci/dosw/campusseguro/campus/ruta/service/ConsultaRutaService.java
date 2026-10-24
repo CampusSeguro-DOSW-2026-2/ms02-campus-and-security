@@ -96,7 +96,7 @@ public class ConsultaRutaService {
     private RutaConsultadaResponse armar(EspacioInfo espacio, RutaEvacuacion ruta) {
         if (ruta == null) {
             return new RutaConsultadaResponse(espacio.id(), espacio.nombre(), false,
-                    null, null, null, null, null, false, MSG_SIN_RUTA);
+                    null, null, null, null, null, null, false, MSG_SIN_RUTA);
         }
 
         Optional<ZonaInfo> zona = zonaGateway.buscarPorId(ruta.getZonaSeguraDestinoId());
@@ -111,6 +111,7 @@ public class ConsultaRutaService {
                 zona.map(ZonaInfo::ubicacion).orElse(null),
                 ruta.getDescripcion(),
                 ruta.getEstado(),
+                ruta.getMotivo(),
                 destinoActivo,
                 mensajeDe(ruta.getEstado(), destinoActivo));
     }

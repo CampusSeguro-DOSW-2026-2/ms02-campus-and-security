@@ -34,7 +34,7 @@ public class RutaController {
         this.rutaService = rutaService;
     }
 
-    @Operation(summary = "Crear ruta", description = "Solo ADMIN. El espacio y la zona deben existir y estar activos; responde 409 si el espacio ya tiene ruta.")
+    @Operation(summary = "Crear ruta", description = "Solo ADMIN. El espacio debe estar disponible y la zona activa; responde 409 si el espacio ya tiene ruta. Si el estado no es DISPONIBLE, el motivo es obligatorio.")
     @PostMapping
     public ResponseEntity<RutaResponse> crear(@Valid @RequestBody CrearRutaRequest request) {
         RutaResponse creada = rutaService.crear(request);
@@ -54,11 +54,11 @@ public class RutaController {
         return rutaService.actualizar(id, request);
     }
 
-    @Operation(summary = "Cambiar estado de una ruta", description = "ADMIN o COORDINADOR. Estados: DISPONIBLE, BLOQUEADA o RESTRINGIDA.")
+    @Operation(summary = "Cambiar estado de una ruta", description = "ADMIN o COORDINADOR. BLOQUEADA y RESTRINGIDA exigen motivo; al pasar a DISPONIBLE el motivo se borra. DISPONIBLE y RESTRINGIDA exigen espacio de origen disponible y zona de destino activa (422).")
     @PatchMapping("/{id}/status")
     public RutaResponse cambiarEstado(@PathVariable UUID id,
                                       @Valid @RequestBody CambiarEstadoRequest request) {
-        return rutaService.cambiarEstado(id, request.estado());
+        return rutaService.cambiarEstado(id, request.estado(), request.motivo());
     }
 
     @Operation(summary = "Consultar ruta", description = "Cualquier rol.")

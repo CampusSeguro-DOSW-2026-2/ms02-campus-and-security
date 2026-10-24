@@ -47,7 +47,18 @@ class RutaControllerTest {
     private final UUID zonaId = uuid(12);
 
     private RutaResponse respuesta(EstadoRuta estado) {
-        return new RutaResponse(rutaId, espacioId, zonaId, "Por la puerta norte", estado, Instant.now());
+        String motivo = estado == EstadoRuta.DISPONIBLE
+                ? null
+                : "Obra en la escalera norte";
+
+        return new RutaResponse(
+                rutaId,
+                espacioId,
+                zonaId,
+                "Por la puerta norte",
+                estado,
+                motivo,
+                Instant.now());
     }
 
     private String json(UUID espacio, UUID zona, String descripcion) {
@@ -116,6 +127,7 @@ class RutaControllerTest {
                         zonaId,
                         "Nueva ruta por la salida sur",
                         EstadoRuta.DISPONIBLE,
+                        null,
                         Instant.now()));
 
         String cuerpo = "{\"zonaSeguraDestinoId\":\"" + zonaId
@@ -132,12 +144,14 @@ class RutaControllerTest {
 
     @Test
     void cambiarEstado_devuelveLaRutaActualizada() throws Exception {
-        when(rutaService.cambiarEstado(rutaId, EstadoRuta.BLOQUEADA)).thenReturn(respuesta(EstadoRuta.BLOQUEADA));
+        when(rutaService.cambiarEstado(rutaId, EstadoRuta.BLOQUEADA, "Obra en la escalera norte"))
+                .thenReturn(respuesta(EstadoRuta.BLOQUEADA));
 
         mockMvc.perform(patch("/api/v1/evacuation-routes/{id}/status", rutaId).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"estado\":\"BLOQUEADA\"}"))
+                        .content("{\"estado\":\"BLOQUEADA\",\"motivo\":\"Obra en la escalera norte\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.estado").value("BLOQUEADA"));
+                .andExpect(jsonPath("$.estado").value("BLOQUEADA"))
+                .andExpect(jsonPath("$.motivo").value("Obra en la escalera norte"));
     }
 
     @Test

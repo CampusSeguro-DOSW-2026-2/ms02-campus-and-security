@@ -20,5 +20,8 @@ public record CrearRutaRequest(
         String descripcion,
 
         @NotNull(message = "El estado es obligatorio")
-        EstadoRuta estado) {
+        EstadoRuta estado,
+
+        @Size(max = 255, message = "El motivo no puede superar 255 caracteres")
+        String motivo) {
 }

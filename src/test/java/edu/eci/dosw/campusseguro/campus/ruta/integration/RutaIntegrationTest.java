@@ -60,9 +60,16 @@ class RutaIntegrationTest {
         plazoleta = campus.zona("Plazoleta", true);
     }
 
+    private static String motivoJson(String estado) {
+        return "DISPONIBLE".equals(estado)
+                ? ""
+                : ",\"motivo\":\"Obra en la escalera\"";
+    }
+
     private String cuerpoRuta(UUID espacioId, UUID zonaId, String estado) {
         return "{\"espacioOrigenId\":\"" + espacioId + "\",\"zonaSeguraDestinoId\":\"" + zonaId
-            + "\",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\"}";
+                + "\",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\""
+                + motivoJson(estado) + "}";
     }
 
     private UUID crearRuta(EspacioInfo espacio, String estado) throws Exception {
@@ -111,12 +118,14 @@ class RutaIntegrationTest {
         UUID id = crearRuta(salon, "DISPONIBLE");
 
         mockMvc.perform(patch(RUTAS + "/{id}/status", id).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"estado\":\"BLOQUEADA\"}"))
+                        .content("{\"estado\":\"BLOQUEADA\",\"motivo\":\"Obra en la escalera\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.estado").value("BLOQUEADA"));
+                .andExpect(jsonPath("$.estado").value("BLOQUEADA"))
+                .andExpect(jsonPath("$.motivo").value("Obra en la escalera"));
 
         mockMvc.perform(get("/api/v1/spaces/{spaceId}/evacuation-route", salon.id()))
                 .andExpect(jsonPath("$.estado").value("BLOQUEADA"))
+                .andExpect(jsonPath("$.motivo").value("Obra en la escalera"))
                 .andExpect(jsonPath("$.mensaje").exists());
     }
 
@@ -177,7 +186,7 @@ class RutaIntegrationTest {
 
     private void cambiarEstado(UUID rutaId, String estado) throws Exception {
         mockMvc.perform(patch(RUTAS + "/{id}/status", rutaId).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"estado\":\"" + estado + "\"}"))
+                        .content("{\"estado\":\"" + estado + "\"" + motivoJson(estado) + "}"))
                 .andExpect(status().isOk());
     }
 }
