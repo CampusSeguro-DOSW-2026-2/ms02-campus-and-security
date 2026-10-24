@@ -167,15 +167,30 @@ class RutaIntegrationTest {
     }
 
     @Test
-    void elVerificadorIndicaQueEspacioZonaYEdificioTienenRuta() throws Exception {
-        assertThat(verificador.tieneRutaEspacio(salon.id())).isFalse();
-        assertThat(verificador.tieneRutaEdificio(edificio.id())).isFalse();
+    void elVerificadorSoloDevuelveRutasDisponiblesORestringidas() throws Exception {
+        assertThat(verificador.rutasActivasDeEspacio(salon.id())).isEmpty();
+        assertThat(verificador.rutasActivasDeEdificio(edificio.id())).isEmpty();
 
-        crearRuta(salon, "DISPONIBLE");
+        UUID rutaSalon = crearRuta(salon, "DISPONIBLE");
+        crearRuta(laboratorio, "BLOQUEADA");
 
-        assertThat(verificador.tieneRutaEspacio(salon.id())).isTrue();
-        assertThat(verificador.tieneRutaEspacio(laboratorio.id())).isFalse();
-        assertThat(verificador.tieneRutaZonaSegura(plazoleta.id())).isTrue();
-        assertThat(verificador.tieneRutaEdificio(edificio.id())).isTrue();
+        assertThat(verificador.rutasActivasDeEspacio(salon.id())).containsExactly(rutaSalon);
+        assertThat(verificador.rutasActivasDeEspacio(laboratorio.id())).isEmpty();
+        assertThat(verificador.rutasActivasDeZonaSegura(plazoleta.id())).containsExactly(rutaSalon);
+        assertThat(verificador.rutasActivasDeEdificio(edificio.id())).containsExactly(rutaSalon);
+
+        cambiarEstado(rutaSalon, "RESTRINGIDA");
+        assertThat(verificador.rutasActivasDeEspacio(salon.id())).containsExactly(rutaSalon);
+
+        cambiarEstado(rutaSalon, "BLOQUEADA");
+        assertThat(verificador.rutasActivasDeEspacio(salon.id())).isEmpty();
+        assertThat(verificador.rutasActivasDeZonaSegura(plazoleta.id())).isEmpty();
+        assertThat(verificador.rutasActivasDeEdificio(edificio.id())).isEmpty();
+    }
+
+    private void cambiarEstado(UUID rutaId, String estado) throws Exception {
+        mockMvc.perform(patch(RUTAS + "/{id}/status", rutaId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"" + estado + "\"}"))
+                .andExpect(status().isOk());
     }
 }
