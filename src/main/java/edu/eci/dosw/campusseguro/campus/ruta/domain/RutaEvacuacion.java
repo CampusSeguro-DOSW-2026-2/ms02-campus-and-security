@@ -42,6 +42,9 @@ public class RutaEvacuacion {
     @Column(nullable = false, length = 20)
     private EstadoRuta estado;
 
+    @Column(length = 255)
+    private String motivo;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -105,8 +108,13 @@ public class RutaEvacuacion {
         return estado;
     }
 
-    public void setEstado(EstadoRuta estado) {
+    public String getMotivo() {
+        return motivo;
+    }
+
+    public void cambiarEstado(EstadoRuta estado, String motivo) {
         this.estado = estado;
+        this.motivo = estado == EstadoRuta.DISPONIBLE ? null : motivo;
     }
 
     public Instant getCreatedAt() {
