@@ -6,4 +6,8 @@ import edu.eci.dosw.campusseguro.campus.entity.ZonaSegura;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ZonaSeguraRepository extends JpaRepository<ZonaSegura, UUID> {
+
+    boolean existsByCodigo(String codigo);
+
+    boolean existsByCodigoAndIdNot(String codigo, UUID id);
 }
