@@ -98,12 +98,12 @@ class RutaControllerTest {
 
     @Test
     void crear_conEspacioInactivoDevuelve422() throws Exception {
-        when(rutaService.crear(any(CrearRutaRequest.class))).thenThrow(new ReglaNegocioException("El espacio está inactivo"));
+        when(rutaService.crear(any(CrearRutaRequest.class))).thenThrow(new ReglaNegocioException("El espacio no está disponible"));
 
         mockMvc.perform(post("/api/v1/evacuation-routes").contentType(MediaType.APPLICATION_JSON)
                         .content(json(espacioId, zonaId, "x")))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.mensaje").value("El espacio está inactivo"));
+                .andExpect(jsonPath("$.mensaje").value("El espacio no está disponible"));
     }
 
     @Test
