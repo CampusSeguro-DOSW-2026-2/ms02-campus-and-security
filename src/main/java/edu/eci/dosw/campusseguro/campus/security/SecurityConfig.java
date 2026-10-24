@@ -43,6 +43,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/evacuation-routes", "/api/v1/evacuation-routes/**")
                         .hasAuthority(Permisos.ROUTE_WRITE)
 
+                        .requestMatchers(HttpMethod.GET, "/api/v1/floors/*/spaces", "/api/v1/buildings/*/spaces",
+                                "/api/v1/spaces/*").hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/floors/*/spaces", "/api/v1/spaces/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Pisos (RF-02): van antes de /buildings/** para que su lectura no exija BUILDING_WRITE.
                         // Gestionar pisos es parte de gestionar edificios (HU-2a), por eso usa el mismo permiso.
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/floors", "/api/v1/floors/*")
@@ -56,7 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/**").hasAuthority(Permisos.BUILDING_WRITE)
                         .requestMatchers("/api/v1/safe-zones/**").hasAuthority(Permisos.SAFE_ZONE_WRITE)
 
-                        // Cualquier otro endpoint (espacios, por ejemplo) exige al menos estar autenticado.
+                        // Cualquier otro endpoint exige al menos estar autenticado.
                         // Quien lo agregue debe declarar aqui su permiso.
                         .anyRequest().authenticated());
 
