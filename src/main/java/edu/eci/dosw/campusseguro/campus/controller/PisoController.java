@@ -31,10 +31,11 @@ public class PisoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(pisoService.crear(edificioId, request));
     }
 
-    @Operation(summary = "Listar pisos de un edificio", description = "Cualquier rol. Ordenados por número.")
+    @Operation(summary = "Listar pisos de un edificio", description = "Cualquier rol. Ordenados por número. Por defecto solo los activos; incluirInactivos=true devuelve todos.")
     @GetMapping("/buildings/{edificioId}/floors")
-    public List<PisoResponse> listarPorEdificio(@PathVariable UUID edificioId) {
-        return pisoService.listarPorEdificio(edificioId);
+    public List<PisoResponse> listarPorEdificio(@PathVariable UUID edificioId,
+                                                @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return pisoService.listarPorEdificio(edificioId, incluirInactivos);
     }
 
     @Operation(summary = "Consultar piso", description = "Cualquier rol.")
