@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -90,6 +91,20 @@ class EspacioSeguridadTest {
         mockMvc.perform(put("/api/v1/spaces/{id}", uuid(3))
                         .header(USER, "USR-1").header(ROLE, "ADMIN")
                         .contentType(MediaType.APPLICATION_JSON).content(MODIFICAR_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void estudiante_noPuedeInactivarEspacios() throws Exception {
+        mockMvc.perform(patch("/api/v1/spaces/{id}/deactivate", uuid(3))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void admin_puedeInactivarEspacios() throws Exception {
+        mockMvc.perform(patch("/api/v1/spaces/{id}/deactivate", uuid(3))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
                 .andExpect(status().isOk());
     }
 }
