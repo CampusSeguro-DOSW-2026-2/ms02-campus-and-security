@@ -59,15 +59,15 @@ public class ZonaSeguraService {
     }
 
     private void copiarDatos(ZonaSegura zona, ZonaSeguraRequest request) {
+        zona.setCodigo(request.codigo().trim());
         zona.setNombre(request.nombre().trim());
         zona.setUbicacion(request.ubicacion().trim());
         zona.setDescripcion(request.descripcion().trim());
         zona.setCapacidad(request.capacidad());
     }
-
     private ZonaSeguraResponse aRespuesta(ZonaSegura z) {
         return new ZonaSeguraResponse(
-                z.getId(), z.getNombre(), z.getUbicacion(),
+                z.getId(), z.getCodigo(), z.getNombre(), z.getUbicacion(),
                 z.getDescripcion(), z.getCapacidad(), z.getEstado());
     }
 }

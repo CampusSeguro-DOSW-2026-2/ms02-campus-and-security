@@ -35,4 +35,7 @@ public class ZonaSegura {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Estado estado = Estado.ACTIVO;
+    
+    @Column(nullable = false, unique = true, length = 50)
+    private String codigo;
 }

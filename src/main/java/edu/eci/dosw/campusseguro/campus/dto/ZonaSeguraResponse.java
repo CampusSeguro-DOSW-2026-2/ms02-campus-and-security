@@ -6,6 +6,7 @@ import edu.eci.dosw.campusseguro.campus.entity.Estado;
 
 public record ZonaSeguraResponse(
         UUID id,
+        String codigo,
         String nombre,
         String ubicacion,
         String descripcion,
