@@ -1,14 +1,13 @@
 package edu.eci.dosw.campusseguro.campus.ruta.port;
 
+import java.util.List;
 import java.util.UUID;
 
-
-// RF-06: lo usan las Personas 1 y 2 antes de eliminar un edificio, espacio o zona.
 public interface VerificadorRutas {
 
-    boolean tieneRutaEspacio(UUID espacioId);
+    List<UUID> rutasActivasDeEspacio(UUID espacioId);
 
-    boolean tieneRutaZonaSegura(UUID zonaSeguraId);
+    List<UUID> rutasActivasDeZonaSegura(UUID zonaSeguraId);
 
-    boolean tieneRutaEdificio(UUID edificioId);
+    List<UUID> rutasActivasDeEdificio(UUID edificioId);
 }

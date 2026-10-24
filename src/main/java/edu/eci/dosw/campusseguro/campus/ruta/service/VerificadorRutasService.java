@@ -2,6 +2,8 @@ package edu.eci.dosw.campusseguro.campus.ruta.service;
 
 import java.util.UUID;
 
+import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
+import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
@@ -9,11 +11,15 @@ import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
 public class VerificadorRutasService implements VerificadorRutas {
+
+    private static final Set<EstadoRuta> ACTIVAS = EnumSet.of(EstadoRuta.DISPONIBLE, EstadoRuta.RESTRINGIDA);
 
     private final RutaRepository rutaRepository;
     private final EspacioGateway espacioGateway;
@@ -24,20 +30,27 @@ public class VerificadorRutasService implements VerificadorRutas {
     }
 
     @Override
-    public boolean tieneRutaEspacio(UUID espacioId) {
-        return rutaRepository.existsByEspacioOrigenId(espacioId);
+    public List<UUID> rutasActivasDeEspacio(UUID espacioId) {
+        return ids(rutaRepository.findByEspacioOrigenIdAndEstadoIn(espacioId, ACTIVAS));
     }
 
     @Override
-    public boolean tieneRutaZonaSegura(UUID zonaSeguraId) {
-        return rutaRepository.existsByZonaSeguraDestinoId(zonaSeguraId);
+    public List<UUID> rutasActivasDeZonaSegura(UUID zonaSeguraId) {
+        return ids(rutaRepository.findByZonaSeguraDestinoIdAndEstadoIn(zonaSeguraId, ACTIVAS));
     }
 
     @Override
-    public boolean tieneRutaEdificio(UUID edificioId) {
+    public List<UUID> rutasActivasDeEdificio(UUID edificioId) {
         List<UUID> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
                 .map(EspacioInfo::id)
                 .toList();
-        return !espacios.isEmpty() && rutaRepository.existsByEspacioOrigenIdIn(espacios);
+        if (espacios.isEmpty()) {
+            return List.of();
+        }
+        return ids(rutaRepository.findByEspacioOrigenIdInAndEstadoIn(espacios, ACTIVAS));
+    }
+
+    private static List<UUID> ids(List<RutaEvacuacion> rutas) {
+        return rutas.stream().map(RutaEvacuacion::getId).toList();
     }
 }

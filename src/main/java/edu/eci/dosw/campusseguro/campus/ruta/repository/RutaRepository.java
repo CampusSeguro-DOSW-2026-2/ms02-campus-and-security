@@ -2,6 +2,7 @@ package edu.eci.dosw.campusseguro.campus.ruta.repository;
 
 import java.util.UUID;
 
+import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,9 +14,12 @@ public interface RutaRepository extends JpaRepository<RutaEvacuacion, UUID> {
 
     boolean existsByEspacioOrigenId(UUID espacioId);
 
-    boolean existsByZonaSeguraDestinoId(UUID zonaSeguraId);
+    List<RutaEvacuacion> findByEspacioOrigenIdAndEstadoIn(UUID espacioId, Collection<EstadoRuta> estados);
 
-    boolean existsByEspacioOrigenIdIn(Collection<UUID> espacioIds);
+    List<RutaEvacuacion> findByZonaSeguraDestinoIdAndEstadoIn(UUID zonaSeguraId, Collection<EstadoRuta> estados);
+
+    List<RutaEvacuacion> findByEspacioOrigenIdInAndEstadoIn(Collection<UUID> espacioIds,
+                                                           Collection<EstadoRuta> estados);
 
     Optional<RutaEvacuacion> findByEspacioOrigenId(UUID espacioId);
 
