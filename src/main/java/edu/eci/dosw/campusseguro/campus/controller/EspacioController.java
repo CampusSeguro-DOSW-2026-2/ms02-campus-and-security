@@ -55,4 +55,11 @@ public class EspacioController {
                                      @Valid @RequestBody ModificarEspacioRequest request) {
         return espacioService.modificar(id, request);
     }
+
+    @Operation(summary = "Inactivar espacio",
+            description = "Solo ADMIN. Se rechaza con 422 si el espacio es origen de una ruta Disponible o Restringida.")
+    @PatchMapping("/spaces/{id}/deactivate")
+    public EspacioResponse inactivar(@PathVariable UUID id) {
+        return espacioService.inactivar(id);
+    }
 }
