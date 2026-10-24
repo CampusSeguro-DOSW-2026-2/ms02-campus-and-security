@@ -17,6 +17,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class EspacioService {
     private final EspacioRepository espacioRepository;
     private final PisoRepository pisoRepository;
     private final EdificioRepository edificioRepository;
+    private final VerificadorRutas verificadorRutas;
 
     @Transactional
     public EspacioResponse crear(UUID pisoId, EspacioRequest request) {
@@ -59,6 +61,18 @@ public class EspacioService {
         Espacio espacio = buscar(id);
         espacio.setNombre(request.nombre().trim());
         espacio.setTipo(request.tipo());
+        return aRespuesta(espacioRepository.save(espacio));
+    }
+
+    @Transactional
+    public EspacioResponse inactivar(UUID id) {
+        Espacio espacio = buscar(id);
+        List<UUID> rutasActivas = verificadorRutas.rutasActivasDeEspacio(id);
+        if (!rutasActivas.isEmpty()) {
+            throw new ReglaNegocioException("El espacio es origen de rutas activas " + rutasActivas
+                    + ": deben bloquearse antes de inactivarlo");
+        }
+        espacio.setEstado(Estado.INACTIVO);
         return aRespuesta(espacioRepository.save(espacio));
     }
 
