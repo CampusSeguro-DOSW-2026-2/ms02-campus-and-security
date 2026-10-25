@@ -37,7 +37,7 @@ public class EdificioController {
         return edificioService.modificar(id, request);
     }
 
-    @Operation(summary = "Inactivar edificio", description = "Solo ADMIN. Cambia el estado a inactivo sin eliminarlo.")
+    @Operation(summary = "Inactivar edificio", description = "Solo ADMIN. Se rechaza con 422 si el edificio tiene rutas activas; deben bloquearse antes.")
     @PatchMapping("/{id}/deactivate")
     public EdificioResponse inactivar(@PathVariable UUID id) {
         return edificioService.inactivar(id);

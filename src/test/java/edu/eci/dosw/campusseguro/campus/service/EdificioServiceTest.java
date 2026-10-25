@@ -1,3 +1,4 @@
+
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.List;
@@ -20,6 +21,8 @@ import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
+import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +35,9 @@ class EdificioServiceTest {
 
     @Mock
     private EdificioRepository edificioRepository;
+
+    @Mock
+    private VerificadorRutas verificadorRutas;
 
     @InjectMocks
     private EdificioService edificioService;
@@ -93,10 +99,11 @@ class EdificioServiceTest {
         UUID id = uuid(1);
         Edificio existente = nuevoEdificio(id, "ED-1", "Bloque H");
         when(edificioRepository.findById(id)).thenReturn(Optional.of(existente));
-        when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(edificioRepository.save(any(Edificio.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        EdificioResponse respuesta = edificioService.modificar(id,
-                new ModificarEdificioRequest(" Bloque H nuevo ", "Otra descripción"));
+        EdificioResponse respuesta = edificioService.modificar(
+                id, new ModificarEdificioRequest(" Bloque H nuevo ", "Otra descripción"));
 
         assertThat(respuesta.codigo()).isEqualTo("ED-1");
         assertThat(respuesta.nombre()).isEqualTo("Bloque H nuevo");
@@ -115,12 +122,31 @@ class EdificioServiceTest {
     void inactivar_cambiaElEstadoAInactivo() {
         when(edificioRepository.findById(uuid(1)))
                 .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Bloque H")));
+        when(verificadorRutas.rutasActivasDeEdificio(uuid(1)))
+                .thenReturn(List.of());
         when(edificioRepository.save(any(Edificio.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         EdificioResponse respuesta = edificioService.inactivar(uuid(1));
 
         assertThat(respuesta.estado()).isEqualTo(Estado.INACTIVO);
+        verify(verificadorRutas).rutasActivasDeEdificio(uuid(1));
+    }
+
+    @Test
+    void inactivar_conRutasActivas_lanzaReglaDeNegocioYNoGuarda() {
+        UUID ruta = uuid(50);
+
+        when(edificioRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Bloque H")));
+        when(verificadorRutas.rutasActivasDeEdificio(uuid(1)))
+                .thenReturn(List.of(ruta));
+
+        assertThatThrownBy(() -> edificioService.inactivar(uuid(1)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining(ruta.toString());
+
+        verify(edificioRepository, never()).save(any());
     }
 
     @Test

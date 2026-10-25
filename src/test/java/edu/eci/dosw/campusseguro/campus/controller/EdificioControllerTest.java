@@ -1,3 +1,4 @@
+
 package edu.eci.dosw.campusseguro.campus.controller;
 
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
@@ -19,6 +20,7 @@ import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
+import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.service.EdificioService;
 
 import org.junit.jupiter.api.Test;
@@ -42,7 +44,8 @@ class EdificioControllerTest {
     private EdificioService edificioService;
 
     private EdificioResponse respuesta(Estado estado) {
-        return new EdificioResponse(uuid(1), "ED-1", "Bloque H", "Descripción", estado);
+        return new EdificioResponse(
+                uuid(1), "ED-1", "Bloque H", "Descripción", estado);
     }
 
     private String json(String codigo, String nombre) {
@@ -60,7 +63,8 @@ class EdificioControllerTest {
         when(edificioService.crear(any(EdificioRequest.class)))
                 .thenReturn(respuesta(Estado.ACTIVO));
 
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "Bloque H")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.codigo").value("ED-1"))
@@ -69,7 +73,8 @@ class EdificioControllerTest {
 
     @Test
     void crear_sinCodigoNiNombre_devuelve400IndicandoLosCampos() throws Exception {
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"codigo\":\"\",\"nombre\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'codigo')]").exists())
@@ -78,7 +83,8 @@ class EdificioControllerTest {
 
     @Test
     void crear_conNombreMayorA100Caracteres_devuelve400() throws Exception {
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "a".repeat(101))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists());
@@ -89,7 +95,8 @@ class EdificioControllerTest {
         when(edificioService.crear(any(EdificioRequest.class)))
                 .thenThrow(new CodigoDuplicadoException("ED-1"));
 
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json("ED-1", "Bloque H")))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errores[0].campo").value("codigo"));
@@ -120,11 +127,22 @@ class EdificioControllerTest {
 
     @Test
     void inactivar_devuelveElEdificioInactivo() throws Exception {
-        when(edificioService.inactivar(uuid(1))).thenReturn(respuesta(Estado.INACTIVO));
+        when(edificioService.inactivar(uuid(1)))
+                .thenReturn(respuesta(Estado.INACTIVO));
 
         mockMvc.perform(patch(BASE + "/{id}/deactivate", uuid(1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("INACTIVO"));
+    }
+
+    @Test
+    void inactivar_conRutasActivas_devuelve422() throws Exception {
+        when(edificioService.inactivar(uuid(1)))
+                .thenThrow(new ReglaNegocioException("El edificio tiene rutas activas"));
+
+        mockMvc.perform(patch(BASE + "/{id}/deactivate", uuid(1)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.codigo").value("REGLA_NEGOCIO"));
     }
 
     @Test
@@ -138,7 +156,8 @@ class EdificioControllerTest {
 
     @Test
     void listar_devuelveLosEdificios() throws Exception {
-        when(edificioService.listar()).thenReturn(List.of(respuesta(Estado.ACTIVO)));
+        when(edificioService.listar())
+                .thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get(BASE))
                 .andExpect(status().isOk())
@@ -147,7 +166,8 @@ class EdificioControllerTest {
 
     @Test
     void obtener_devuelveElEdificio() throws Exception {
-        when(edificioService.obtener(uuid(1))).thenReturn(respuesta(Estado.ACTIVO));
+        when(edificioService.obtener(uuid(1)))
+                .thenReturn(respuesta(Estado.ACTIVO));
 
         mockMvc.perform(get(BASE + "/{id}", uuid(1)))
                 .andExpect(status().isOk())

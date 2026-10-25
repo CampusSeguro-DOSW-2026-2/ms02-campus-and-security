@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
@@ -10,17 +11,18 @@ import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
+import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class EdificioService {
 
     private final EdificioRepository edificioRepository;
+    private final VerificadorRutas verificadorRutas;
 
     @Transactional
     public EdificioResponse crear(EdificioRequest request) {
@@ -46,6 +48,14 @@ public class EdificioService {
     @Transactional
     public EdificioResponse inactivar(UUID id) {
         Edificio edificio = buscar(id);
+
+        List<UUID> rutasActivas = verificadorRutas.rutasActivasDeEdificio(id);
+        if (!rutasActivas.isEmpty()) {
+            throw new ReglaNegocioException(
+                    "El edificio tiene rutas activas " + rutasActivas
+                            + ": deben bloquearse antes de inactivarlo");
+        }
+
         edificio.setEstado(Estado.INACTIVO);
         return aRespuesta(edificioRepository.save(edificio));
     }
