@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
+import edu.eci.dosw.campusseguro.campus.dto.ModificarEdificioRequest;
 import edu.eci.dosw.campusseguro.campus.service.EdificioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +30,10 @@ public class EdificioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(edificioService.crear(request));
     }
 
-    @Operation(summary = "Modificar edificio", description = "Solo ADMIN. Cambia código, nombre y descripción.")
+    @Operation(summary = "Modificar edificio",description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
     @PutMapping("/{id}")
     public EdificioResponse modificar(@PathVariable UUID id,
-                                      @Valid @RequestBody EdificioRequest request) {
+                                  @Valid @RequestBody ModificarEdificioRequest request) {
         return edificioService.modificar(id, request);
     }
 
@@ -53,4 +54,5 @@ public class EdificioController {
     public EdificioResponse obtener(@PathVariable UUID id) {
         return edificioService.obtener(id);
     }
-}
+
+    }
