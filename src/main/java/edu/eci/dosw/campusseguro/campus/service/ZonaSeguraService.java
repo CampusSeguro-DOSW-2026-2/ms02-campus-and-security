@@ -13,9 +13,11 @@ import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ZonaSeguraService {
@@ -34,7 +36,9 @@ public class ZonaSeguraService {
         ZonaSegura zona = new ZonaSegura();
         copiarDatos(zona, request);
 
-        return aRespuesta(zonaSeguraRepository.save(zona));
+        ZonaSegura guardada = zonaSeguraRepository.save(zona);
+        log.info("Zona segura {} creada con código {}", guardada.getId(), guardada.getCodigo());
+        return aRespuesta(guardada);
     }
 
     @Transactional
@@ -48,7 +52,9 @@ public class ZonaSeguraService {
 
         copiarDatos(zona, request);
 
-        return aRespuesta(zonaSeguraRepository.save(zona));
+        ZonaSegura guardada = zonaSeguraRepository.save(zona);
+        log.info("Zona segura {} modificada", guardada.getId());
+        return aRespuesta(guardada);
     }
 
     @Transactional
@@ -59,6 +65,7 @@ public class ZonaSeguraService {
                 verificadorRutas.rutasActivasDeZonaSegura(id);
 
         if (!rutasActivas.isEmpty()) {
+            log.warn("No se inactivó la zona segura {}: es destino de rutas activas {}", id, rutasActivas);
             throw new ReglaNegocioException(
                     "La zona segura es destino de rutas activas " + rutasActivas
                             + ": deben bloquearse antes de inactivarla");
@@ -66,7 +73,9 @@ public class ZonaSeguraService {
 
         zona.setEstado(Estado.INACTIVO);
 
-        return aRespuesta(zonaSeguraRepository.save(zona));
+        ZonaSegura guardada = zonaSeguraRepository.save(zona);
+        log.info("Zona segura {} inactivada", id);
+        return aRespuesta(guardada);
     }
 
     @Transactional
@@ -80,7 +89,9 @@ public class ZonaSeguraService {
 
         zona.setEstado(Estado.ACTIVO);
 
-        return aRespuesta(zonaSeguraRepository.save(zona));
+        ZonaSegura guardada = zonaSeguraRepository.save(zona);
+        log.info("Zona segura {} reactivada", id);
+        return aRespuesta(guardada);
     }
 
     @Transactional(readOnly = true)
