@@ -66,10 +66,24 @@ public class PisoService {
         return aRespuesta(pisoRepository.save(piso));
     }
 
+    @Transactional
+    public PisoResponse reactivar(UUID id) {
+        Piso piso = buscar(id);
+        if (piso.getEstado() == Estado.ACTIVO) {
+            throw new ReglaNegocioException("El piso ya está activo");
+        }
+        if (buscarEdificio(piso.getEdificioId()).getEstado() == Estado.INACTIVO) {
+            throw new ReglaNegocioException("El edificio está inactivo: debe reactivarse primero");
+        }
+        piso.setEstado(Estado.ACTIVO);
+        return aRespuesta(pisoRepository.save(piso));
+    }
+
     @Transactional(readOnly = true)
-    public List<PisoResponse> listarPorEdificio(UUID edificioId) {
+    public List<PisoResponse> listarPorEdificio(UUID edificioId, boolean incluirInactivos) {
         buscarEdificio(edificioId);
         return pisoRepository.findByEdificioIdOrderByNumeroAsc(edificioId).stream()
+                .filter(p -> incluirInactivos || p.getEstado() == Estado.ACTIVO)
                 .map(this::aRespuesta)
                 .toList();
     }

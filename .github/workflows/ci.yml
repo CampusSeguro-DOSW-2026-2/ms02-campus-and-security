@@ -40,3 +40,52 @@ jobs:
         # Se omite si no hay SONAR_TOKEN (
         if: env.SONAR_TOKEN != ''
         run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: campus
+          POSTGRES_USER: campus_user
+          POSTGRES_PASSWORD: postgres_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U campus_user -d campus"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: campus
+      DB_USER: campus_user
+      DB_PASSWORD: postgres_ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Empaquetar
+        run: mvn -B -DskipTests package
+
+      - name: Arrancar la app contra PostgreSQL con Flyway
+        run: |
+          java -jar target/*.jar > app.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf http://localhost:8080/actuator/health; then
+              grep -E "Successfully (applied|validated)|Schema .* is up to date" app.log
+              exit 0
+            fi
+            sleep 2
+          done
+          cat app.log
+          exit 1

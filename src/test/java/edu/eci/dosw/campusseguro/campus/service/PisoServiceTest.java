@@ -176,14 +176,14 @@ class PisoServiceTest {
         p.setNumero(1);
         when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO)).thenReturn(List.of(p));
 
-        assertThat(pisoService.listarPorEdificio(EDIFICIO)).extracting(PisoResponse::id).containsExactly(PISO);
+        assertThat(pisoService.listarPorEdificio(EDIFICIO, false)).extracting(PisoResponse::id).containsExactly(PISO);
     }
 
     @Test
     void listarPorEdificio_edificioInexistente_falla() {
         when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> pisoService.listarPorEdificio(EDIFICIO))
+        assertThatThrownBy(() -> pisoService.listarPorEdificio(EDIFICIO, false))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 
@@ -192,5 +192,65 @@ class PisoServiceTest {
         piso();
 
         assertThat(pisoService.obtener(PISO).numero()).isEqualTo(1);
+    }
+
+    @Test
+    void reactivar_conEdificioActivo_loDejaActivo() {
+        piso().setEstado(Estado.INACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        assertThat(pisoService.reactivar(PISO).estado()).isEqualTo(Estado.ACTIVO);
+    }
+
+    @Test
+    void reactivar_pisoYaActivo_seRechaza() {
+        piso();
+
+        assertThatThrownBy(() -> pisoService.reactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya está activo");
+        verify(pisoRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_conEdificioInactivo_seRechaza() {
+        piso().setEstado(Estado.INACTIVO);
+        edificio(Estado.INACTIVO);
+
+        assertThatThrownBy(() -> pisoService.reactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("debe reactivarse primero");
+        verify(pisoRepository, never()).save(any());
+    }
+
+    private void pisosDelEdificio() {
+        Piso activo = new Piso();
+        activo.setId(PISO);
+        activo.setEdificioId(EDIFICIO);
+        activo.setNumero(1);
+        Piso inactivo = new Piso();
+        inactivo.setId(uuid(3));
+        inactivo.setEdificioId(EDIFICIO);
+        inactivo.setNumero(2);
+        inactivo.setEstado(Estado.INACTIVO);
+        when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO)).thenReturn(List.of(activo, inactivo));
+    }
+
+    @Test
+    void listarPorEdificio_porDefecto_soloDevuelveLosActivos() {
+        edificio(Estado.ACTIVO);
+        pisosDelEdificio();
+
+        assertThat(pisoService.listarPorEdificio(EDIFICIO, false)).extracting(PisoResponse::id).containsExactly(PISO);
+    }
+
+    @Test
+    void listarPorEdificio_incluyendoInactivos_devuelveTodos() {
+        edificio(Estado.ACTIVO);
+        pisosDelEdificio();
+
+        assertThat(pisoService.listarPorEdificio(EDIFICIO, true)).extracting(PisoResponse::id)
+                .containsExactly(PISO, uuid(3));
     }
 }

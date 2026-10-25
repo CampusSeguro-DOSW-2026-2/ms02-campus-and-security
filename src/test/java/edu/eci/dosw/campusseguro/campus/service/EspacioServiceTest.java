@@ -183,25 +183,27 @@ class EspacioServiceTest {
     @Test
     void listarPorPiso_devuelveSusEspacios() {
         piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
         when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of(espacioActivo()));
 
-        assertThat(espacioService.listarPorPiso(PISO)).extracting(EspacioResponse::id).containsExactly(ESPACIO);
+        assertThat(espacioService.listarPorPiso(PISO, false)).extracting(EspacioResponse::id).containsExactly(ESPACIO);
     }
 
     @Test
     void listarPorEdificio_edificioInexistente_falla() {
         when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> espacioService.listarPorEdificio(EDIFICIO))
+        assertThatThrownBy(() -> espacioService.listarPorEdificio(EDIFICIO, false))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 
     @Test
     void listarPorEdificio_devuelveSusEspacios() {
         edificio(Estado.ACTIVO);
+        pisosDelEdificio(Estado.ACTIVO);
         when(espacioRepository.findByEdificioId(EDIFICIO)).thenReturn(List.of(espacioActivo()));
 
-        assertThat(espacioService.listarPorEdificio(EDIFICIO)).extracting(EspacioResponse::codigo)
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, false)).extracting(EspacioResponse::codigo)
                 .containsExactly("G-101");
     }
 
@@ -232,5 +234,106 @@ class EspacioServiceTest {
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining(uuid(20).toString());
         verify(espacioRepository, never()).save(any());
+    }
+
+    private Espacio espacioInactivo() {
+        Espacio e = espacioActivo();
+        e.setEstado(Estado.INACTIVO);
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(e));
+        return e;
+    }
+
+    @Test
+    void reactivar_conPisoYEdificioActivos_loDejaActivo() {
+        espacioInactivo();
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        assertThat(espacioService.reactivar(ESPACIO).estado()).isEqualTo(Estado.ACTIVO);
+    }
+
+    @Test
+    void reactivar_espacioYaActivo_seRechaza() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya está activo");
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_conPisoInactivo_seRechaza() {
+        espacioInactivo();
+        piso(Estado.INACTIVO);
+        edificio(Estado.ACTIVO);
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("debe reactivarse primero");
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_conEdificioInactivo_seRechaza() {
+        espacioInactivo();
+        piso(Estado.ACTIVO);
+        edificio(Estado.INACTIVO);
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("debe reactivarse primero");
+        verify(espacioRepository, never()).save(any());
+    }
+
+    private void pisosDelEdificio(Estado estado) {
+        Piso p = new Piso();
+        p.setId(PISO);
+        p.setEdificioId(EDIFICIO);
+        p.setNumero(1);
+        p.setEstado(estado);
+        when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO)).thenReturn(List.of(p));
+    }
+
+    @Test
+    void listarPorPiso_conPisoInactivo_porDefectoNoDevuelveNada() {
+        piso(Estado.INACTIVO);
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of(espacioActivo()));
+
+        assertThat(espacioService.listarPorPiso(PISO, false)).isEmpty();
+    }
+
+    @Test
+    void listarPorPiso_incluyendoInactivos_marcaQueNoEstanDisponibles() {
+        piso(Estado.INACTIVO);
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of(espacioActivo()));
+
+        assertThat(espacioService.listarPorPiso(PISO, true)).extracting(EspacioResponse::disponible)
+                .containsExactly(false);
+    }
+
+    @Test
+    void listarPorEdificio_porDefecto_ocultaLosEspaciosInactivos() {
+        edificio(Estado.ACTIVO);
+        pisosDelEdificio(Estado.ACTIVO);
+        Espacio inactivo = espacioActivo();
+        inactivo.setId(uuid(11));
+        inactivo.setEstado(Estado.INACTIVO);
+        when(espacioRepository.findByEdificioId(EDIFICIO)).thenReturn(List.of(espacioActivo(), inactivo));
+
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, false)).extracting(EspacioResponse::id)
+                .containsExactly(ESPACIO);
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, true)).extracting(EspacioResponse::disponible)
+                .containsExactly(true, false);
+    }
+
+    @Test
+    void obtener_indicaSiElEspacioEstaDisponible() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        piso(Estado.ACTIVO);
+        edificio(Estado.INACTIVO);
+
+        assertThat(espacioService.obtener(ESPACIO).disponible()).isFalse();
     }
 }
