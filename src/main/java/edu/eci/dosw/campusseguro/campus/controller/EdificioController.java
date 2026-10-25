@@ -30,7 +30,7 @@ public class EdificioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(edificioService.crear(request));
     }
 
-    @Operation(summary = "Modificar edificio", description = "Solo ADMIN. Cambia código, nombre y descripción.")
+    @Operation(summary = "Modificar edificio",description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
     @PutMapping("/{id}")
     public EdificioResponse modificar(@PathVariable UUID id,
                                   @Valid @RequestBody ModificarEdificioRequest request) {
@@ -54,4 +54,5 @@ public class EdificioController {
     public EdificioResponse obtener(@PathVariable UUID id) {
         return edificioService.obtener(id);
     }
-}
+
+    }
