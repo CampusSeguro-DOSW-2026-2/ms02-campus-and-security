@@ -132,6 +132,38 @@ class ZonaSeguraServiceTest {
                 .isInstanceOf(ZonaSeguraNoEncontradaException.class);
     }
 
+    @Test
+    void listar_porDefectoDevuelveSoloLasActivas() {
+        ZonaSegura activa = new ZonaSegura();
+        activa.setId(uuid(1));
+        activa.setCodigo("MP-H-01");
+
+        ZonaSegura inactiva = new ZonaSegura();
+        inactiva.setId(uuid(2));
+        inactiva.setCodigo("MP-H-02");
+        inactiva.setEstado(Estado.INACTIVO);
+
+        when(zonaSeguraRepository.findAll()).thenReturn(List.of(activa, inactiva));
+
+        assertThat(zonaSeguraService.listar(false))
+                .extracting(ZonaSeguraResponse::codigo)
+                .containsExactly("MP-H-01");
+    }
+
+    @Test
+    void listar_conIncluirInactivos_devuelveTodas() {
+        ZonaSegura activa = new ZonaSegura();
+        activa.setId(uuid(1));
+
+        ZonaSegura inactiva = new ZonaSegura();
+        inactiva.setId(uuid(2));
+        inactiva.setEstado(Estado.INACTIVO);
+
+        when(zonaSeguraRepository.findAll()).thenReturn(List.of(activa, inactiva));
+
+        assertThat(zonaSeguraService.listar(true)).hasSize(2);
+    }
+
     // Pruebas nuevas de reactivación
 
     @Test

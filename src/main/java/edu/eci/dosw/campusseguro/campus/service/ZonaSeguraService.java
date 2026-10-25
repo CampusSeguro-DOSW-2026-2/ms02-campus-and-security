@@ -84,8 +84,9 @@ public class ZonaSeguraService {
     }
 
     @Transactional(readOnly = true)
-    public List<ZonaSeguraResponse> listar() {
+    public List<ZonaSeguraResponse> listar(boolean incluirInactivos) {
         return zonaSeguraRepository.findAll().stream()
+                .filter(z -> incluirInactivos || z.getEstado() == Estado.ACTIVO)
                 .map(this::aRespuesta)
                 .toList();
     }

@@ -1,12 +1,12 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
-import edu.eci.dosw.campusseguro.campus.security.Permiso;
-import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import edu.eci.dosw.campusseguro.campus.service.ZonaSeguraService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -73,12 +73,13 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Listar zonas seguras",
-        description = "Cualquier rol."
+        description = "Cualquier rol. Por defecto solo las activas; incluirInactivos=true devuelve todas."
     )
     @Permiso(Permisos.CAMPUS_READ)
     @GetMapping
-    public List<ZonaSeguraResponse> listar() {
-        return zonaSeguraService.listar();
+    public List<ZonaSeguraResponse> listar(
+            @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return zonaSeguraService.listar(incluirInactivos);
     }
 
     @Operation(
