@@ -60,6 +60,7 @@ public class EspacioGatewayImpl implements EspacioGateway {
                 e.getId(),
                 e.getEdificioId(),
                 e.getNombre(),
-                contenedoresActivos && e.getEstado() == Estado.ACTIVO);
+                contenedoresActivos && e.getEstado() == Estado.ACTIVO,
+                e.getTipo());
     }
 }

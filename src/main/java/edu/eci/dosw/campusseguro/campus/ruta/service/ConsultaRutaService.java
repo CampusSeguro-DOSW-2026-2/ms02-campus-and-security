@@ -20,6 +20,11 @@ import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
+import edu.eci.dosw.campusseguro.campus.repository.RecomendacionPreventivaRepository;
+import edu.eci.dosw.campusseguro.campus.dto.RecomendacionPreventivaResponse;
+import edu.eci.dosw.campusseguro.campus.entity.Estado;
+import edu.eci.dosw.campusseguro.campus.entity.RecomendacionPreventiva;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,15 +49,30 @@ public class ConsultaRutaService {
     private final EspacioGateway espacioGateway;
     private final ZonaSeguraGateway zonaGateway;
 
+    private final RecomendacionPreventivaRepository recomendacionRepository;
+
+    // Constructor utilizado por Spring en la aplicación.
+    @Autowired
+    public ConsultaRutaService(
+            RutaRepository rutaRepository,
+            EdificioGateway edificioGateway,
+            EspacioGateway espacioGateway,
+            ZonaSeguraGateway zonaGateway,
+            RecomendacionPreventivaRepository recomendacionRepository) {
+        this.rutaRepository = rutaRepository;
+        this.edificioGateway = edificioGateway;
+        this.espacioGateway = espacioGateway;
+        this.zonaGateway = zonaGateway;
+        this.recomendacionRepository = recomendacionRepository;
+    }
+
+    // Mantiene compatibilidad con las pruebas existentes.
     public ConsultaRutaService(
             RutaRepository rutaRepository,
             EdificioGateway edificioGateway,
             EspacioGateway espacioGateway,
             ZonaSeguraGateway zonaGateway) {
-        this.rutaRepository = rutaRepository;
-        this.edificioGateway = edificioGateway;
-        this.espacioGateway = espacioGateway;
-        this.zonaGateway = zonaGateway;
+        this(rutaRepository, edificioGateway, espacioGateway, zonaGateway, null);
     }
 
     public RutaConsultadaResponse consultarPorEspacio(UUID espacioId) {
@@ -146,7 +166,8 @@ public class ConsultaRutaService {
                     null,
                     null,
                     false,
-                    MSG_SIN_RUTA);
+                    MSG_SIN_RUTA,
+                    recomendacionesDe(espacio));
         }
 
         Optional<ZonaInfo> zona =
@@ -167,7 +188,40 @@ public class ConsultaRutaService {
                 ruta.getEstado(),
                 ruta.getMotivo(),
                 destinoActivo,
-                mensajeDe(ruta.getEstado(), destinoActivo));
+                mensajeDe(ruta.getEstado(), destinoActivo),
+                recomendacionesDe(espacio));
+    }
+
+    private List<RecomendacionPreventivaResponse> recomendacionesDe(EspacioInfo espacio) {
+        if (recomendacionRepository == null) {
+            return List.of();
+        }
+
+        List<RecomendacionPreventivaResponse> resultado = new java.util.ArrayList<>();
+
+        recomendacionRepository
+                .findByEstadoAndEdificioId(Estado.ACTIVO, espacio.edificioId())
+                .stream()
+                .map(this::aRecomendacionResponse)
+                .forEach(resultado::add);
+
+        if (espacio.tipoEspacio() != null) {
+            recomendacionRepository
+                    .findByEstadoAndTipoEspacio(Estado.ACTIVO, espacio.tipoEspacio())
+                    .stream()
+                    .map(this::aRecomendacionResponse)
+                    .forEach(resultado::add);
+        }
+
+        return List.copyOf(resultado);
+    }
+
+    private RecomendacionPreventivaResponse aRecomendacionResponse(
+            RecomendacionPreventiva entidad) {
+        return new RecomendacionPreventivaResponse(
+                entidad.getId(), entidad.getAmbito(), entidad.getEdificioId(),
+                entidad.getTipoEspacio(), entidad.getTitulo(), entidad.getRecomendacion(),
+                entidad.getEstado(), entidad.getCreatedAt(), entidad.getUpdatedAt());
     }
 
     // Si el destino está inactivo, ese aviso va primero.

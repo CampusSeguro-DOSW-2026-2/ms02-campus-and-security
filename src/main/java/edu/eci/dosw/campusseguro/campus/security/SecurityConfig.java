@@ -64,6 +64,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/**").hasAuthority(Permisos.BUILDING_WRITE)
                         .requestMatchers("/api/v1/safe-zones/**").hasAuthority(Permisos.SAFE_ZONE_WRITE)
 
+                        // Recomendaciones preventivas: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/preventive-recommendations",
+                                "/api/v1/preventive-recommendations/**")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/preventive-recommendations",
+                                "/api/v1/preventive-recommendations/**")
+                        .hasAuthority(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
+
                         // Cualquier otro endpoint exige al menos estar autenticado.
                         // Quien lo agregue debe declarar aqui su permiso.
                         .anyRequest().authenticated());
