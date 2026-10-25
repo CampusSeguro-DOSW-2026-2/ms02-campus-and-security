@@ -1,4 +1,3 @@
-
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.List;
@@ -15,9 +14,11 @@ import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EdificioService {
@@ -38,7 +39,9 @@ public class EdificioService {
         edificio.setNombre(request.nombre().trim());
         edificio.setDescripcion(request.descripcion());
 
-        return aRespuesta(edificioRepository.save(edificio));
+        Edificio guardado = edificioRepository.save(edificio);
+        log.info("Edificio {} creado con código {}", guardado.getId(), guardado.getCodigo());
+        return aRespuesta(guardado);
     }
 
     @Transactional
@@ -47,7 +50,9 @@ public class EdificioService {
         edificio.setNombre(request.nombre().trim());
         edificio.setDescripcion(request.descripcion());
 
-        return aRespuesta(edificioRepository.save(edificio));
+        Edificio guardado = edificioRepository.save(edificio);
+        log.info("Edificio {} modificado", guardado.getId());
+        return aRespuesta(guardado);
     }
 
     @Transactional
@@ -58,6 +63,7 @@ public class EdificioService {
                 verificadorRutas.rutasActivasDeEdificio(id);
 
         if (!rutasActivas.isEmpty()) {
+            log.warn("No se inactivó el edificio {}: tiene rutas activas {}", id, rutasActivas);
             throw new ReglaNegocioException(
                     "El edificio tiene rutas activas " + rutasActivas
                             + ": deben bloquearse antes de inactivarlo");
@@ -65,7 +71,9 @@ public class EdificioService {
 
         edificio.setEstado(Estado.INACTIVO);
 
-        return aRespuesta(edificioRepository.save(edificio));
+        Edificio guardado = edificioRepository.save(edificio);
+        log.info("Edificio {} inactivado", id);
+        return aRespuesta(guardado);
     }
 
     @Transactional
@@ -78,7 +86,9 @@ public class EdificioService {
 
         edificio.setEstado(Estado.ACTIVO);
 
-        return aRespuesta(edificioRepository.save(edificio));
+        Edificio guardado = edificioRepository.save(edificio);
+        log.info("Edificio {} reactivado", id);
+        return aRespuesta(guardado);
     }
 
     @Transactional(readOnly = true)
