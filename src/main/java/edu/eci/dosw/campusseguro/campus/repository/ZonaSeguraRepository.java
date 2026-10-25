@@ -9,5 +9,4 @@ public interface ZonaSeguraRepository extends JpaRepository<ZonaSegura, UUID> {
 
     boolean existsByCodigo(String codigo);
 
-    boolean existsByCodigoAndIdNot(String codigo, UUID id);
 }

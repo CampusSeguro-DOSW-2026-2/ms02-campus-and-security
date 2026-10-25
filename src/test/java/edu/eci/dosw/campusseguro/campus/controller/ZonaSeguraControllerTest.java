@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import edu.eci.dosw.campusseguro.campus.dto.ModificarZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
@@ -48,6 +49,13 @@ class ZonaSeguraControllerTest {
 
     private String json(String codigo, String nombre, int capacidad) {
         return "{\"codigo\":\"" + codigo + "\",\"nombre\":\"" + nombre
+                + "\",\"ubicacion\":\"Frente al bloque H\""
+                + ",\"descripcion\":\"Zona abierta\""
+                + ",\"capacidad\":" + capacidad + "}";
+    }
+
+    private String jsonModificar(String nombre, int capacidad) {
+        return "{\"nombre\":\"" + nombre
                 + "\",\"ubicacion\":\"Frente al bloque H\""
                 + ",\"descripcion\":\"Zona abierta\""
                 + ",\"capacidad\":" + capacidad + "}";
@@ -100,43 +108,35 @@ class ZonaSeguraControllerTest {
 
     @Test
     void modificar_devuelve200ConLosDatosActualizados() throws Exception {
-        when(zonaSeguraService.modificar(eq(uuid(1)), any(ZonaSeguraRequest.class)))
+        when(zonaSeguraService.modificar(
+                eq(uuid(1)), any(ModificarZonaSeguraRequest.class)))
                 .thenReturn(respuesta(Estado.ACTIVO));
 
         mockMvc.perform(put(BASE + "/{id}", uuid(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("MP-H-01", "Punto H", 200)))
+                        .content(jsonModificar("Punto H", 200)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Punto H"));
     }
 
     @Test
     void modificar_noExiste_devuelve404() throws Exception {
-        when(zonaSeguraService.modificar(eq(uuid(99)), any(ZonaSeguraRequest.class)))
+        when(zonaSeguraService.modificar(
+                eq(uuid(99)), any(ModificarZonaSeguraRequest.class)))
                 .thenThrow(new ZonaSeguraNoEncontradaException(uuid(99)));
 
         mockMvc.perform(put(BASE + "/{id}", uuid(99))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("MP-H-01", "Punto H", 200)))
+                        .content(jsonModificar("Punto H", 200)))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void modificar_codigoDeOtraZona_devuelve409() throws Exception {
-        when(zonaSeguraService.modificar(eq(uuid(1)), any(ZonaSeguraRequest.class)))
-                .thenThrow(new ZonaCodigoDuplicadoException("MP-H-02"));
-
-        mockMvc.perform(put(BASE + "/{id}", uuid(1))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("MP-H-02", "Punto H", 200)))
-                .andExpect(status().isConflict());
     }
 
     // ---------- inactivar ----------
 
     @Test
     void inactivar_devuelveLaZonaInactiva() throws Exception {
-        when(zonaSeguraService.inactivar(uuid(1))).thenReturn(respuesta(Estado.INACTIVO));
+        when(zonaSeguraService.inactivar(uuid(1)))
+                .thenReturn(respuesta(Estado.INACTIVO));
 
         mockMvc.perform(patch(BASE + "/{id}/deactivate", uuid(1)))
                 .andExpect(status().isOk())
@@ -146,7 +146,8 @@ class ZonaSeguraControllerTest {
     @Test
     void inactivar_conRutasActivas_devuelve422() throws Exception {
         when(zonaSeguraService.inactivar(uuid(1)))
-                .thenThrow(new ReglaNegocioException("La zona segura es destino de rutas activas"));
+                .thenThrow(new ReglaNegocioException(
+                        "La zona segura es destino de rutas activas"));
 
         mockMvc.perform(patch(BASE + "/{id}/deactivate", uuid(1)))
                 .andExpect(status().isUnprocessableEntity())
@@ -166,7 +167,8 @@ class ZonaSeguraControllerTest {
 
     @Test
     void reactivar_devuelveLaZonaActiva() throws Exception {
-        when(zonaSeguraService.reactivar(uuid(1))).thenReturn(respuesta(Estado.ACTIVO));
+        when(zonaSeguraService.reactivar(uuid(1)))
+                .thenReturn(respuesta(Estado.ACTIVO));
 
         mockMvc.perform(patch(BASE + "/{id}/reactivate", uuid(1)))
                 .andExpect(status().isOk())
@@ -176,7 +178,8 @@ class ZonaSeguraControllerTest {
     @Test
     void reactivar_yaActiva_devuelve422() throws Exception {
         when(zonaSeguraService.reactivar(uuid(1)))
-                .thenThrow(new ReglaNegocioException("La zona segura ya está activa"));
+                .thenThrow(new ReglaNegocioException(
+                        "La zona segura ya está activa"));
 
         mockMvc.perform(patch(BASE + "/{id}/reactivate", uuid(1)))
                 .andExpect(status().isUnprocessableEntity())
@@ -196,7 +199,8 @@ class ZonaSeguraControllerTest {
 
     @Test
     void listar_porDefectoPideSoloLasActivas() throws Exception {
-        when(zonaSeguraService.listar(false)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
+        when(zonaSeguraService.listar(false))
+                .thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get(BASE))
                 .andExpect(status().isOk())
@@ -205,7 +209,8 @@ class ZonaSeguraControllerTest {
 
     @Test
     void listar_conIncluirInactivos_pasaElFiltro() throws Exception {
-        when(zonaSeguraService.listar(true)).thenReturn(List.of(respuesta(Estado.INACTIVO)));
+        when(zonaSeguraService.listar(true))
+                .thenReturn(List.of(respuesta(Estado.INACTIVO)));
 
         mockMvc.perform(get(BASE).param("incluirInactivos", "true"))
                 .andExpect(status().isOk())
@@ -214,7 +219,8 @@ class ZonaSeguraControllerTest {
 
     @Test
     void obtener_devuelveLaZona() throws Exception {
-        when(zonaSeguraService.obtener(uuid(1))).thenReturn(respuesta(Estado.ACTIVO));
+        when(zonaSeguraService.obtener(uuid(1)))
+                .thenReturn(respuesta(Estado.ACTIVO));
 
         mockMvc.perform(get(BASE + "/{id}", uuid(1)))
                 .andExpect(status().isOk())

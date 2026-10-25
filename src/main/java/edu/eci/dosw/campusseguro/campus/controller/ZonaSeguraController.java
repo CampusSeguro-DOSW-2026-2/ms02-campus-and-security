@@ -3,6 +3,7 @@ package edu.eci.dosw.campusseguro.campus.controller;
 import java.util.List;
 import java.util.UUID;
 
+import edu.eci.dosw.campusseguro.campus.dto.ModificarZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.security.Permiso;
@@ -47,7 +48,7 @@ public class ZonaSeguraController {
     @PutMapping("/{id}")
     public ZonaSeguraResponse modificar(
             @PathVariable UUID id,
-            @Valid @RequestBody ZonaSeguraRequest request) {
+            @Valid @RequestBody ModificarZonaSeguraRequest request) {
         return zonaSeguraService.modificar(id, request);
     }
 

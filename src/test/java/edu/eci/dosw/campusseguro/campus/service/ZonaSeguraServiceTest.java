@@ -72,22 +72,6 @@ class ZonaSeguraServiceTest {
     }
 
     @Test
-    void modificar_conCodigoDeOtraZona_lanzaExcepcion() {
-        UUID id = uuid(2);
-
-        when(zonaSeguraRepository.findById(id))
-                .thenReturn(Optional.of(new ZonaSegura()));
-        when(zonaSeguraRepository.existsByCodigoAndIdNot("MP-H-01", id))
-                .thenReturn(true);
-
-        assertThatThrownBy(() ->
-                zonaSeguraService.modificar(id, request("MP-H-01")))
-                .isInstanceOf(ZonaCodigoDuplicadoException.class);
-
-        verify(zonaSeguraRepository, never()).save(any());
-    }
-
-    @Test
     void inactivar_sinRutasActivas_cambiaElEstadoAInactivo() {
         ZonaSegura zona = new ZonaSegura();
         zona.setId(uuid(1));
