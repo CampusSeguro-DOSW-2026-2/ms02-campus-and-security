@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +51,7 @@ public class RutaController {
             responseCode = "422",
             description = "El espacio de origen o la zona segura de destino no cumple las reglas de negocio."
     )
+    @Permiso(Permisos.ROUTE_WRITE)
     @PostMapping
     public ResponseEntity<RutaResponse> crear(
             @Valid @RequestBody CrearRutaRequest request) {
@@ -69,6 +72,7 @@ public class RutaController {
             responseCode = "422",
             description = "La zona segura de destino no cumple las reglas de negocio."
     )
+    @Permiso(Permisos.ROUTE_WRITE)
     @PutMapping("/{id}")
     public RutaResponse actualizar(
             @Parameter(
@@ -92,6 +96,7 @@ public class RutaController {
             responseCode = "422",
             description = "El espacio de origen o la zona segura de destino no está habilitado para el estado solicitado."
     )
+    @Permiso(Permisos.ROUTE_STATUS_WRITE)
     @PatchMapping("/{id}/status")
     public RutaResponse cambiarEstado(
             @Parameter(
@@ -112,6 +117,7 @@ public class RutaController {
             summary = "Consultar ruta",
             description = "Cualquier rol."
     )
+    @Permiso(Permisos.ROUTE_READ)
     @GetMapping("/{id}")
     public RutaResponse obtener(
             @Parameter(
@@ -127,6 +133,7 @@ public class RutaController {
             summary = "Listar rutas",
             description = "Cualquier rol."
     )
+    @Permiso(Permisos.ROUTE_READ)
     @GetMapping
     public List<RutaResponse> listar() {
         return rutaService.listar();

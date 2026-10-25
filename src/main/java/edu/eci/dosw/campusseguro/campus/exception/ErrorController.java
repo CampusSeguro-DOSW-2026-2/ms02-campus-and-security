@@ -1,6 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.exception;
 
 import edu.eci.dosw.campusseguro.campus.config.CorrelationIdFilter;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Hidden
 @RestController
 public class ErrorController implements org.springframework.boot.webmvc.error.ErrorController {
 

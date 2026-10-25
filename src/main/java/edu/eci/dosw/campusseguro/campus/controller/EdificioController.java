@@ -1,6 +1,8 @@
 
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class EdificioController {
     @Operation(
             summary = "Crear edificio",
             description = "Solo ADMIN. El código es único. El edificio queda activo.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PostMapping
     public ResponseEntity<EdificioResponse> crear(
             @Valid @RequestBody EdificioRequest request) {
@@ -37,6 +40,7 @@ public class EdificioController {
     @Operation(
             summary = "Modificar edificio",
             description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PutMapping("/{id}")
     public EdificioResponse modificar(
             @PathVariable UUID id,
@@ -47,6 +51,7 @@ public class EdificioController {
     @Operation(
             summary = "Inactivar edificio",
             description = "Solo ADMIN. Se rechaza con 422 si el edificio tiene rutas activas; deben bloquearse antes.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PatchMapping("/{id}/deactivate")
     public EdificioResponse inactivar(@PathVariable UUID id) {
         return edificioService.inactivar(id);
@@ -55,18 +60,21 @@ public class EdificioController {
     @Operation(
             summary = "Reactivar edificio",
             description = "Solo ADMIN. Sus pisos y espacios conservan su estado; se reactivan por separado.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PatchMapping("/{id}/reactivate")
     public EdificioResponse reactivar(@PathVariable UUID id) {
         return edificioService.reactivar(id);
     }
 
     @Operation(summary = "Listar edificios", description = "Cualquier rol.")
+    @Permiso(Permisos.CAMPUS_READ)
     @GetMapping
     public List<EdificioResponse> listar() {
         return edificioService.listar();
     }
 
     @Operation(summary = "Consultar edificio", description = "Cualquier rol.")
+    @Permiso(Permisos.CAMPUS_READ)
     @GetMapping("/{id}")
     public EdificioResponse obtener(@PathVariable UUID id) {
         return edificioService.obtener(id);
