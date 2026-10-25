@@ -1,3 +1,4 @@
+
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.List;
@@ -27,13 +28,16 @@ public class EdificioService {
     @Transactional
     public EdificioResponse crear(EdificioRequest request) {
         String codigo = request.codigo().trim();
+
         if (edificioRepository.existsByCodigo(codigo)) {
             throw new CodigoDuplicadoException(codigo);
         }
+
         Edificio edificio = new Edificio();
         edificio.setCodigo(codigo);
         edificio.setNombre(request.nombre().trim());
         edificio.setDescripcion(request.descripcion());
+
         return aRespuesta(edificioRepository.save(edificio));
     }
 
@@ -42,6 +46,7 @@ public class EdificioService {
         Edificio edificio = buscar(id);
         edificio.setNombre(request.nombre().trim());
         edificio.setDescripcion(request.descripcion());
+
         return aRespuesta(edificioRepository.save(edificio));
     }
 
@@ -49,7 +54,9 @@ public class EdificioService {
     public EdificioResponse inactivar(UUID id) {
         Edificio edificio = buscar(id);
 
-        List<UUID> rutasActivas = verificadorRutas.rutasActivasDeEdificio(id);
+        List<UUID> rutasActivas =
+                verificadorRutas.rutasActivasDeEdificio(id);
+
         if (!rutasActivas.isEmpty()) {
             throw new ReglaNegocioException(
                     "El edificio tiene rutas activas " + rutasActivas
@@ -57,6 +64,20 @@ public class EdificioService {
         }
 
         edificio.setEstado(Estado.INACTIVO);
+
+        return aRespuesta(edificioRepository.save(edificio));
+    }
+
+    @Transactional
+    public EdificioResponse reactivar(UUID id) {
+        Edificio edificio = buscar(id);
+
+        if (edificio.getEstado() == Estado.ACTIVO) {
+            throw new ReglaNegocioException("El edificio ya está activo");
+        }
+
+        edificio.setEstado(Estado.ACTIVO);
+
         return aRespuesta(edificioRepository.save(edificio));
     }
 
@@ -79,6 +100,10 @@ public class EdificioService {
 
     private EdificioResponse aRespuesta(Edificio e) {
         return new EdificioResponse(
-                e.getId(), e.getCodigo(), e.getNombre(), e.getDescripcion(), e.getEstado());
+                e.getId(),
+                e.getCodigo(),
+                e.getNombre(),
+                e.getDescripcion(),
+                e.getEstado());
     }
 }

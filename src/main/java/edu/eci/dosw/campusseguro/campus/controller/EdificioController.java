@@ -1,5 +1,7 @@
+
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
@@ -14,8 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Tag(name = "Edificios", description = "RF-01. Gestión de edificios del campus.")
 @RestController
 @RequestMapping("/api/v1/buildings")
@@ -24,23 +24,40 @@ public class EdificioController {
 
     private final EdificioService edificioService;
 
-    @Operation(summary = "Crear edificio", description = "Solo ADMIN. El código es único. El edificio queda activo.")
+    @Operation(
+            summary = "Crear edificio",
+            description = "Solo ADMIN. El código es único. El edificio queda activo.")
     @PostMapping
-    public ResponseEntity<EdificioResponse> crear(@Valid @RequestBody EdificioRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(edificioService.crear(request));
+    public ResponseEntity<EdificioResponse> crear(
+            @Valid @RequestBody EdificioRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(edificioService.crear(request));
     }
 
-    @Operation(summary = "Modificar edificio",description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
+    @Operation(
+            summary = "Modificar edificio",
+            description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
     @PutMapping("/{id}")
-    public EdificioResponse modificar(@PathVariable UUID id,
-                                  @Valid @RequestBody ModificarEdificioRequest request) {
+    public EdificioResponse modificar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ModificarEdificioRequest request) {
         return edificioService.modificar(id, request);
     }
 
-    @Operation(summary = "Inactivar edificio", description = "Solo ADMIN. Se rechaza con 422 si el edificio tiene rutas activas; deben bloquearse antes.")
+    @Operation(
+            summary = "Inactivar edificio",
+            description = "Solo ADMIN. Se rechaza con 422 si el edificio tiene rutas activas; deben bloquearse antes.")
     @PatchMapping("/{id}/deactivate")
     public EdificioResponse inactivar(@PathVariable UUID id) {
         return edificioService.inactivar(id);
+    }
+
+    @Operation(
+            summary = "Reactivar edificio",
+            description = "Solo ADMIN. Sus pisos y espacios conservan su estado; se reactivan por separado.")
+    @PatchMapping("/{id}/reactivate")
+    public EdificioResponse reactivar(@PathVariable UUID id) {
+        return edificioService.reactivar(id);
     }
 
     @Operation(summary = "Listar edificios", description = "Cualquier rol.")
@@ -54,5 +71,4 @@ public class EdificioController {
     public EdificioResponse obtener(@PathVariable UUID id) {
         return edificioService.obtener(id);
     }
-
-    }
+}
