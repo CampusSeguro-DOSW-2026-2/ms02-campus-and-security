@@ -99,13 +99,12 @@ class VerificadorRutasServiceTest {
     }
 
     @Test
-    void rutasActivasDeEdificio_incluyeEspaciosNoDisponibles() {
+    void rutasActivasDeEdificio_excluyeEspaciosInactivos() {
         when(espacioGateway.listarPorEdificio(edificioId))
                 .thenReturn(List.of(new EspacioInfo(espacioId, edificioId, "Salón 101", false)));
-        when(rutaRepository.findByEspacioOrigenIdInAndEstadoIn(eq(List.of(espacioId)), anyCollection()))
-                .thenReturn(List.of());
 
         assertThat(verificador.rutasActivasDeEdificio(edificioId)).isEmpty();
-        verify(rutaRepository).findByEspacioOrigenIdInAndEstadoIn(eq(List.of(espacioId)), anyCollection());
+        verify(rutaRepository, never())
+                .findByEspacioOrigenIdInAndEstadoIn(any(), any());
     }
 }

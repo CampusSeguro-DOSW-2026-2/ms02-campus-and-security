@@ -47,12 +47,20 @@ public class ConsultaRutaService {
         this.zonaGateway = zonaGateway;
     }
 
+
     public RutaConsultadaResponse consultarPorEspacio(UUID espacioId) {
         EspacioInfo espacio = espacioGateway.buscarPorId(espacioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "El espacio " + espacioId + " no existe"));
+
+        if (!espacio.activo()) {
+            throw new ReglaNegocioException(
+                    "El espacio '" + espacio.nombre() + "' está inactivo");
+        }
+
         return consultar(espacio.edificioId(), espacioId).get(0);
     }
+
 
     public List<RutaConsultadaResponse> consultarPorEdificio(UUID edificioId) {
         return consultar(edificioId, null);
@@ -61,7 +69,7 @@ public class ConsultaRutaService {
     public List<RutaConsultadaResponse> consultar(UUID edificioId, UUID espacioId) {
         EdificioInfo edificio = edificioGateway.buscarPorId(edificioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "El edificio " + edificioId + " no existe"));
+                      "El edificio " + edificioId + " no existe"));
         if (!edificio.activo()) {
             throw new ReglaNegocioException("El edificio '" + edificio.nombre() + "' está inactivo");
         }
@@ -73,24 +81,31 @@ public class ConsultaRutaService {
             if (!espacio.edificioId().equals(edificioId)) {
                 throw new ReglaNegocioException(
                         "El espacio '" + espacio.nombre() + "' no pertenece al edificio seleccionado");
-            }
-            Optional<RutaEvacuacion> ruta = rutaRepository.findByEspacioOrigenId(espacioId);
-            return List.of(armar(espacio, ruta.orElse(null)));
         }
 
-        List<EspacioInfo> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
-                .filter(EspacioInfo::activo)
-                .toList();
-        if (espacios.isEmpty()) {
-            return List.of();
+        if (!espacio.activo()) {
+              throw new ReglaNegocioException(
+                      "El espacio '" + espacio.nombre() + "' está inactivo");
         }
-        Map<UUID, RutaEvacuacion> rutasPorEspacio = rutaRepository
-                .findByEspacioOrigenIdIn(espacios.stream().map(EspacioInfo::id).toList())
-                .stream()
-                .collect(Collectors.toMap(RutaEvacuacion::getEspacioOrigenId, Function.identity()));
-        return espacios.stream()
-                .map(e -> armar(e, rutasPorEspacio.get(e.id())))
-                .toList();
+
+        Optional<RutaEvacuacion> ruta = rutaRepository.findByEspacioOrigenId(espacioId);
+        return List.of(armar(espacio, ruta.orElse(null)));
+      }
+
+      List<EspacioInfo> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
+              .filter(EspacioInfo::activo)
+              .toList();
+      if (espacios.isEmpty()) {
+          return List.of();
+      }
+
+      Map<UUID, RutaEvacuacion> rutasPorEspacio = rutaRepository
+              .findByEspacioOrigenIdIn(espacios.stream().map(EspacioInfo::id).toList())
+              .stream()
+              .collect(Collectors.toMap(RutaEvacuacion::getEspacioOrigenId, Function.identity()));
+      return espacios.stream()
+              .map(e -> armar(e, rutasPorEspacio.get(e.id())))
+              .toList();
     }
 
     private RutaConsultadaResponse armar(EspacioInfo espacio, RutaEvacuacion ruta) {
