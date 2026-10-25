@@ -65,6 +65,7 @@ public class ZonaSeguraController {
         summary = "Reactivar zona segura",
         description = "Solo ADMIN. Se rechaza con 422 si la zona ya está activa."
     )
+    @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PatchMapping("/{id}/reactivate")
     public ZonaSeguraResponse reactivar(@PathVariable UUID id) {
         return zonaSeguraService.reactivar(id);
