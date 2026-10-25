@@ -1,4 +1,3 @@
-
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.List;
@@ -66,6 +65,20 @@ public class ZonaSeguraService {
         }
 
         zona.setEstado(Estado.INACTIVO);
+
+        return aRespuesta(zonaSeguraRepository.save(zona));
+    }
+
+    @Transactional
+    public ZonaSeguraResponse reactivar(UUID id) {
+        ZonaSegura zona = buscar(id);
+
+        if (zona.getEstado() == Estado.ACTIVO) {
+            throw new ReglaNegocioException(
+                    "La zona segura ya está activa");
+        }
+
+        zona.setEstado(Estado.ACTIVO);
 
         return aRespuesta(zonaSeguraRepository.save(zona));
     }
