@@ -1,4 +1,3 @@
-
 package edu.eci.dosw.campusseguro.campus.service;
 
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
@@ -130,6 +129,50 @@ class ZonaSeguraServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> zonaSeguraService.inactivar(uuid(99)))
+                .isInstanceOf(ZonaSeguraNoEncontradaException.class);
+    }
+
+    // Pruebas nuevas de reactivación
+
+    @Test
+    void reactivar_zonaInactiva_cambiaElEstadoAActivo() {
+        ZonaSegura zona = new ZonaSegura();
+        zona.setId(uuid(1));
+        zona.setEstado(Estado.INACTIVO);
+
+        when(zonaSeguraRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(zona));
+        when(zonaSeguraRepository.save(any(ZonaSegura.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        ZonaSeguraResponse respuesta = zonaSeguraService.reactivar(uuid(1));
+
+        assertThat(respuesta.estado()).isEqualTo(Estado.ACTIVO);
+        verify(zonaSeguraRepository).save(zona);
+    }
+
+    @Test
+    void reactivar_zonaYaActiva_lanzaExcepcionYNoGuarda() {
+        ZonaSegura zona = new ZonaSegura();
+        zona.setId(uuid(1));
+        zona.setEstado(Estado.ACTIVO);
+
+        when(zonaSeguraRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(zona));
+
+        assertThatThrownBy(() -> zonaSeguraService.reactivar(uuid(1)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("La zona segura ya está activa");
+
+        verify(zonaSeguraRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_noExiste_lanzaExcepcion() {
+        when(zonaSeguraRepository.findById(uuid(99)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> zonaSeguraService.reactivar(uuid(99)))
                 .isInstanceOf(ZonaSeguraNoEncontradaException.class);
     }
 }
