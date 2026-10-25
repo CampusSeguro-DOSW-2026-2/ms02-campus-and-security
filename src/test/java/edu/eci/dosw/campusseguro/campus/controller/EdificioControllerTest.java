@@ -1,24 +1,7 @@
+
 package edu.eci.dosw.campusseguro.campus.controller;
 
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
-
-import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
-import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
-import edu.eci.dosw.campusseguro.campus.entity.Estado;
-import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
-import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
-import edu.eci.dosw.campusseguro.campus.service.EdificioService;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -28,6 +11,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.List;
+
+import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
+import edu.eci.dosw.campusseguro.campus.dto.ModificarEdificioRequest;
+import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
+import edu.eci.dosw.campusseguro.campus.entity.Estado;
+import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
+import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
+import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+import edu.eci.dosw.campusseguro.campus.service.EdificioService;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest(EdificioController.class)
@@ -48,6 +50,11 @@ class EdificioControllerTest {
 
     private String json(String codigo, String nombre) {
         return "{\"codigo\":\"" + codigo + "\",\"nombre\":\"" + nombre
+                + "\",\"descripcion\":\"Descripción\"}";
+    }
+
+    private String jsonModificar(String nombre) {
+        return "{\"nombre\":\"" + nombre
                 + "\",\"descripcion\":\"Descripción\"}";
     }
 
@@ -97,24 +104,24 @@ class EdificioControllerTest {
 
     @Test
     void modificar_devuelve200ConLosDatosActualizados() throws Exception {
-        when(edificioService.modificar(eq(uuid(1)), any(EdificioRequest.class)))
+        when(edificioService.modificar(eq(uuid(1)), any(ModificarEdificioRequest.class)))
                 .thenReturn(respuesta(Estado.ACTIVO));
 
         mockMvc.perform(put(BASE + "/{id}", uuid(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("ED-1", "Bloque H")))
+                        .content(jsonModificar("Bloque H")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Bloque H"));
     }
 
     @Test
     void modificar_noExiste_devuelve404() throws Exception {
-        when(edificioService.modificar(eq(uuid(99)), any(EdificioRequest.class)))
+        when(edificioService.modificar(eq(uuid(99)), any(ModificarEdificioRequest.class)))
                 .thenThrow(new EdificioNoEncontradoException(uuid(99)));
 
         mockMvc.perform(put(BASE + "/{id}", uuid(99))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("ED-1", "Bloque H")))
+                        .content(jsonModificar("Bloque H")))
                 .andExpect(status().isNotFound());
     }
 

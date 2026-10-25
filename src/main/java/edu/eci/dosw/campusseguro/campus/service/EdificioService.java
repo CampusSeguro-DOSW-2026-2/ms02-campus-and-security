@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
+import edu.eci.dosw.campusseguro.campus.dto.ModificarEdificioRequest;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
@@ -37,13 +38,8 @@ public class EdificioService {
     }
 
     @Transactional
-    public EdificioResponse modificar(UUID id, EdificioRequest request) {
+    public EdificioResponse modificar(UUID id, ModificarEdificioRequest request) {
         Edificio edificio = buscar(id);
-        String codigo = request.codigo().trim();
-        if (edificioRepository.existsByCodigoAndIdNot(codigo, id)) {
-            throw new CodigoDuplicadoException(codigo);
-        }
-        edificio.setCodigo(codigo);
         edificio.setNombre(request.nombre().trim());
         edificio.setDescripcion(request.descripcion());
         return aRespuesta(edificioRepository.save(edificio));

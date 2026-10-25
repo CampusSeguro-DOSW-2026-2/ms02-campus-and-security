@@ -8,6 +8,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EdificioRepository extends JpaRepository<Edificio, UUID> {
 
     boolean existsByCodigo(String codigo);
-
-    boolean existsByCodigoAndIdNot(String codigo, UUID id);
 }
