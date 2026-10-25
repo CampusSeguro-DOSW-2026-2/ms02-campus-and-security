@@ -3,6 +3,7 @@ package edu.eci.dosw.campusseguro.campus.controller;
 import java.util.List;
 import java.util.UUID;
 
+import edu.eci.dosw.campusseguro.campus.dto.ModificarZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.security.Permiso;
@@ -41,13 +42,13 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Modificar zona segura",
-        description = "Solo ADMIN. El código debe seguir siendo único."
+        description = "Solo ADMIN. Cambia nombre, ubicación, descripción y capacidad. El código no se puede modificar."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PutMapping("/{id}")
     public ZonaSeguraResponse modificar(
             @PathVariable UUID id,
-            @Valid @RequestBody ZonaSeguraRequest request) {
+            @Valid @RequestBody ModificarZonaSeguraRequest request) {
         return zonaSeguraService.modificar(id, request);
     }
 

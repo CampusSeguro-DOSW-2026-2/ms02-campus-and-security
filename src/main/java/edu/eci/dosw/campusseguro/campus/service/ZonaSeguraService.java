@@ -3,6 +3,7 @@ package edu.eci.dosw.campusseguro.campus.service;
 import java.util.List;
 import java.util.UUID;
 
+import edu.eci.dosw.campusseguro.campus.dto.ModificarZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
@@ -42,15 +43,12 @@ public class ZonaSeguraService {
     }
 
     @Transactional
-    public ZonaSeguraResponse modificar(UUID id, ZonaSeguraRequest request) {
+    public ZonaSeguraResponse modificar(UUID id, ModificarZonaSeguraRequest request) {
         ZonaSegura zona = buscar(id);
-        String codigo = request.codigo().trim();
-
-        if (zonaSeguraRepository.existsByCodigoAndIdNot(codigo, id)) {
-            throw new ZonaCodigoDuplicadoException(codigo);
-        }
-
-        copiarDatos(zona, request);
+        zona.setNombre(request.nombre().trim());
+        zona.setUbicacion(request.ubicacion().trim());
+        zona.setDescripcion(request.descripcion().trim());
+        zona.setCapacidad(request.capacidad());
 
         ZonaSegura guardada = zonaSeguraRepository.save(zona);
         log.info("Zona segura {} modificada", guardada.getId());
