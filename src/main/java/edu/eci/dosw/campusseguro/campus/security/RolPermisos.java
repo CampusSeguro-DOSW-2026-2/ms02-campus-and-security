@@ -23,7 +23,8 @@ public final class RolPermisos {
             "AUDITOR", LECTURA,
             "COORDINADOR", Set.of(Permisos.CAMPUS_READ, Permisos.ROUTE_READ, Permisos.ROUTE_STATUS_WRITE),
             "ADMIN", Set.of(Permisos.CAMPUS_READ, Permisos.ROUTE_READ, Permisos.BUILDING_WRITE,
-                    Permisos.SAFE_ZONE_WRITE, Permisos.ROUTE_WRITE, Permisos.ROUTE_STATUS_WRITE));
+                    Permisos.SAFE_ZONE_WRITE, Permisos.ROUTE_WRITE, Permisos.ROUTE_STATUS_WRITE,
+                    Permisos.PREVENTIVE_RECOMMENDATION_WRITE));
 
     private RolPermisos() {
     }
