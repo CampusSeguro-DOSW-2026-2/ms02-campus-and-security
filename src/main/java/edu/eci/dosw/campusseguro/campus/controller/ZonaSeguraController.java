@@ -1,12 +1,12 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
-import edu.eci.dosw.campusseguro.campus.security.Permiso;
-import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import edu.eci.dosw.campusseguro.campus.service.ZonaSeguraService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Registrar zona segura",
-        description = "Solo ADMIN. La capacidad debe ser mayor que cero. La zona queda activa."
+        description = "Solo ADMIN. El código (por ejemplo MP-H-01) es único. La capacidad debe ser mayor que cero. La zona queda activa."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PostMapping
@@ -41,7 +41,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Modificar zona segura",
-        description = "Solo ADMIN."
+        description = "Solo ADMIN. El código debe seguir siendo único."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PutMapping("/{id}")
@@ -73,12 +73,13 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Listar zonas seguras",
-        description = "Cualquier rol."
+        description = "Cualquier rol. Por defecto solo las activas; incluirInactivos=true devuelve todas."
     )
     @Permiso(Permisos.CAMPUS_READ)
     @GetMapping
-    public List<ZonaSeguraResponse> listar() {
-        return zonaSeguraService.listar();
+    public List<ZonaSeguraResponse> listar(
+            @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return zonaSeguraService.listar(incluirInactivos);
     }
 
     @Operation(

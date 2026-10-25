@@ -82,8 +82,9 @@ public class EdificioService {
     }
 
     @Transactional(readOnly = true)
-    public List<EdificioResponse> listar() {
+    public List<EdificioResponse> listar(boolean incluirInactivos) {
         return edificioRepository.findAll().stream()
+                .filter(e -> incluirInactivos || e.getEstado() == Estado.ACTIVO)
                 .map(this::aRespuesta)
                 .toList();
     }
