@@ -29,7 +29,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Registrar zona segura",
-        description = "Solo ADMIN. La capacidad debe ser mayor que cero. La zona queda activa."
+        description = "Solo ADMIN. El código (por ejemplo MP-H-01) es único. La capacidad debe ser mayor que cero. La zona queda activa."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PostMapping
@@ -41,7 +41,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Modificar zona segura",
-        description = "Solo ADMIN."
+        description = "Solo ADMIN. El código debe seguir siendo único."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PutMapping("/{id}")
