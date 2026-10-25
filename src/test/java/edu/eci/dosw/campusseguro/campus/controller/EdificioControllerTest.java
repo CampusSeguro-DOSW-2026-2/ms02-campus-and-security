@@ -104,7 +104,8 @@ class EdificioControllerTest {
 
     @Test
     void modificar_devuelve200ConLosDatosActualizados() throws Exception {
-        when(edificioService.modificar(eq(uuid(1)), any(ModificarEdificioRequest.class)))
+        when(edificioService.modificar(
+                eq(uuid(1)), any(ModificarEdificioRequest.class)))
                 .thenReturn(respuesta(Estado.ACTIVO));
 
         mockMvc.perform(put(BASE + "/{id}", uuid(1))
@@ -116,7 +117,8 @@ class EdificioControllerTest {
 
     @Test
     void modificar_noExiste_devuelve404() throws Exception {
-        when(edificioService.modificar(eq(uuid(99)), any(ModificarEdificioRequest.class)))
+        when(edificioService.modificar(
+                eq(uuid(99)), any(ModificarEdificioRequest.class)))
                 .thenThrow(new EdificioNoEncontradoException(uuid(99)));
 
         mockMvc.perform(put(BASE + "/{id}", uuid(99))
@@ -187,5 +189,34 @@ class EdificioControllerTest {
     void obtener_conIdMalFormado_devuelve400() throws Exception {
         mockMvc.perform(get(BASE + "/{id}", "no-es-numero"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void reactivar_devuelveElEdificioActivo() throws Exception {
+        when(edificioService.reactivar(uuid(1)))
+                .thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(patch(BASE + "/{id}/reactivate", uuid(1)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("ACTIVO"));
+    }
+
+    @Test
+    void reactivar_yaActivo_devuelve422() throws Exception {
+        when(edificioService.reactivar(uuid(1)))
+                .thenThrow(new ReglaNegocioException("El edificio ya está activo"));
+
+        mockMvc.perform(patch(BASE + "/{id}/reactivate", uuid(1)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.codigo").value("REGLA_NEGOCIO"));
+    }
+
+    @Test
+    void reactivar_noExiste_devuelve404() throws Exception {
+        when(edificioService.reactivar(uuid(99)))
+                .thenThrow(new EdificioNoEncontradoException(uuid(99)));
+
+        mockMvc.perform(patch(BASE + "/{id}/reactivate", uuid(99)))
+                .andExpect(status().isNotFound());
     }
 }

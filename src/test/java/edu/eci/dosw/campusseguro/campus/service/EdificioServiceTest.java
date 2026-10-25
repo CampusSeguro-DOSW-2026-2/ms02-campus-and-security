@@ -181,4 +181,36 @@ class EdificioServiceTest {
         assertThatThrownBy(() -> edificioService.obtener(uuid(99)))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
+
+    @Test
+    void reactivar_edificioInactivo_loDejaActivo() {
+        Edificio inactivo = nuevoEdificio(uuid(1), "ED-1", "Bloque H");
+        inactivo.setEstado(Estado.INACTIVO);
+
+        when(edificioRepository.findById(uuid(1))).thenReturn(Optional.of(inactivo));
+        when(edificioRepository.save(any(Edificio.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(edificioService.reactivar(uuid(1)).estado()).isEqualTo(Estado.ACTIVO);
+    }
+
+    @Test
+    void reactivar_edificioYaActivo_seRechazaYNoGuarda() {
+        when(edificioRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(nuevoEdificio(uuid(1), "ED-1", "Bloque H")));
+
+        assertThatThrownBy(() -> edificioService.reactivar(uuid(1)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya está activo");
+
+        verify(edificioRepository, never()).save(any());
+    }
+
+    @Test
+    void reactivar_noExiste_lanzaExcepcion() {
+        when(edificioRepository.findById(uuid(99))).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> edificioService.reactivar(uuid(99)))
+                .isInstanceOf(EdificioNoEncontradoException.class);
+    }
 }
