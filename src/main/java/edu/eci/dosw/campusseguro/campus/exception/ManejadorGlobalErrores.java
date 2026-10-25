@@ -96,6 +96,14 @@ public class ManejadorGlobalErrores {
                 "El cuerpo de la solicitud es inválido o tiene un valor no permitido.", List.of(), request);
     }
 
+    @ExceptionHandler(ZonaCodigoDuplicadoException.class)
+    public ResponseEntity<ErrorResponse> zonaCodigoDuplicado(ZonaCodigoDuplicadoException e,
+                                                             HttpServletRequest request) {
+            List<ErrorResponse.CampoError> errores =
+            List.of(new ErrorResponse.CampoError("codigo", "Ya existe una zona segura con ese código."));
+        return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
+    }
+
     private ResponseEntity<ErrorResponse> respuesta(HttpStatus status, String codigo, String mensaje,
                                                     List<ErrorResponse.CampoError> errores,
                                                     HttpServletRequest request) {

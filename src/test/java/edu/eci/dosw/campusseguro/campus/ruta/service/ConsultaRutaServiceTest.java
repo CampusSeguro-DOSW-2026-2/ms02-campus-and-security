@@ -26,6 +26,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -193,6 +196,18 @@ class ConsultaRutaServiceTest {
         assertThatThrownBy(() -> service.consultar(edificioId, espacioId))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("no pertenece");
+    }
+
+    @Test
+    void consultar_fallaSiElEspacioNoEstaDisponible() {
+        edificio(true);
+        when(espacioGateway.buscarPorId(espacioId))
+                .thenReturn(Optional.of(new EspacioInfo(espacioId, edificioId, "Salón 101", false)));
+
+        assertThatThrownBy(() -> service.consultar(edificioId, espacioId))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("no está disponible");
+        verify(rutaRepository, never()).findByEspacioOrigenId(any());
     }
 
     @Test

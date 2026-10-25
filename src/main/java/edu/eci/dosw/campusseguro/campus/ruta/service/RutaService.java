@@ -45,8 +45,8 @@ public class RutaService {
         EspacioInfo espacio = espacioGateway.buscarPorId(request.espacioOrigenId())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "El espacio " + request.espacioOrigenId() + " no existe"));
-        if (!espacio.activo()) {
-            throw new ReglaNegocioException("El espacio '" + espacio.nombre() + "' está inactivo");
+        if (!espacio.disponible()) {
+            throw new ReglaNegocioException("El espacio '" + espacio.nombre() + "' no está disponible");
         }
 
         ZonaInfo zona = zonaGateway.buscarPorId(request.zonaSeguraDestinoId())
@@ -130,7 +130,7 @@ public class RutaService {
 
     private void validarOrigenYDestinoUtilizables(RutaEvacuacion ruta) {
         boolean espacioDisponible = espacioGateway.buscarPorId(ruta.getEspacioOrigenId())
-                .map(EspacioInfo::activo)
+                .map(EspacioInfo::disponible)
                 .orElse(false);
         if (!espacioDisponible) {
             throw new ReglaNegocioException("El espacio de origen no está disponible; la ruta solo puede quedar bloqueada");

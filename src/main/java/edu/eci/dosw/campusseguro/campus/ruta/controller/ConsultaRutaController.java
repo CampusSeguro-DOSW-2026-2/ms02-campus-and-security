@@ -31,11 +31,11 @@ public class ConsultaRutaController {
 
     @Operation(
             summary = "Ruta de un espacio",
-            description = "Cualquier rol. Devuelve la ruta con su estado o el aviso de que el espacio no tiene ruta."
+            description = "Cualquier rol. Devuelve la ruta con su estado y motivo, o el aviso de que el espacio no tiene ruta. 422 si el espacio está inactivo o no está disponible, o si su edificio está inactivo."
     )
     @ApiResponse(
             responseCode = "422",
-            description = "El espacio consultado está inactivo."
+            description = "El espacio está inactivo o no disponible, o el edificio está inactivo."
     )
     @GetMapping("/api/v1/spaces/{spaceId}/evacuation-route")
     public RutaConsultadaResponse porEspacio(
@@ -50,7 +50,7 @@ public class ConsultaRutaController {
 
     @Operation(
             summary = "Rutas de un edificio",
-            description = "Cualquier rol. Lista los espacios activos del edificio, cada uno con su ruta o el aviso de que no tiene. 422 si el edificio está inactivo."
+            description = "Cualquier rol. Lista los espacios activos y disponibles del edificio, cada uno con su ruta o el aviso de que no tiene. 422 si el edificio está inactivo."
     )
     @ApiResponse(
             responseCode = "422",

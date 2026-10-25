@@ -6,6 +6,7 @@ import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.ZonaSegura;
+import edu.eci.dosw.campusseguro.campus.exception.ZonaCodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaSeguraNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +23,22 @@ public class ZonaSeguraService {
 
     @Transactional
     public ZonaSeguraResponse crear(ZonaSeguraRequest request) {
+        String codigo = request.codigo().trim();
+        if (zonaSeguraRepository.existsByCodigo(codigo)) {
+            throw new ZonaCodigoDuplicadoException(codigo);
+        }
         ZonaSegura zona = new ZonaSegura();
         copiarDatos(zona, request);
         return aRespuesta(zonaSeguraRepository.save(zona));
-    }
+}
 
     @Transactional
     public ZonaSeguraResponse modificar(UUID id, ZonaSeguraRequest request) {
         ZonaSegura zona = buscar(id);
+        String codigo = request.codigo().trim();
+        if (zonaSeguraRepository.existsByCodigoAndIdNot(codigo, id)) {
+            throw new ZonaCodigoDuplicadoException(codigo);
+        }
         copiarDatos(zona, request);
         return aRespuesta(zonaSeguraRepository.save(zona));
     }
@@ -59,15 +68,15 @@ public class ZonaSeguraService {
     }
 
     private void copiarDatos(ZonaSegura zona, ZonaSeguraRequest request) {
+        zona.setCodigo(request.codigo().trim());
         zona.setNombre(request.nombre().trim());
         zona.setUbicacion(request.ubicacion().trim());
         zona.setDescripcion(request.descripcion().trim());
         zona.setCapacidad(request.capacidad());
     }
-
     private ZonaSeguraResponse aRespuesta(ZonaSegura z) {
         return new ZonaSeguraResponse(
-                z.getId(), z.getNombre(), z.getUbicacion(),
+                z.getId(), z.getCodigo(), z.getNombre(), z.getUbicacion(),
                 z.getDescripcion(), z.getCapacidad(), z.getEstado());
     }
 }

@@ -42,7 +42,7 @@ public class VerificadorRutasService implements VerificadorRutas {
     @Override
     public List<UUID> rutasActivasDeEdificio(UUID edificioId) {
         List<UUID> espacios = espacioGateway.listarPorEdificio(edificioId).stream()
-                .filter(EspacioInfo::activo)
+                .filter(EspacioInfo::disponible)
                 .map(EspacioInfo::id)
                 .toList();
         if (espacios.isEmpty()) {
