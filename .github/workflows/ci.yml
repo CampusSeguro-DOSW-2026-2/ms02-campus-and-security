@@ -81,7 +81,7 @@ jobs:
         run: |
           java -jar target/*.jar > app.log 2>&1 &
           for _ in $(seq 1 60); do
-            if curl -sf http://localhost:8080/actuator/health; then
+            if curl -sf http://localhost:8082/actuator/health; then
               grep -E "Successfully (applied|validated)|Schema .* is up to date" app.log
               exit 0
             fi

@@ -3,15 +3,21 @@ package edu.eci.dosw.campusseguro.campus.exception;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaDuplicadaException;
+import edu.eci.dosw.campusseguro.campus.config.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,8 +27,9 @@ import java.util.Map;
 @RestControllerAdvice
 public class ManejadorGlobalErrores {
 
-    private static final String CORRELATION_ID = "X-Correlation-ID";
+    static final String ERROR_INTERNO = "Ocurrió un error inesperado. Intente de nuevo más tarde.";
     private static final String DATOS_INVALIDOS = "Datos inválidos.";
+    private static final Logger log = LoggerFactory.getLogger(ManejadorGlobalErrores.class);
 
     @ExceptionHandler({EdificioNoEncontradoException.class,
             ZonaSeguraNoEncontradaException.class,
@@ -104,11 +111,36 @@ public class ManejadorGlobalErrores {
         return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> rutaInexistente(NoResourceFoundException e, HttpServletRequest request) {
+        return respuesta(HttpStatus.NOT_FOUND, "NO_ENCONTRADO", "El recurso solicitado no existe.", List.of(), request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> metodoNoPermitido(HttpRequestMethodNotSupportedException e,
+                                                           HttpServletRequest request) {
+        return respuesta(HttpStatus.METHOD_NOT_ALLOWED, "METODO_NO_PERMITIDO",
+                "El método " + e.getMethod() + " no está permitido en esta ruta.", List.of(), request);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> tipoDeContenido(HttpMediaTypeNotSupportedException e,
+                                                         HttpServletRequest request) {
+        return respuesta(HttpStatus.BAD_REQUEST, "VALIDACION",
+                "El tipo de contenido no es compatible; use application/json.", List.of(), request);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> errorInterno(Exception e, HttpServletRequest request) {
+        log.error("Error no controlado en {} {}", request.getMethod(), request.getRequestURI(), e);
+        return respuesta(HttpStatus.INTERNAL_SERVER_ERROR, "ERROR_INTERNO", ERROR_INTERNO, List.of(), request);
+    }
+
     private ResponseEntity<ErrorResponse> respuesta(HttpStatus status, String codigo, String mensaje,
                                                     List<ErrorResponse.CampoError> errores,
                                                     HttpServletRequest request) {
         ErrorResponse cuerpo = new ErrorResponse(status.value(), codigo, mensaje, errores,
-                request.getHeader(CORRELATION_ID));
+                CorrelationIdFilter.de(request));
         return ResponseEntity.status(status).body(cuerpo);
     }
 }

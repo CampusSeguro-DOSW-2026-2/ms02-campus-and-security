@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.config.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -13,8 +14,6 @@ import java.nio.charset.StandardCharsets;
 
 // Responde 401 y 403 con el mismo formato de error del resto del servicio (ErrorResponse).
 public class ManejadorErroresSeguridad implements AuthenticationEntryPoint, AccessDeniedHandler {
-
-    private static final String CORRELATION_ID = "X-Correlation-ID";
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
@@ -37,10 +36,7 @@ public class ManejadorErroresSeguridad implements AuthenticationEntryPoint, Acce
                 .append(",\"codigo\":\"").append(codigo).append('"')
                 .append(",\"mensaje\":\"").append(mensaje).append('"')
                 .append(",\"errores\":[]");
-        String correlationId = request.getHeader(CORRELATION_ID);
-        if (correlationId != null && !correlationId.isBlank()) {
-            json.append(",\"correlation_id\":\"").append(escapar(correlationId)).append('"');
-        }
+        json.append(",\"correlation_id\":\"").append(escapar(CorrelationIdFilter.de(request))).append('"');
         json.append('}');
 
         response.setStatus(status);
