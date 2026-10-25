@@ -49,7 +49,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Inactivar zona segura",
-        description = "Solo ADMIN. Cambia el estado a inactiva sin eliminarla."
+        description = "Solo ADMIN. Se rechaza con 422 si la zona es destino de rutas activas; deben bloquearse antes."
     )
     @PatchMapping("/{id}/deactivate")
     public ZonaSeguraResponse inactivar(@PathVariable UUID id) {
