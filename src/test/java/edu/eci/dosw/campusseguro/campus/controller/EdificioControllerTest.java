@@ -158,12 +158,22 @@ class EdificioControllerTest {
 
     @Test
     void listar_devuelveLosEdificios() throws Exception {
-        when(edificioService.listar())
+        when(edificioService.listar(false))
                 .thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get(BASE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].codigo").value("ED-1"));
+    }
+
+    @Test
+    void listar_conIncluirInactivos_pasaElFiltro() throws Exception {
+        when(edificioService.listar(true))
+                .thenReturn(List.of(respuesta(Estado.INACTIVO)));
+
+        mockMvc.perform(get(BASE).param("incluirInactivos", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].estado").value("INACTIVO"));
     }
 
     @Test

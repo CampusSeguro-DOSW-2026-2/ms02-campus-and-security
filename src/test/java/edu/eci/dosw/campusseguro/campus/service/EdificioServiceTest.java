@@ -158,12 +158,25 @@ class EdificioServiceTest {
     }
 
     @Test
-    void listar_devuelveTodosLosEdificios() {
+    void listar_porDefectoDevuelveSoloLosActivos() {
+        Edificio inactivo = nuevoEdificio(uuid(2), "ED-2", "Bloque B");
+        inactivo.setEstado(Estado.INACTIVO);
         when(edificioRepository.findAll()).thenReturn(List.of(
-                nuevoEdificio(uuid(1), "ED-1", "Bloque H"),
-                nuevoEdificio(uuid(2), "ED-2", "Bloque B")));
+                nuevoEdificio(uuid(1), "ED-1", "Bloque H"), inactivo));
 
-        assertThat(edificioService.listar()).hasSize(2);
+        assertThat(edificioService.listar(false))
+                .extracting(EdificioResponse::codigo)
+                .containsExactly("ED-1");
+    }
+
+    @Test
+    void listar_conIncluirInactivos_devuelveTodos() {
+        Edificio inactivo = nuevoEdificio(uuid(2), "ED-2", "Bloque B");
+        inactivo.setEstado(Estado.INACTIVO);
+        when(edificioRepository.findAll()).thenReturn(List.of(
+                nuevoEdificio(uuid(1), "ED-1", "Bloque H"), inactivo));
+
+        assertThat(edificioService.listar(true)).hasSize(2);
     }
 
     @Test

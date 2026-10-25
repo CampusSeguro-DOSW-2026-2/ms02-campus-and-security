@@ -66,11 +66,14 @@ public class EdificioController {
         return edificioService.reactivar(id);
     }
 
-    @Operation(summary = "Listar edificios", description = "Cualquier rol.")
+    @Operation(
+            summary = "Listar edificios",
+            description = "Cualquier rol. Por defecto solo los activos; incluirInactivos=true devuelve todos.")
     @Permiso(Permisos.CAMPUS_READ)
     @GetMapping
-    public List<EdificioResponse> listar() {
-        return edificioService.listar();
+    public List<EdificioResponse> listar(
+            @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return edificioService.listar(incluirInactivos);
     }
 
     @Operation(summary = "Consultar edificio", description = "Cualquier rol.")
