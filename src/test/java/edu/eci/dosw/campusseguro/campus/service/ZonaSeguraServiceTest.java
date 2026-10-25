@@ -1,3 +1,4 @@
+
 package edu.eci.dosw.campusseguro.campus.service;
 
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
@@ -8,14 +9,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
+import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.ZonaSegura;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaCodigoDuplicadoException;
+import edu.eci.dosw.campusseguro.campus.exception.ZonaSeguraNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
+import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,11 +35,15 @@ class ZonaSeguraServiceTest {
     @Mock
     private ZonaSeguraRepository zonaSeguraRepository;
 
+    @Mock
+    private VerificadorRutas verificadorRutas;
+
     @InjectMocks
     private ZonaSeguraService zonaSeguraService;
 
     private ZonaSeguraRequest request(String codigo) {
-        return new ZonaSeguraRequest(codigo, "Punto H", "Frente al bloque H", "Zona abierta", 200);
+        return new ZonaSeguraRequest(
+                codigo, "Punto H", "Frente al bloque H", "Zona abierta", 200);
     }
 
     @Test
@@ -44,7 +55,8 @@ class ZonaSeguraServiceTest {
             return z;
         });
 
-        ZonaSeguraResponse respuesta = zonaSeguraService.crear(request(" MP-H-01 "));
+        ZonaSeguraResponse respuesta =
+                zonaSeguraService.crear(request(" MP-H-01 "));
 
         assertThat(respuesta.codigo()).isEqualTo("MP-H-01");
     }
@@ -53,7 +65,8 @@ class ZonaSeguraServiceTest {
     void crear_conCodigoDuplicado_lanzaExcepcionYNoGuarda() {
         when(zonaSeguraRepository.existsByCodigo("MP-H-01")).thenReturn(true);
 
-        assertThatThrownBy(() -> zonaSeguraService.crear(request("MP-H-01")))
+        assertThatThrownBy(() ->
+                zonaSeguraService.crear(request("MP-H-01")))
                 .isInstanceOf(ZonaCodigoDuplicadoException.class);
 
         verify(zonaSeguraRepository, never()).save(any());
@@ -62,12 +75,61 @@ class ZonaSeguraServiceTest {
     @Test
     void modificar_conCodigoDeOtraZona_lanzaExcepcion() {
         UUID id = uuid(2);
-        when(zonaSeguraRepository.findById(id)).thenReturn(Optional.of(new ZonaSegura()));
-        when(zonaSeguraRepository.existsByCodigoAndIdNot("MP-H-01", id)).thenReturn(true);
 
-        assertThatThrownBy(() -> zonaSeguraService.modificar(id, request("MP-H-01")))
+        when(zonaSeguraRepository.findById(id))
+                .thenReturn(Optional.of(new ZonaSegura()));
+        when(zonaSeguraRepository.existsByCodigoAndIdNot("MP-H-01", id))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                zonaSeguraService.modificar(id, request("MP-H-01")))
                 .isInstanceOf(ZonaCodigoDuplicadoException.class);
 
         verify(zonaSeguraRepository, never()).save(any());
+    }
+
+    @Test
+    void inactivar_sinRutasActivas_cambiaElEstadoAInactivo() {
+        ZonaSegura zona = new ZonaSegura();
+        zona.setId(uuid(1));
+
+        when(zonaSeguraRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(zona));
+        when(verificadorRutas.rutasActivasDeZonaSegura(uuid(1)))
+                .thenReturn(List.of());
+        when(zonaSeguraRepository.save(any(ZonaSegura.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        ZonaSeguraResponse respuesta = zonaSeguraService.inactivar(uuid(1));
+
+        assertThat(respuesta.estado()).isEqualTo(Estado.INACTIVO);
+        verify(verificadorRutas).rutasActivasDeZonaSegura(uuid(1));
+    }
+
+    @Test
+    void inactivar_conRutasActivas_lanzaReglaDeNegocioYNoGuarda() {
+        UUID ruta = uuid(50);
+        ZonaSegura zona = new ZonaSegura();
+        zona.setId(uuid(1));
+
+        when(zonaSeguraRepository.findById(uuid(1)))
+                .thenReturn(Optional.of(zona));
+        when(verificadorRutas.rutasActivasDeZonaSegura(uuid(1)))
+                .thenReturn(List.of(ruta));
+
+        assertThatThrownBy(() -> zonaSeguraService.inactivar(uuid(1)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining(ruta.toString());
+
+        verify(zonaSeguraRepository, never()).save(any());
+    }
+
+    @Test
+    void inactivar_noExiste_lanzaExcepcion() {
+        when(zonaSeguraRepository.findById(uuid(99)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> zonaSeguraService.inactivar(uuid(99)))
+                .isInstanceOf(ZonaSeguraNoEncontradaException.class);
     }
 }
