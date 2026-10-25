@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.PisoRequest;
@@ -25,6 +27,7 @@ public class PisoController {
     private final PisoService pisoService;
 
     @Operation(summary = "Registrar piso", description = "Solo ADMIN. El edificio debe estar activo y el número no se puede repetir en el edificio.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PostMapping("/buildings/{edificioId}/floors")
     public ResponseEntity<PisoResponse> crear(@PathVariable UUID edificioId,
                                               @Valid @RequestBody PisoRequest request) {
@@ -32,6 +35,7 @@ public class PisoController {
     }
 
     @Operation(summary = "Listar pisos de un edificio", description = "Cualquier rol. Ordenados por número. Por defecto solo los activos; incluirInactivos=true devuelve todos.")
+    @Permiso(Permisos.CAMPUS_READ)
     @GetMapping("/buildings/{edificioId}/floors")
     public List<PisoResponse> listarPorEdificio(@PathVariable UUID edificioId,
                                                 @RequestParam(defaultValue = "false") boolean incluirInactivos) {
@@ -39,12 +43,14 @@ public class PisoController {
     }
 
     @Operation(summary = "Consultar piso", description = "Cualquier rol.")
+    @Permiso(Permisos.CAMPUS_READ)
     @GetMapping("/floors/{id}")
     public PisoResponse obtener(@PathVariable UUID id) {
         return pisoService.obtener(id);
     }
 
     @Operation(summary = "Modificar piso", description = "Solo ADMIN. Cambia número y nombre; el número no se puede repetir en el edificio.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PutMapping("/floors/{id}")
     public PisoResponse modificar(@PathVariable UUID id,
                                   @Valid @RequestBody PisoRequest request) {
@@ -52,12 +58,14 @@ public class PisoController {
     }
 
     @Operation(summary = "Inactivar piso", description = "Solo ADMIN. Se rechaza con 422 si el piso tiene espacios activos.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PatchMapping("/floors/{id}/deactivate")
     public PisoResponse inactivar(@PathVariable UUID id) {
         return pisoService.inactivar(id);
     }
 
     @Operation(summary = "Reactivar piso", description = "Solo ADMIN. El edificio debe estar activo; sus espacios conservan su estado.")
+    @Permiso(Permisos.BUILDING_WRITE)
     @PatchMapping("/floors/{id}/reactivate")
     public PisoResponse reactivar(@PathVariable UUID id) {
         return pisoService.reactivar(id);

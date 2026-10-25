@@ -2,11 +2,15 @@ package edu.eci.dosw.campusseguro.campus.security;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 // Que permisos de MS02 tiene cada rol (x-roles del swagger). Un usuario con varios roles tiene la union.
 public final class RolPermisos {
+
+    public static final List<String> ROLES = List.of("ESTUDIANTE", "PROFESOR", "ADMINISTRATIVO", "BRIGADISTA",
+            "COORDINADOR", "ORGANIZADOR", "ADMIN", "AUDITOR");
 
     private static final Set<String> LECTURA = Set.of(Permisos.CAMPUS_READ, Permisos.ROUTE_READ);
 
@@ -30,5 +34,11 @@ public final class RolPermisos {
             permisos.addAll(POR_ROL.getOrDefault(rol, Set.of()));
         }
         return permisos;
+    }
+
+    public static List<String> rolesCon(String permiso) {
+        return ROLES.stream()
+                .filter(rol -> POR_ROL.getOrDefault(rol, Set.of()).contains(permiso))
+                .toList();
     }
 }

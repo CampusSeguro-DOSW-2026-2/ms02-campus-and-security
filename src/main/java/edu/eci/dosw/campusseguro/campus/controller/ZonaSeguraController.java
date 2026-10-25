@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +31,7 @@ public class ZonaSeguraController {
         summary = "Registrar zona segura",
         description = "Solo ADMIN. La capacidad debe ser mayor que cero. La zona queda activa."
     )
+    @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PostMapping
     public ResponseEntity<ZonaSeguraResponse> crear(
             @Valid @RequestBody ZonaSeguraRequest request) {
@@ -40,6 +43,7 @@ public class ZonaSeguraController {
         summary = "Modificar zona segura",
         description = "Solo ADMIN."
     )
+    @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PutMapping("/{id}")
     public ZonaSeguraResponse modificar(
             @PathVariable UUID id,
@@ -51,6 +55,7 @@ public class ZonaSeguraController {
         summary = "Inactivar zona segura",
         description = "Solo ADMIN. Se rechaza con 422 si la zona es destino de rutas activas; deben bloquearse antes."
     )
+    @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PatchMapping("/{id}/deactivate")
     public ZonaSeguraResponse inactivar(@PathVariable UUID id) {
         return zonaSeguraService.inactivar(id);
@@ -60,6 +65,7 @@ public class ZonaSeguraController {
         summary = "Reactivar zona segura",
         description = "Solo ADMIN. Se rechaza con 422 si la zona ya está activa."
     )
+    @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PatchMapping("/{id}/reactivate")
     public ZonaSeguraResponse reactivar(@PathVariable UUID id) {
         return zonaSeguraService.reactivar(id);
@@ -69,6 +75,7 @@ public class ZonaSeguraController {
         summary = "Listar zonas seguras",
         description = "Cualquier rol."
     )
+    @Permiso(Permisos.CAMPUS_READ)
     @GetMapping
     public List<ZonaSeguraResponse> listar() {
         return zonaSeguraService.listar();
@@ -78,6 +85,7 @@ public class ZonaSeguraController {
         summary = "Consultar zona segura",
         description = "Cualquier rol."
     )
+    @Permiso(Permisos.CAMPUS_READ)
     @GetMapping("/{id}")
     public ZonaSeguraResponse obtener(@PathVariable UUID id) {
         return zonaSeguraService.obtener(id);

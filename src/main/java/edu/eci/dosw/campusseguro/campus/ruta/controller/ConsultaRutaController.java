@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.controller;
 
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +39,7 @@ public class ConsultaRutaController {
             responseCode = "422",
             description = "El espacio está inactivo o no disponible, o el edificio está inactivo."
     )
+    @Permiso(Permisos.ROUTE_READ)
     @GetMapping("/api/v1/spaces/{spaceId}/evacuation-route")
     public RutaConsultadaResponse porEspacio(
             @Parameter(
@@ -56,6 +59,7 @@ public class ConsultaRutaController {
             responseCode = "422",
             description = "El edificio consultado está inactivo."
     )
+    @Permiso(Permisos.ROUTE_READ)
     @GetMapping("/api/v1/buildings/{buildingId}/evacuation-routes")
     public List<RutaConsultadaResponse> porEdificio(
             @Parameter(
