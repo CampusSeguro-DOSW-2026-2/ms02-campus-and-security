@@ -42,7 +42,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Modificar zona segura",
-        description = "Solo ADMIN. El código debe seguir siendo único."
+        description = "Solo ADMIN. Cambia nombre, ubicación, descripción y capacidad. El código no se puede modificar."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PutMapping("/{id}")
