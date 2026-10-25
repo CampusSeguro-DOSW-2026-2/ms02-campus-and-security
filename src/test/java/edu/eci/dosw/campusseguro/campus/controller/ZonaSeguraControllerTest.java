@@ -68,7 +68,8 @@ class ZonaSeguraControllerTest {
         when(zonaSeguraService.crear(any(ZonaSeguraRequest.class)))
                 .thenReturn(respuesta(Estado.ACTIVO));
 
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json("MP-H-01", "Punto H", 200)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.codigo").value("MP-H-01"))
@@ -77,7 +78,8 @@ class ZonaSeguraControllerTest {
 
     @Test
     void crear_sinDatosObligatorios_devuelve400IndicandoLosCampos() throws Exception {
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"codigo\":\"\",\"nombre\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'codigo')]").exists())
@@ -87,7 +89,8 @@ class ZonaSeguraControllerTest {
 
     @Test
     void crear_conCapacidadCero_devuelve400() throws Exception {
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json("MP-H-01", "Punto H", 0)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'capacidad')]").exists());
@@ -98,7 +101,8 @@ class ZonaSeguraControllerTest {
         when(zonaSeguraService.crear(any(ZonaSeguraRequest.class)))
                 .thenThrow(new ZonaCodigoDuplicadoException("MP-H-01"));
 
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json("MP-H-01", "Punto H", 200)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errores[0].campo").value("codigo"));
@@ -129,6 +133,15 @@ class ZonaSeguraControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonModificar("Punto H", 200)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void modificar_conCapacidadCero_devuelve400() throws Exception {
+        mockMvc.perform(put(BASE + "/{id}", uuid(1))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonModificar("Punto H", 0)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'capacidad')]").exists());
     }
 
     // ---------- inactivar ----------
