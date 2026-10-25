@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -128,6 +129,26 @@ public class ManejadorGlobalErrores {
                                                          HttpServletRequest request) {
         return respuesta(HttpStatus.BAD_REQUEST, "VALIDACION",
                 "El tipo de contenido no es compatible; use application/json.", List.of(), request);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> errorEstadoHttp(
+            ResponseStatusException e,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
+
+        String codigo = status == HttpStatus.NOT_FOUND
+                ? "NO_ENCONTRADO"
+                : status.is4xxClientError()
+                    ? "SOLICITUD_INVALIDA"
+                    : "ERROR_INTERNO";
+
+        String mensaje = e.getReason() != null
+                ? e.getReason()
+                : status.getReasonPhrase();
+
+        return respuesta(status, codigo, mensaje, List.of(), request);
     }
 
     @ExceptionHandler(Exception.class)
