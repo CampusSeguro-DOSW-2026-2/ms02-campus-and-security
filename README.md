@@ -41,7 +41,7 @@ Espacio (1) ──< (N) RutaEvacuacion >── (N) ZonaSegura (destino)
 - **Piso**: id, edificioId, nivel, descripción
 - **Espacio**: id, pisoId, tipo (SALON/LABORATORIO/AUDITORIO/OFICINA/COMUN), nombre, estado
 - **ZonaSegura**: id, nombre, descripción, capacidadAproximada, edificioId (opcional, puede ser exterior), estado (DISPONIBLE/INACTIVA)
-- **RutaEvacuacion**: id, espacioOrigenId, zonaSeguraDestinoId, descripción, estado (DISPONIBLE/BLOQUEADA/RESTRINGIDA), rutaAlternativaId (autorreferencia, nullable)
+- **RutaEvacuacion**: id, espacioOrigenId, zonaSeguraDestinoId, descripción, estado (DISPONIBLE/BLOQUEADA/RESTRINGIDA)
 
 **Regla de dominio:** `Edificio`, `Espacio` y `ZonaSegura` no se eliminan (hard delete) si tienen una `RutaEvacuacion` con estado distinto de inactiva referenciándolos — solo se inactivan.
 
