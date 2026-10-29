@@ -1,0 +1,85 @@
+
+package edu.eci.dosw.campusseguro.campus.controller;
+
+import edu.eci.dosw.campusseguro.campus.security.Permiso;
+import edu.eci.dosw.campusseguro.campus.security.Permisos;
+import java.util.List;
+import java.util.UUID;
+
+import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
+import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
+import edu.eci.dosw.campusseguro.campus.dto.ModificarEdificioRequest;
+import edu.eci.dosw.campusseguro.campus.service.EdificioService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@Tag(name = "Edificios", description = "RF-01. Gestión de edificios del campus.")
+@RestController
+@RequestMapping("/api/v1/buildings")
+@RequiredArgsConstructor
+public class EdificioController {
+
+    private final EdificioService edificioService;
+
+    @Operation(
+            summary = "Crear edificio",
+            description = "Solo ADMIN. El código es único. El edificio queda activo.")
+    @Permiso(Permisos.BUILDING_WRITE)
+    @PostMapping
+    public ResponseEntity<EdificioResponse> crear(
+            @Valid @RequestBody EdificioRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(edificioService.crear(request));
+    }
+
+    @Operation(
+            summary = "Modificar edificio",
+            description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
+    @Permiso(Permisos.BUILDING_WRITE)
+    @PutMapping("/{id}")
+    public EdificioResponse modificar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ModificarEdificioRequest request) {
+        return edificioService.modificar(id, request);
+    }
+
+    @Operation(
+            summary = "Inactivar edificio",
+            description = "Solo ADMIN. Se rechaza con 422 si el edificio tiene rutas activas; deben bloquearse antes.")
+    @Permiso(Permisos.BUILDING_WRITE)
+    @PatchMapping("/{id}/deactivate")
+    public EdificioResponse inactivar(@PathVariable UUID id) {
+        return edificioService.inactivar(id);
+    }
+
+    @Operation(
+            summary = "Reactivar edificio",
+            description = "Solo ADMIN. Sus pisos y espacios conservan su estado; se reactivan por separado.")
+    @Permiso(Permisos.BUILDING_WRITE)
+    @PatchMapping("/{id}/reactivate")
+    public EdificioResponse reactivar(@PathVariable UUID id) {
+        return edificioService.reactivar(id);
+    }
+
+    @Operation(
+            summary = "Listar edificios",
+            description = "Cualquier rol. Por defecto solo los activos; incluirInactivos=true devuelve todos.")
+    @Permiso(Permisos.CAMPUS_READ)
+    @GetMapping
+    public List<EdificioResponse> listar(
+            @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return edificioService.listar(incluirInactivos);
+    }
+
+    @Operation(summary = "Consultar edificio", description = "Cualquier rol.")
+    @Permiso(Permisos.CAMPUS_READ)
+    @GetMapping("/{id}")
+    public EdificioResponse obtener(@PathVariable UUID id) {
+        return edificioService.obtener(id);
+    }
+}
