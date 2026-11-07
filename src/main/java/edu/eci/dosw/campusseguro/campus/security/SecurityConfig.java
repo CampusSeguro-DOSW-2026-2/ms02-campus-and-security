@@ -58,6 +58,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/*/floors", "/api/v1/floors/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
+                        // Campus y zonas abiertas (ADR-003): lectura para cualquier rol, escritura solo ADMIN.
+                        // Van antes de /buildings/** y /safe-zones/** y no se solapan con ellos.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/campuses", "/api/v1/campuses/*",
+                                "/api/v1/campuses/*/open-zones", "/api/v1/open-zones/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/campuses", "/api/v1/campuses/**", "/api/v1/open-zones/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Edificios y zonas seguras: lectura para cualquier rol, escritura solo ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings", "/api/v1/buildings/*",
                                 "/api/v1/safe-zones", "/api/v1/safe-zones/*").hasAuthority(Permisos.CAMPUS_READ)
