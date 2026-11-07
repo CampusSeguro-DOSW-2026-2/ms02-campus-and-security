@@ -10,10 +10,10 @@ El administrador podrá crear, modificar e inactivar edificios.
 El administrador podrá registrar pisos asociados a un edificio.
 
 **RF-03 · Gestionar espacios**
-El administrador podrá registrar, modificar e inactivar espacios (salones, laboratorios, auditorios, oficinas y espacios comunes) asociados a un piso de un edificio. 
+El administrador podrá registrar, modificar e inactivar espacios (salones, laboratorios, auditorios, oficinas y espacios comunes) asociados a un piso de un edificio.
 
 **RF-04 · Gestionar zonas seguras / puntos de encuentro**
-El administrador podrá egistrar, modificar e inactivar zonas seguras, indicando código, nombre, ubicación, descripción y capacidad aproximada. 
+El administrador podrá registrar, modificar e inactivar zonas seguras, indicando código, nombre, ubicación, descripción y capacidad aproximada.
 
 **RF-05 · Gestionar rutas de evacuación**
 El administrador podrá asociar espacios con rutas recomendadas y definir su estado (disponible, bloqueada, restringida).
@@ -30,24 +30,62 @@ El administrador podrá registrar, modificar e inactivar recomendaciones prevent
 **RF-09 · Consultar catálogo del campus**
 Los usuarios y otros servicios podrán consultar los edificios, pisos, espacios y zonas seguras del campus con sus identificadores y estado.
 
+## Modelo de datos
 
+### Estado actual (develop)
+
+```mermaid
+erDiagram
+    EDIFICIO ||--o{ PISO : tiene
+    PISO ||--o{ ESPACIO : contiene
+    EDIFICIO ||--o{ ESPACIO : "pertenece a"
+    ESPACIO ||--o| RUTA_EVACUACION : "origen (una por espacio)"
+    ZONA_SEGURA ||--o{ RUTA_EVACUACION : destino
+    EDIFICIO ||--o{ RECOMENDACION_PREVENTIVA : "ambito EDIFICIO"
 ```
-Edificio (1) ──< (N) Piso (1) ──< (N) Espacio
-Edificio (1) ──< (N) ZonaSegura
-Espacio (1) ──< (N) RutaEvacuacion >── (N) ZonaSegura (destino)
+
+- **Edificio**: id, codigo (único), nombre, descripcion, estado (ACTIVO/INACTIVO)
+- **Piso**: id, edificioId, numero (puede ser negativo para sótanos), nombre, estado. Único por (edificio, número)
+- **Espacio**: id, edificioId, pisoId, codigo (único por edificio), nombre, tipo (SALON/LABORATORIO/AUDITORIO/OFICINA/ESPACIO_COMUN), estado
+- **ZonaSegura**: id, codigo (fijo, no se puede cambiar), nombre, ubicacion, descripcion, capacidad, estado
+- **RutaEvacuacion**: id, espacioOrigenId (único), zonaSeguraDestinoId, descripcion, estado (DISPONIBLE/BLOQUEADA/RESTRINGIDA), motivo (obligatorio si no está disponible)
+- **RecomendacionPreventiva**: ambito (EDIFICIO o TIPO_ESPACIO), edificioId o tipoEspacio, titulo, recomendacion, estado
+
+**Regla de dominio actual:** `Edificio`, `Espacio` y `ZonaSegura` no se eliminan (hard delete) si tienen una `RutaEvacuacion` con estado distinto de inactiva referenciándolos: solo se inactivan.
+
+### Modelo objetivo (en construcción, ver ADR-003)
+
+```mermaid
+erDiagram
+    CAMPUS ||--o{ EDIFICIO : contiene
+    CAMPUS ||--o{ ZONA_ABIERTA : contiene
+    EDIFICIO ||--o{ PISO : tiene
+    PISO ||--o{ ESPACIO : contiene
+    EDIFICIO ||--o{ ESCALERA : tiene
+    ESCALERA }o--o{ PISO : conecta
+    EDIFICIO ||--o{ SALIDA : tiene
+    PISO ||--o{ SALIDA : "sale desde"
+    ZONA_ABIERTA ||--o{ ZONA_SEGURA : ubica
+    SALIDA ||--o{ RUTA_EVACUACION : origen
+    ZONA_SEGURA ||--o{ RUTA_EVACUACION : destino
+    IMAGEN }o--|| EDIFICIO : "foto de"
+    IMAGEN }o--|| ESPACIO : "foto de"
+    IMAGEN }o--|| SALIDA : "foto de"
+    IMAGEN }o--|| ZONA_SEGURA : "foto de"
 ```
 
-- **Edificio**: id, nombre, código, estado (ACTIVO/INACTIVO)
-- **Piso**: id, edificioId, nivel, descripción
-- **Espacio**: id, pisoId, tipo (SALON/LABORATORIO/AUDITORIO/OFICINA/COMUN), nombre, estado
-- **ZonaSegura**: id, nombre, descripción, capacidadAproximada, edificioId (opcional, puede ser exterior), estado (DISPONIBLE/INACTIVA)
-- **RutaEvacuacion**: id, espacioOrigenId, zonaSeguraDestinoId, descripción, estado (DISPONIBLE/BLOQUEADA/RESTRINGIDA)
+**Cómo funciona la evacuación**
+1. **Dentro del edificio:** el sistema identifica edificio y piso y recomienda una escalera disponible hasta el piso de salida. No hay ruta salón → escalera ni coordenadas interiores.
+2. **Fuera del edificio:** la ruta va de la salida exterior a una zona segura y se calcula con OpenStreetMap (servicio de ruteo peatonal) detrás de la abstracción `ProveedorNavegacion`.
 
-**Regla de dominio:** `Edificio`, `Espacio` y `ZonaSegura` no se eliminan (hard delete) si tienen una `RutaEvacuacion` con estado distinto de inactiva referenciándolos — solo se inactivan.
+**Reglas de dominio del modelo objetivo**
+- `Edificio`, `Piso`, `Espacio`, `Escalera`, `Salida` y `ZonaSegura` no se eliminan: se inactivan.
+- Una escalera bloqueada o fuera de servicio nunca se recomienda.
+- Una zona segura sin coordenadas no puede ser destino de una ruta exterior.
+- Solo llevan coordenadas los elementos exteriores: salidas, zonas seguras y zonas abiertas que participen en la navegación.
+- No existe la entidad `PuntoEncuentro`: es una `ZonaSegura` marcada como punto de encuentro.
+- Los QR se generan automáticamente a partir del UUID del elemento; la consulta pública es de solo lectura.
+- MS02 no maneja asistencia ni control de evacuados (eso es de MS04).
 
 ## Contratos API
 https://editor.swagger.io/
-
-
-
-
