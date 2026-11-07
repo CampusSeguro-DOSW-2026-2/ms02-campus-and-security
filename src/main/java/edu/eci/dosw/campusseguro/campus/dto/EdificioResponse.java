@@ -9,6 +9,7 @@ public record EdificioResponse(
         String codigo,
         String nombre,
         String descripcion,
-        Estado estado
+        Estado estado,
+        UUID campusId
 ) {
 }
