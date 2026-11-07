@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.dto;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
@@ -11,6 +12,10 @@ public record ZonaSeguraResponse(
         String ubicacion,
         String descripcion,
         Integer capacidad,
-        Estado estado
+        Estado estado,
+        BigDecimal latitud,
+        BigDecimal longitud,
+        UUID zonaAbiertaId,
+        boolean puntoEncuentro
 ) {
 }
