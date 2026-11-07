@@ -45,7 +45,7 @@ class EdificioControllerTest {
 
     private EdificioResponse respuesta(Estado estado) {
         return new EdificioResponse(
-                uuid(1), "ED-1", "Bloque H", "Descripción", estado);
+                uuid(1), "ED-1", "Bloque H", "Descripción", estado, null);
     }
 
     private String json(String codigo, String nombre) {

@@ -16,10 +16,13 @@ import static org.mockito.Mockito.when;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ModificarEdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
+import edu.eci.dosw.campusseguro.campus.entity.Campus;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
+import edu.eci.dosw.campusseguro.campus.exception.CampusNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
+import edu.eci.dosw.campusseguro.campus.repository.CampusRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
@@ -38,6 +41,9 @@ class EdificioServiceTest {
 
     @Mock
     private VerificadorRutas verificadorRutas;
+
+    @Mock
+    private CampusRepository campusRepository;
 
     @InjectMocks
     private EdificioService edificioService;
@@ -60,7 +66,7 @@ class EdificioServiceTest {
         });
 
         EdificioResponse respuesta = edificioService.crear(
-                new EdificioRequest(" ED-1 ", " Bloque H ", "Descripción"));
+                new EdificioRequest(" ED-1 ", " Bloque H ", "Descripción", null));
 
         assertThat(respuesta.id()).isEqualTo(uuid(1));
         assertThat(respuesta.codigo()).isEqualTo("ED-1");
@@ -73,7 +79,7 @@ class EdificioServiceTest {
         when(edificioRepository.existsByCodigo("ED-1")).thenReturn(true);
 
         assertThatThrownBy(() -> edificioService.crear(
-                new EdificioRequest("ED-1", "Bloque H", null)))
+                new EdificioRequest("ED-1", "Bloque H", null, null)))
                 .isInstanceOf(CodigoDuplicadoException.class);
 
         verify(edificioRepository, never()).save(any());
@@ -87,7 +93,7 @@ class EdificioServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
 
         EdificioResponse respuesta = edificioService.modificar(
-                uuid(1), new ModificarEdificioRequest("Nuevo", "Otra descripción"));
+                uuid(1), new ModificarEdificioRequest("Nuevo", "Otra descripción", null));
 
         assertThat(respuesta.codigo()).isEqualTo("ED-1");
         assertThat(respuesta.nombre()).isEqualTo("Nuevo");
@@ -103,7 +109,7 @@ class EdificioServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
 
         EdificioResponse respuesta = edificioService.modificar(
-                id, new ModificarEdificioRequest(" Bloque H nuevo ", "Otra descripción"));
+                id, new ModificarEdificioRequest(" Bloque H nuevo ", "Otra descripción", null));
 
         assertThat(respuesta.codigo()).isEqualTo("ED-1");
         assertThat(respuesta.nombre()).isEqualTo("Bloque H nuevo");
@@ -114,7 +120,7 @@ class EdificioServiceTest {
         when(edificioRepository.findById(uuid(99))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> edificioService.modificar(
-                uuid(99), new ModificarEdificioRequest("Nuevo", null)))
+                uuid(99), new ModificarEdificioRequest("Nuevo", null, null)))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 
@@ -225,5 +231,80 @@ class EdificioServiceTest {
 
         assertThatThrownBy(() -> edificioService.reactivar(uuid(99)))
                 .isInstanceOf(EdificioNoEncontradoException.class);
+    }
+
+    private Campus nuevoCampus(UUID id, Estado estado) {
+        Campus c = new Campus();
+        c.setId(id);
+        c.setNombre("Campus principal");
+        c.setEstado(estado);
+        return c;
+    }
+
+    @Test
+    void crear_conCampusActivo_guardaElCampusDelEdificio() {
+        when(edificioRepository.existsByCodigo("ED-1")).thenReturn(false);
+        when(campusRepository.findById(uuid(10)))
+                .thenReturn(Optional.of(nuevoCampus(uuid(10), Estado.ACTIVO)));
+        when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EdificioResponse respuesta = edificioService.crear(
+                new EdificioRequest("ED-1", "Bloque H", null, uuid(10)));
+
+        assertThat(respuesta.campusId()).isEqualTo(uuid(10));
+    }
+
+    @Test
+    void crear_campusInexistente_lanzaExcepcionYNoGuarda() {
+        when(edificioRepository.existsByCodigo("ED-1")).thenReturn(false);
+        when(campusRepository.findById(uuid(99))).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> edificioService.crear(
+                new EdificioRequest("ED-1", "Bloque H", null, uuid(99))))
+                .isInstanceOf(CampusNoEncontradoException.class);
+
+        verify(edificioRepository, never()).save(any());
+    }
+
+    @Test
+    void crear_campusInactivo_lanzaReglaDeNegocioYNoGuarda() {
+        when(edificioRepository.existsByCodigo("ED-1")).thenReturn(false);
+        when(campusRepository.findById(uuid(10)))
+                .thenReturn(Optional.of(nuevoCampus(uuid(10), Estado.INACTIVO)));
+
+        assertThatThrownBy(() -> edificioService.crear(
+                new EdificioRequest("ED-1", "Bloque H", null, uuid(10))))
+                .isInstanceOf(ReglaNegocioException.class);
+
+        verify(edificioRepository, never()).save(any());
+    }
+
+    @Test
+    void modificar_conCampusNuevo_cambiaElCampus() {
+        Edificio existente = nuevoEdificio(uuid(1), "ED-1", "Bloque H");
+        existente.setCampusId(uuid(10));
+        when(edificioRepository.findById(uuid(1))).thenReturn(Optional.of(existente));
+        when(campusRepository.findById(uuid(11)))
+                .thenReturn(Optional.of(nuevoCampus(uuid(11), Estado.ACTIVO)));
+        when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EdificioResponse respuesta = edificioService.modificar(
+                uuid(1), new ModificarEdificioRequest("Bloque H", null, uuid(11)));
+
+        assertThat(respuesta.campusId()).isEqualTo(uuid(11));
+    }
+
+    @Test
+    void modificar_sinCampus_conservaElCampusActual() {
+        Edificio existente = nuevoEdificio(uuid(1), "ED-1", "Bloque H");
+        existente.setCampusId(uuid(10));
+        when(edificioRepository.findById(uuid(1))).thenReturn(Optional.of(existente));
+        when(edificioRepository.save(any(Edificio.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EdificioResponse respuesta = edificioService.modificar(
+                uuid(1), new ModificarEdificioRequest("Bloque H", null, null));
+
+        assertThat(respuesta.campusId()).isEqualTo(uuid(10));
+        verify(campusRepository, never()).findById(any());
     }
 }
