@@ -36,6 +36,8 @@ public class ManejadorGlobalErrores {
             ZonaSeguraNoEncontradaException.class,
             PisoNoEncontradoException.class,
             EspacioNoEncontradoException.class,
+            CampusNoEncontradoException.class,
+            ZonaAbiertaNoEncontradaException.class,
             RecursoNoEncontradoException.class})
     public ResponseEntity<ErrorResponse> noEncontrado(RuntimeException e, HttpServletRequest request) {
         return respuesta(HttpStatus.NOT_FOUND, "NO_ENCONTRADO", e.getMessage(), List.of(), request);

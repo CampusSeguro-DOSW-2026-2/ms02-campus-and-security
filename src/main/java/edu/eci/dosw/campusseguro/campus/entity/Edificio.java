@@ -29,6 +29,10 @@ public class Edificio {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    // Nullable: los edificios pueden registrarse sin campus (ADR-003).
+    @Column(name = "campus_id")
+    private UUID campusId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Estado estado = Estado.ACTIVO;
