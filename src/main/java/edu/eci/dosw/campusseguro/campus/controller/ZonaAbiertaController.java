@@ -63,7 +63,7 @@ public class ZonaAbiertaController {
         return zonaAbiertaService.modificar(id, request);
     }
 
-    @Operation(summary = "Inactivar zona abierta", description = "Solo ADMIN.")
+    @Operation(summary = "Inactivar zona abierta", description = "Solo ADMIN. Se rechaza con 422 si tiene zonas seguras activas.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PatchMapping("/open-zones/{id}/deactivate")
     public ZonaAbiertaResponse inactivar(@PathVariable UUID id) {

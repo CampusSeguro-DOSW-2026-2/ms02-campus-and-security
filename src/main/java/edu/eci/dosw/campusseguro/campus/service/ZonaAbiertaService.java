@@ -13,6 +13,7 @@ import edu.eci.dosw.campusseguro.campus.exception.CampusNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaAbiertaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.CampusRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaAbiertaRepository;
+import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class ZonaAbiertaService {
 
     private final ZonaAbiertaRepository zonaAbiertaRepository;
     private final CampusRepository campusRepository;
+    private final ZonaSeguraRepository zonaSeguraRepository;
 
     @Transactional
     public ZonaAbiertaResponse crear(UUID campusId, ZonaAbiertaRequest request) {
@@ -69,6 +71,12 @@ public class ZonaAbiertaService {
     @Transactional
     public ZonaAbiertaResponse inactivar(UUID id) {
         ZonaAbierta zona = buscar(id);
+
+        if (zonaSeguraRepository.existsByZonaAbiertaIdAndEstado(id, Estado.ACTIVO)) {
+            log.warn("No se inactivó la zona abierta {}: tiene zonas seguras activas", id);
+            throw new ReglaNegocioException("La zona abierta tiene zonas seguras activas; deben inactivarse antes");
+        }
+
         zona.setEstado(Estado.INACTIVO);
 
         ZonaAbierta guardada = zonaAbiertaRepository.save(zona);
