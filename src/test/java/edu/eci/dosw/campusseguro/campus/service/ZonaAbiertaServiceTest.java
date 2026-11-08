@@ -23,6 +23,7 @@ import edu.eci.dosw.campusseguro.campus.exception.CampusNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaAbiertaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.CampusRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaAbiertaRepository;
+import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +44,9 @@ class ZonaAbiertaServiceTest {
 
     @Mock
     private CampusRepository campusRepository;
+
+    @Mock
+    private ZonaSeguraRepository zonaSeguraRepository;
 
     @InjectMocks
     private ZonaAbiertaService zonaAbiertaService;
@@ -164,6 +168,7 @@ class ZonaAbiertaServiceTest {
     @Test
     void inactivar_dejaLaZonaInactiva() {
         when(zonaAbiertaRepository.findById(ZONA)).thenReturn(Optional.of(zona(Estado.ACTIVO)));
+        when(zonaSeguraRepository.existsByZonaAbiertaIdAndEstado(ZONA, Estado.ACTIVO)).thenReturn(false);
         when(zonaAbiertaRepository.save(any(ZonaAbierta.class))).thenAnswer(inv -> inv.getArgument(0));
 
         assertThat(zonaAbiertaService.inactivar(ZONA).estado()).isEqualTo(Estado.INACTIVO);
@@ -224,5 +229,17 @@ class ZonaAbiertaServiceTest {
 
         assertThatThrownBy(() -> zonaAbiertaService.obtener(uuid(99)))
                 .isInstanceOf(ZonaAbiertaNoEncontradaException.class);
+    }
+
+    @Test
+    void inactivar_conZonasSegurasActivas_lanzaReglaDeNegocioYNoGuarda() {
+        when(zonaAbiertaRepository.findById(ZONA)).thenReturn(Optional.of(zona(Estado.ACTIVO)));
+        when(zonaSeguraRepository.existsByZonaAbiertaIdAndEstado(ZONA, Estado.ACTIVO)).thenReturn(true);
+
+        assertThatThrownBy(() -> zonaAbiertaService.inactivar(ZONA))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("zonas seguras activas");
+
+        verify(zonaAbiertaRepository, never()).save(any());
     }
 }

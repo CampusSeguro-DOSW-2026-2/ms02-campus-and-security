@@ -30,7 +30,8 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Registrar zona segura",
-        description = "Solo ADMIN. El código (por ejemplo MP-H-01) es único. La capacidad debe ser mayor que cero. La zona queda activa."
+        description = "Solo ADMIN. El código (por ejemplo MP-H-01) es único. La capacidad debe ser mayor que cero. La zona queda activa. "
+                + "Latitud y longitud son opcionales pero van juntas; zonaAbiertaId es opcional; puntoEncuentro es true por defecto."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PostMapping
@@ -42,7 +43,8 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Modificar zona segura",
-        description = "Solo ADMIN. Cambia nombre, ubicación, descripción y capacidad. El código no se puede modificar."
+        description = "Solo ADMIN. Cambia nombre, ubicación, descripción y capacidad. El código no se puede modificar. "
+                + "Las coordenadas, la zona abierta y puntoEncuentro solo cambian si se envían."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PutMapping("/{id}")
@@ -64,7 +66,7 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Reactivar zona segura",
-        description = "Solo ADMIN. Se rechaza con 422 si la zona ya está activa."
+        description = "Solo ADMIN. Se rechaza con 422 si la zona ya está activa o si su zona abierta está inactiva."
     )
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @PatchMapping("/{id}/reactivate")
@@ -74,13 +76,16 @@ public class ZonaSeguraController {
 
     @Operation(
         summary = "Listar zonas seguras",
-        description = "Cualquier rol. Por defecto solo las activas; incluirInactivos=true devuelve todas."
+        description = "Cualquier rol. Por defecto solo las activas; incluirInactivos=true devuelve todas. "
+                + "puntoEncuentro=true|false filtra por esa marca; sinCoordenadas=true lista las que aún no tienen coordenadas."
     )
     @Permiso(Permisos.CAMPUS_READ)
     @GetMapping
     public List<ZonaSeguraResponse> listar(
-            @RequestParam(defaultValue = "false") boolean incluirInactivos) {
-        return zonaSeguraService.listar(incluirInactivos);
+            @RequestParam(defaultValue = "false") boolean incluirInactivos,
+            @RequestParam(required = false) Boolean puntoEncuentro,
+            @RequestParam(defaultValue = "false") boolean sinCoordenadas) {
+        return zonaSeguraService.listar(incluirInactivos, puntoEncuentro, sinCoordenadas);
     }
 
     @Operation(

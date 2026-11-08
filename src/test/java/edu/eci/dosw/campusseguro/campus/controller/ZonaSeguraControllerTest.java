@@ -11,12 +11,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import edu.eci.dosw.campusseguro.campus.dto.ModificarZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
+import edu.eci.dosw.campusseguro.campus.exception.ZonaAbiertaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaCodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaSeguraNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
@@ -44,7 +46,7 @@ class ZonaSeguraControllerTest {
 
     private ZonaSeguraResponse respuesta(Estado estado) {
         return new ZonaSeguraResponse(uuid(1), "MP-H-01", "Punto H",
-                "Frente al bloque H", "Zona abierta", 200, estado);
+                "Frente al bloque H", "Zona abierta", 200, estado, null, null, null, true);
     }
 
     private String json(String codigo, String nombre, int capacidad) {
@@ -212,7 +214,7 @@ class ZonaSeguraControllerTest {
 
     @Test
     void listar_porDefectoPideSoloLasActivas() throws Exception {
-        when(zonaSeguraService.listar(false))
+        when(zonaSeguraService.listar(false, null, false))
                 .thenReturn(List.of(respuesta(Estado.ACTIVO)));
 
         mockMvc.perform(get(BASE))
@@ -222,7 +224,7 @@ class ZonaSeguraControllerTest {
 
     @Test
     void listar_conIncluirInactivos_pasaElFiltro() throws Exception {
-        when(zonaSeguraService.listar(true))
+        when(zonaSeguraService.listar(true, null, false))
                 .thenReturn(List.of(respuesta(Estado.INACTIVO)));
 
         mockMvc.perform(get(BASE).param("incluirInactivos", "true"))
@@ -253,5 +255,53 @@ class ZonaSeguraControllerTest {
     void obtener_conIdMalFormado_devuelve400() throws Exception {
         mockMvc.perform(get(BASE + "/{id}", "no-es-uuid"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ---------- coordenadas, zona abierta y punto de encuentro ----------
+
+    private static final String JSON_CON_UBICACION =
+            "{\"codigo\":\"MP-H-01\",\"nombre\":\"Punto H\",\"ubicacion\":\"Frente al bloque H\","
+                    + "\"descripcion\":\"Zona abierta\",\"capacidad\":200,"
+                    + "\"latitud\":4.782,\"longitud\":-74.042,"
+                    + "\"zonaAbiertaId\":\"00000000-0000-0000-0000-00000000000a\",\"puntoEncuentro\":true}";
+
+    @Test
+    void crear_conCoordenadasYZonaAbierta_devuelveLosDatos() throws Exception {
+        when(zonaSeguraService.crear(any(ZonaSeguraRequest.class)))
+                .thenReturn(new ZonaSeguraResponse(uuid(1), "MP-H-01", "Punto H", "Frente al bloque H",
+                        "Zona abierta", 200, Estado.ACTIVO, new BigDecimal("4.782000"),
+                        new BigDecimal("-74.042000"), uuid(10), true));
+
+        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content(JSON_CON_UBICACION))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.latitud").value(4.782))
+                .andExpect(jsonPath("$.zonaAbiertaId").value(uuid(10).toString()))
+                .andExpect(jsonPath("$.puntoEncuentro").value(true));
+    }
+
+    @Test
+    void crear_conLatitudFueraDeRango_devuelve400() throws Exception {
+        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+                        .content(JSON_CON_UBICACION.replace("\"latitud\":4.782", "\"latitud\":95")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'latitud')]").exists());
+    }
+
+    @Test
+    void crear_zonaAbiertaInexistente_devuelve404() throws Exception {
+        when(zonaSeguraService.crear(any(ZonaSeguraRequest.class)))
+                .thenThrow(new ZonaAbiertaNoEncontradaException(uuid(10)));
+
+        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content(JSON_CON_UBICACION))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listar_conFiltros_pasaLosParametros() throws Exception {
+        when(zonaSeguraService.listar(false, true, true)).thenReturn(List.of(respuesta(Estado.ACTIVO)));
+
+        mockMvc.perform(get(BASE).param("puntoEncuentro", "true").param("sinCoordenadas", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].puntoEncuentro").value(true));
     }
 }
