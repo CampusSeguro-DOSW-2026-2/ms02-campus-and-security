@@ -66,6 +66,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/*/floors", "/api/v1/floors/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
+                        // Salidas (ADR-003): van antes de /buildings/** para que su lectura no exija BUILDING_WRITE.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/exits", "/api/v1/exits/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/buildings/*/exits", "/api/v1/exits/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Campus y zonas abiertas (ADR-003): lectura para cualquier rol, escritura solo ADMIN.
                         // Van antes de /buildings/** y /safe-zones/** y no se solapan con ellos.
                         .requestMatchers(HttpMethod.GET, "/api/v1/campuses", "/api/v1/campuses/*",
