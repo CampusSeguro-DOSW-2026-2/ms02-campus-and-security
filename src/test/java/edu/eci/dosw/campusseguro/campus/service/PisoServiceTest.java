@@ -7,6 +7,7 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
@@ -151,19 +152,27 @@ class PisoServiceTest {
     @Test
     void inactivar_sinEspaciosActivos_loDejaInactivo() {
         piso();
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
         guardarDevuelveLoMismo();
 
         assertThat(pisoService.inactivar(PISO).estado()).isEqualTo(Estado.INACTIVO);
     }
 
     @Test
-    void inactivar_conEspaciosActivos_seRechaza() {
+    void inactivar_conEspaciosActivos_seRechazaYListaLosCodigos() {
         piso();
-        when(espacioRepository.existsByPisoIdAndEstado(PISO, Estado.ACTIVO)).thenReturn(true);
+
+        Espacio espacio = new Espacio();
+        espacio.setCodigo("SALON-101");
+        espacio.setEstado(Estado.ACTIVO);
+
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of(espacio));
 
         assertThatThrownBy(() -> pisoService.inactivar(PISO))
                 .isInstanceOf(ReglaNegocioException.class)
-                .hasMessageContaining("espacios activos");
+                .hasMessageContaining("espacios activos")
+                .hasMessageContaining("SALON-101");
+
         verify(pisoRepository, never()).save(any());
     }
 

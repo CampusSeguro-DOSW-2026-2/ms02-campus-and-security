@@ -15,6 +15,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -74,13 +75,19 @@ public class PisoService {
     public PisoResponse inactivar(UUID id) {
         Piso piso = buscar(id);
 
-        if (espacioRepository.existsByPisoIdAndEstado(id, Estado.ACTIVO)) {
-            log.warn("No se inactivó el piso {}: tiene espacios activos", id);
-            throw new ReglaNegocioException("El piso tiene espacios activos; deben inactivarse antes");
+        List<String> espaciosActivos = espacioRepository.findByPisoId(id).stream()
+                .filter(espacio -> espacio.getEstado() == Estado.ACTIVO)
+                .map(Espacio::getCodigo)
+                .toList();
+
+        if (!espaciosActivos.isEmpty()) {
+            log.warn("No se inactivó el piso {}: tiene espacios activos {}", id, espaciosActivos);
+            throw new ReglaNegocioException(
+                    "El piso tiene espacios activos " + espaciosActivos
+                            + "; deben inactivarse antes");
         }
 
         piso.setEstado(Estado.INACTIVO);
-
         Piso guardado = pisoRepository.save(piso);
         log.info("Piso {} inactivado", id);
         return aRespuesta(guardado);
