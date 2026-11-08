@@ -8,6 +8,7 @@ import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.entity.Espacio;
+import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
@@ -40,10 +41,15 @@ class PisoServiceTest {
 
     @Mock
     private PisoRepository pisoRepository;
+
     @Mock
     private EdificioRepository edificioRepository;
+
     @Mock
     private EspacioRepository espacioRepository;
+
+    @Mock
+    private EscaleraRepository escaleraRepository;
 
     @InjectMocks
     private PisoService pisoService;
@@ -152,10 +158,16 @@ class PisoServiceTest {
     @Test
     void inactivar_sinEspaciosActivos_loDejaInactivo() {
         piso();
+
         when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+
+        when(escaleraRepository.existsByPisos_IdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(false);
+
         guardarDevuelveLoMismo();
 
-        assertThat(pisoService.inactivar(PISO).estado()).isEqualTo(Estado.INACTIVO);
+        assertThat(pisoService.inactivar(PISO).estado())
+                .isEqualTo(Estado.INACTIVO);
     }
 
     @Test
@@ -261,5 +273,21 @@ class PisoServiceTest {
 
         assertThat(pisoService.listarPorEdificio(EDIFICIO, true)).extracting(PisoResponse::id)
                 .containsExactly(PISO, uuid(3));
+    }
+
+    @Test
+    void inactivar_conEscaleraActiva_seRechaza() {
+        piso();
+
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+
+        when(escaleraRepository.existsByPisos_IdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> pisoService.inactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("escaleras activas");
+
+        verify(pisoRepository, never()).save(any());
     }
 }
