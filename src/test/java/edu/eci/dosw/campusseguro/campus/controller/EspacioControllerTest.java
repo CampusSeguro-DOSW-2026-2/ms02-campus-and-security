@@ -49,8 +49,8 @@ class EspacioControllerTest {
     private EspacioService espacioService;
 
     private EspacioResponse respuesta(Estado estado) {
-        return new EspacioResponse(ESPACIO, EDIFICIO, PISO, "G-101", "Salón 101", TipoEspacio.SALON, estado,
-                estado == Estado.ACTIVO);
+        return new EspacioResponse(ESPACIO, EDIFICIO, "Bloque G", PISO, 1, "G-101", "Salón 101", TipoEspacio.SALON,
+                estado, estado == Estado.ACTIVO);
     }
 
     @Test
@@ -188,5 +188,27 @@ class EspacioControllerTest {
         mockMvc.perform(get("/api/v1/buildings/{id}/spaces", EDIFICIO).param("incluirInactivos", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].disponible").value(false));
+    }
+
+    @Test
+    void obtener_incluyeElNombreDelEdificioYElNumeroDelPiso() throws Exception {
+        when(espacioService.obtener(ESPACIO)).thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(get("/api/v1/spaces/{id}", ESPACIO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.edificioNombre").value("Bloque G"))
+                .andExpect(jsonPath("$.pisoNumero").value(1));
+    }
+
+    @Test
+    void crear_conCoordenadas_lasIgnoraPorqueElEspacioNoLasLleva() throws Exception {
+        when(espacioService.crear(eq(PISO), any(EspacioRequest.class))).thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(post("/api/v1/floors/{id}/spaces", PISO).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codigo\":\"G-101\",\"nombre\":\"Salón 101\",\"tipo\":\"SALON\","
+                                + "\"latitud\":4.78,\"longitud\":-74.04}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.latitud").doesNotExist())
+                .andExpect(jsonPath("$.longitud").doesNotExist());
     }
 }
