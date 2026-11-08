@@ -1,3 +1,4 @@
+
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.List;
@@ -8,16 +9,19 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
+import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
-import edu.eci.dosw.campusseguro.campus.entity.Espacio;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +34,7 @@ public class PisoService {
     private final PisoRepository pisoRepository;
     private final EdificioRepository edificioRepository;
     private final EspacioRepository espacioRepository;
+    private final EscaleraRepository escaleraRepository;
 
     @Transactional
     public PisoResponse crear(UUID edificioId, PisoRequest request) {
@@ -85,6 +90,15 @@ public class PisoService {
             throw new ReglaNegocioException(
                     "El piso tiene espacios activos " + espaciosActivos
                             + "; deben inactivarse antes");
+        }
+
+        boolean tieneEscalerasActivas =
+                escaleraRepository.existsByPisos_IdAndEstado(id, Estado.ACTIVO);
+
+        if (tieneEscalerasActivas) {
+            log.warn("No se inactivó el piso {}: tiene escaleras activas", id);
+            throw new ReglaNegocioException(
+                    "El piso tiene escaleras activas; deben inactivarse antes");
         }
 
         piso.setEstado(Estado.INACTIVO);

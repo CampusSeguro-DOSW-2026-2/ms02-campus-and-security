@@ -51,6 +51,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/floors/*/spaces", "/api/v1/spaces/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
+                        // Escaleras: lectura general, administración para ADMIN y estado para COORDINADOR.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/stairs", "/api/v1/stairs/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/stairs/*/status")
+                        .hasAuthority(Permisos.STAIR_STATUS_WRITE)
+                        .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Pisos (RF-02): van antes de /buildings/** para que su lectura no exija BUILDING_WRITE.
                         // Gestionar pisos es parte de gestionar edificios (HU-2a), por eso usa el mismo permiso.
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/floors", "/api/v1/floors/*")
