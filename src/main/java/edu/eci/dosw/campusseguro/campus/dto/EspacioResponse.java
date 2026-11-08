@@ -8,7 +8,9 @@ import edu.eci.dosw.campusseguro.campus.entity.TipoEspacio;
 public record EspacioResponse(
         UUID id,
         UUID edificioId,
+        String edificioNombre,
         UUID pisoId,
+        Integer pisoNumero,
         String codigo,
         String nombre,
         TipoEspacio tipo,

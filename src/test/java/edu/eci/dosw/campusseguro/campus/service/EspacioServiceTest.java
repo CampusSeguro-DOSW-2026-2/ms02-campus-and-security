@@ -78,6 +78,7 @@ class EspacioServiceTest {
     private void edificio(Estado estado) {
         Edificio e = new Edificio();
         e.setId(EDIFICIO);
+        e.setNombre("Bloque G");
         e.setEstado(estado);
         when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.of(e));
     }
@@ -335,5 +336,101 @@ class EspacioServiceTest {
         edificio(Estado.INACTIVO);
 
         assertThat(espacioService.obtener(ESPACIO).disponible()).isFalse();
+    }
+
+    @Test
+    void crear_devuelveElNombreDelEdificioYElNumeroDelPiso() {
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        EspacioResponse respuesta = espacioService.crear(PISO, request("G-101"));
+
+        assertThat(respuesta.edificioNombre()).isEqualTo("Bloque G");
+        assertThat(respuesta.pisoNumero()).isEqualTo(1);
+        assertThat(respuesta.disponible()).isTrue();
+    }
+
+    @Test
+    void obtener_devuelveElNombreDelEdificioYElNumeroDelPiso() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+
+        EspacioResponse respuesta = espacioService.obtener(ESPACIO);
+
+        assertThat(respuesta.edificioNombre()).isEqualTo("Bloque G");
+        assertThat(respuesta.pisoNumero()).isEqualTo(1);
+    }
+
+    @Test
+    void obtener_espacioInexistente_falla() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.obtener(ESPACIO))
+                .isInstanceOf(EspacioNoEncontradoException.class);
+    }
+
+    @Test
+    void inactivar_espacioInexistente_falla() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.inactivar(ESPACIO))
+                .isInstanceOf(EspacioNoEncontradoException.class);
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
+    void inactivar_conRutaDeLegadoActiva_avisaCualesSon() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        when(verificadorRutas.rutasActivasDeEspacio(ESPACIO)).thenReturn(List.of(uuid(50)));
+
+        assertThatThrownBy(() -> espacioService.inactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("rutas de legado activas")
+                .hasMessageContaining(uuid(50).toString());
+    }
+
+    @Test
+    void reactivar_espacioInexistente_falla() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(EspacioNoEncontradoException.class);
+    }
+
+    @Test
+    void listarPorPiso_pisoInexistente_falla() {
+        when(pisoRepository.findById(PISO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.listarPorPiso(PISO, false))
+                .isInstanceOf(PisoNoEncontradoException.class);
+    }
+
+    @Test
+    void listarPorEdificio_conEdificioInactivo_soloLosMuestraIncluyendoInactivos() {
+        edificio(Estado.INACTIVO);
+        pisosDelEdificio(Estado.ACTIVO);
+        when(espacioRepository.findByEdificioId(EDIFICIO)).thenReturn(List.of(espacioActivo()));
+
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, false)).isEmpty();
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, true))
+                .extracting(EspacioResponse::disponible, EspacioResponse::edificioNombre, EspacioResponse::pisoNumero)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(false, "Bloque G", 1));
+    }
+
+    @Test
+    void modificar_noCambiaElPisoNiElEdificio() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        EspacioResponse respuesta = espacioService.modificar(ESPACIO,
+                new ModificarEspacioRequest("Laboratorio", TipoEspacio.LABORATORIO));
+
+        assertThat(respuesta.pisoId()).isEqualTo(PISO);
+        assertThat(respuesta.edificioId()).isEqualTo(EDIFICIO);
+        assertThat(respuesta.codigo()).isEqualTo("G-101");
     }
 }
