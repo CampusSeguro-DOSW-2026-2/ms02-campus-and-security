@@ -57,26 +57,26 @@ class CodigoQrServiceTest {
     }
 
     @Test
-    void espacio_elQrContieneSoloElEnlacePublicoConSuUuid() throws Exception {
+    void espacio_elQrContieneSoloElEnlaceALaPantallaPublicaConSuUuid() throws Exception {
         when(espacioRepository.existsById(ID)).thenReturn(true);
 
         byte[] png = servicio.generar(TipoQr.ESPACIO, ID);
 
-        assertThat(leer(png)).isEqualTo(BASE + "/api/v1/public/spaces?id=" + ID);
+        assertThat(leer(png)).isEqualTo(BASE + "/#/qr/espacios/" + ID);
     }
 
     @Test
-    void salida_elQrApuntaALaConsultaPublicaDeSalidas() throws Exception {
+    void salida_elQrApuntaALaPantallaPublicaDeSalidas() throws Exception {
         when(salidaRepository.existsById(ID)).thenReturn(true);
 
-        assertThat(leer(servicio.generar(TipoQr.SALIDA, ID))).isEqualTo(BASE + "/api/v1/public/exits?id=" + ID);
+        assertThat(leer(servicio.generar(TipoQr.SALIDA, ID))).isEqualTo(BASE + "/#/qr/salidas/" + ID);
     }
 
     @Test
-    void zonaSegura_elQrApuntaALaConsultaPublicaDeZonas() throws Exception {
+    void zonaSegura_elQrApuntaALaPantallaPublicaDeZonas() throws Exception {
         when(zonaSeguraRepository.existsById(ID)).thenReturn(true);
 
-        assertThat(leer(servicio.generar(TipoQr.ZONA_SEGURA, ID))).isEqualTo(BASE + "/api/v1/public/safe-zones?id=" + ID);
+        assertThat(leer(servicio.generar(TipoQr.ZONA_SEGURA, ID))).isEqualTo(BASE + "/#/qr/zonas/" + ID);
     }
 
     @Test
@@ -90,7 +90,7 @@ class CodigoQrServiceTest {
 
     @Test
     void enlace_quitaLaBarraFinalDeLaBase() {
-        assertThat(servicio.enlace(TipoQr.SALIDA, ID)).isEqualTo(BASE + "/api/v1/public/exits?id=" + ID);
+        assertThat(servicio.enlace(TipoQr.SALIDA, ID)).isEqualTo(BASE + "/#/qr/salidas/" + ID);
     }
 
     @Test

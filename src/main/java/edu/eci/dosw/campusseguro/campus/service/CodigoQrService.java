@@ -30,9 +30,9 @@ public class CodigoQrService {
     private static final int TAMANO = 512;
 
     public enum TipoQr {
-        ESPACIO("spaces"),
-        SALIDA("exits"),
-        ZONA_SEGURA("safe-zones");
+        ESPACIO("espacios"),
+        SALIDA("salidas"),
+        ZONA_SEGURA("zonas");
 
         private final String ruta;
 
@@ -64,7 +64,7 @@ public class CodigoQrService {
     }
 
     public String enlace(TipoQr tipo, UUID id) {
-        return baseUrl + "/api/v1/public/" + tipo.ruta + "?id=" + id;
+        return baseUrl + "/#/qr/" + tipo.ruta + "/" + id;
     }
 
     private void verificarQueExiste(TipoQr tipo, UUID id) {

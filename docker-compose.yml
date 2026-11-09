@@ -29,7 +29,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       NAVIGATION_BASE_URL: ${NAVIGATION_BASE_URL:-https://routing.openstreetmap.de/routed-foot}
       NAVIGATION_PROFILE: ${NAVIGATION_PROFILE:-foot}
-      QR_BASE_URL: ${QR_BASE_URL:-http://localhost:8080}
+      QR_BASE_URL: ${QR_BASE_URL:-http://localhost:5173}
     ports:
       - "${APP_PORT:-8082}:8082"
 

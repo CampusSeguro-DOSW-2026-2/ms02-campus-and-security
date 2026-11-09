@@ -26,7 +26,10 @@ import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
+import edu.eci.dosw.campusseguro.campus.ruta.domain.PasoRuta;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.GuiaEvacuacionResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaExteriorResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.service.ConsultaRutaService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -267,5 +270,57 @@ class ConsultaPublicaServiceTest {
         assertThat(r.disponible()).isTrue();
         assertThat(r.puntoEncuentro()).isFalse();
         assertThat(r.aviso()).isNull();
+    }
+
+    @Test
+    void espacio_conGuia_laResumeSinIdsInternos() {
+        espacio(Estado.ACTIVO);
+        contenedores(Estado.ACTIVO, Estado.ACTIVO);
+        RutaExteriorResponse exterior = new RutaExteriorResponse(uuid(60), SALIDA, ZONA, EstadoRuta.DISPONIBLE, null,
+                new BigDecimal("184.20"), new BigDecimal("147.40"), List.of(),
+                List.of(new PasoRuta("Inicia el recorrido", 39.9, 31.9), new PasoRuta("Has llegado al destino", 0, 0)),
+                null);
+        GuiaEvacuacionResponse guia = new GuiaEvacuacionResponse(EDIFICIO, "Bloque G", PISO, 2, true,
+                List.of(new GuiaEvacuacionResponse.EscaleraGuia(uuid(70), "ESC-1", "Escalera norte")),
+                new GuiaEvacuacionResponse.SalidaGuia(SALIDA, "Salida principal", new BigDecimal("4.782710"),
+                        new BigDecimal("-74.042630")),
+                exterior, "Plazoleta H", "Baje por la escalera norte y salga por 'Salida principal'.", null);
+        when(consultaRutaService.consultarPorEspacio(ESPACIO)).thenReturn(new RutaConsultadaResponse(ESPACIO,
+                "Salón 201", false, null, null, null, null, null, null, false, null, List.of(), guia));
+
+        EspacioPublicoResponse.Guia publica = servicio.espacio(ESPACIO).guia();
+
+        assertThat(publica.indicacion()).startsWith("Baje por la escalera norte");
+        assertThat(publica.escaleras()).containsExactly("Escalera norte");
+        assertThat(publica.salida()).isEqualTo("Salida principal");
+        assertThat(publica.salidaLatitud()).isEqualByComparingTo("4.78271");
+        assertThat(publica.zonaSegura()).isEqualTo("Plazoleta H");
+        assertThat(publica.distanciaMetros()).isEqualByComparingTo("184.2");
+        assertThat(publica.pasos()).extracting(EspacioPublicoResponse.Paso::instruccion)
+                .containsExactly("Inicia el recorrido", "Has llegado al destino");
+    }
+
+    @Test
+    void espacio_sinSalidaConRuta_devuelveElMensajeDeLaGuia() {
+        espacio(Estado.ACTIVO);
+        contenedores(Estado.ACTIVO, Estado.ACTIVO);
+        GuiaEvacuacionResponse guia = new GuiaEvacuacionResponse(EDIFICIO, "Bloque G", PISO, 2, false, List.of(),
+                null, null, null, null, "No hay una salida con ruta exterior hacia una zona segura.");
+        when(consultaRutaService.consultarPorEspacio(ESPACIO)).thenReturn(new RutaConsultadaResponse(ESPACIO,
+                "Salón 201", false, null, null, null, null, null, null, false, null, List.of(), guia));
+
+        EspacioPublicoResponse.Guia publica = servicio.espacio(ESPACIO).guia();
+
+        assertThat(publica.mensaje()).contains("No hay una salida");
+        assertThat(publica.salida()).isNull();
+        assertThat(publica.pasos()).isEmpty();
+    }
+
+    @Test
+    void espacio_noDisponible_noIncluyeGuia() {
+        espacio(Estado.INACTIVO);
+        contenedores(Estado.ACTIVO, Estado.ACTIVO);
+
+        assertThat(servicio.espacio(ESPACIO).guia()).isNull();
     }
 }

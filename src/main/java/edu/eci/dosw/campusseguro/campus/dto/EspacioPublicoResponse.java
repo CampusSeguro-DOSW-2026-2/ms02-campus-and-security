@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import edu.eci.dosw.campusseguro.campus.entity.TipoEspacio;
@@ -14,8 +15,26 @@ public record EspacioPublicoResponse(
         boolean disponible,
         Evacuacion evacuacion,
         String aviso,
-        boolean tieneFotografia
+        boolean tieneFotografia,
+        Guia guia
 ) {
+
+    public record Guia(
+            String indicacion,
+            String mensaje,
+            List<String> escaleras,
+            String salida,
+            BigDecimal salidaLatitud,
+            BigDecimal salidaLongitud,
+            String zonaSegura,
+            BigDecimal distanciaMetros,
+            BigDecimal duracionSegundos,
+            List<Paso> pasos
+    ) {
+    }
+
+    public record Paso(String instruccion, double distanciaMetros) {
+    }
 
     public record Evacuacion(
             boolean tieneRuta,

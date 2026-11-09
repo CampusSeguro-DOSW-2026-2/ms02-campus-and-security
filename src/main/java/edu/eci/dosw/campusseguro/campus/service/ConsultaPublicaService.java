@@ -22,6 +22,8 @@ import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.GuiaEvacuacionResponse;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaExteriorResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.service.ConsultaRutaService;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,7 @@ public class ConsultaPublicaService {
         Piso piso = pisoRepository.findById(espacio.getPisoId()).orElse(null);
         Edificio edificio = edificioRepository.findById(espacio.getEdificioId()).orElse(null);
         boolean disponible = activo(espacio.getEstado()) && activo(piso) && activo(edificio);
+        RutaConsultadaResponse ruta = disponible ? consultaRutaService.consultarPorEspacio(id) : null;
         boolean tieneFotografia = imagenRepository.existsByTipoElementoAndElementoId(
                 TipoElementoImagen.ESPACIO, id);
 
@@ -60,9 +63,10 @@ public class ConsultaPublicaService {
                 edificio == null ? null : edificio.getNombre(),
                 piso == null ? null : piso.getNumero(),
                 disponible,
-                disponible ? evacuacion(consultaRutaService.consultarPorEspacio(id)) : null,
+                ruta == null ? null : evacuacion(ruta),
                 disponible ? null : AVISO_NO_DISPONIBLE,
-                tieneFotografia);
+                tieneFotografia,
+                ruta == null ? null : guia(ruta.guia()));
     }
 
     @Transactional(readOnly = true)
@@ -123,6 +127,34 @@ public class ConsultaPublicaService {
                 ruta.motivo(),
                 ruta.mensaje(),
                 recomendaciones);
+    }
+
+    private static EspacioPublicoResponse.Guia guia(GuiaEvacuacionResponse guia) {
+        if (guia == null) {
+            return null;
+        }
+        GuiaEvacuacionResponse.SalidaGuia salida = guia.salida();
+        RutaExteriorResponse exterior = guia.rutaExterior();
+        List<EspacioPublicoResponse.Paso> pasos = exterior == null || exterior.pasos() == null
+                ? List.of()
+                : exterior.pasos().stream()
+                        .map(p -> new EspacioPublicoResponse.Paso(p.instruccion(), p.distanciaMetros()))
+                        .toList();
+        List<String> escaleras = guia.escaleras() == null
+                ? List.of()
+                : guia.escaleras().stream().map(GuiaEvacuacionResponse.EscaleraGuia::nombre).toList();
+
+        return new EspacioPublicoResponse.Guia(
+                guia.indicacion(),
+                guia.mensaje(),
+                escaleras,
+                salida == null ? null : salida.nombre(),
+                salida == null ? null : salida.latitud(),
+                salida == null ? null : salida.longitud(),
+                guia.zonaSeguraNombre(),
+                exterior == null ? null : exterior.distanciaMetros(),
+                exterior == null ? null : exterior.duracionSegundos(),
+                pasos);
     }
 
     private static boolean activo(Estado estado) {
