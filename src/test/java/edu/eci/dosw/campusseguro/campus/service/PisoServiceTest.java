@@ -7,6 +7,7 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
@@ -15,6 +16,7 @@ import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
+import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +52,9 @@ class PisoServiceTest {
 
     @Mock
     private EscaleraRepository escaleraRepository;
+
+    @Mock
+    private SalidaRepository salidaRepository;
 
     @InjectMocks
     private PisoService pisoService;
@@ -289,5 +294,38 @@ class PisoServiceTest {
                 .hasMessageContaining("escaleras activas");
 
         verify(pisoRepository, never()).save(any());
+    }
+
+    private static Salida salida(String codigo, Estado estado) {
+        Salida s = new Salida();
+        s.setPisoId(PISO);
+        s.setCodigo(codigo);
+        s.setEstado(estado);
+        return s;
+    }
+
+    @Test
+    void inactivar_conSalidaActiva_seRechazaYListaLosCodigos() {
+        piso();
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+        when(salidaRepository.findByPisoId(PISO))
+                .thenReturn(List.of(salida("G-S1", Estado.ACTIVO), salida("G-S2", Estado.INACTIVO)));
+
+        assertThatThrownBy(() -> pisoService.inactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("salidas activas [G-S1]")
+                .hasMessageNotContaining("G-S2");
+
+        verify(pisoRepository, never()).save(any());
+    }
+
+    @Test
+    void inactivar_conSalidasYaInactivas_loDejaInactivo() {
+        piso();
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+        when(salidaRepository.findByPisoId(PISO)).thenReturn(List.of(salida("G-S2", Estado.INACTIVO)));
+        when(pisoRepository.save(any(Piso.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(pisoService.inactivar(PISO).estado()).isEqualTo(Estado.INACTIVO);
     }
 }

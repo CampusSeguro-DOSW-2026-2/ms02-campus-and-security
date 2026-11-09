@@ -11,4 +11,6 @@ public interface SalidaRepository extends JpaRepository<Salida, UUID> {
     List<Salida> findByEdificioIdOrderByCodigoAsc(UUID edificioId);
 
     boolean existsByEdificioIdAndCodigo(UUID edificioId, String codigo);
+
+    List<Salida> findByPisoId(UUID pisoId);
 }
