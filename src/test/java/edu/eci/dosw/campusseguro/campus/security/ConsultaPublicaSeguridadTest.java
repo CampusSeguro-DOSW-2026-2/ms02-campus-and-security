@@ -45,7 +45,11 @@ class ConsultaPublicaSeguridadTest {
                 new EspacioPublicoResponse.Evacuacion(true, "Plazoleta H", "Frente al bloque H",
                         "Baje por la escalera norte.", EstadoRuta.DISPONIBLE, null, null,
                         List.of(new EspacioPublicoResponse.Recomendacion("Escaleras", "Use la escalera norte."))),
-                null, false);
+                null, false,
+                new EspacioPublicoResponse.Guia("Baje por la escalera norte y salga por 'Salida principal'.", null,
+                        List.of("Escalera norte"), "Salida principal", new BigDecimal("4.782710"),
+                        new BigDecimal("-74.042630"), "Plazoleta H", new BigDecimal("184.20"), new BigDecimal("147.40"),
+                        List.of(new EspacioPublicoResponse.Paso("Inicia el recorrido", 39.9))));
     }
 
     @Test
@@ -58,6 +62,10 @@ class ConsultaPublicaSeguridadTest {
                 .andExpect(jsonPath("$.edificio").value("Bloque G"))
                 .andExpect(jsonPath("$.piso").value(2))
                 .andExpect(jsonPath("$.evacuacion.zonaSegura").value("Plazoleta H"))
+                .andExpect(jsonPath("$.guia.indicacion").value("Baje por la escalera norte y salga por 'Salida principal'."))
+                .andExpect(jsonPath("$.guia.escaleras[0]").value("Escalera norte"))
+                .andExpect(jsonPath("$.guia.pasos[0].instruccion").value("Inicia el recorrido"))
+                .andExpect(jsonPath("$.guia.salidaId").doesNotExist())
                 .andExpect(jsonPath("$.id").doesNotExist())
                 .andExpect(jsonPath("$.edificioId").doesNotExist())
                 .andExpect(jsonPath("$.pisoId").doesNotExist())
