@@ -30,6 +30,7 @@
 		<java.version>21</java.version>
 		<jacoco.version>0.8.12</jacoco.version>
 		<springdoc.version>3.1.1</springdoc.version>
+		<zxing.version>3.5.4</zxing.version>
 
 		<!-- SonarCloud: cambiar por los valores reales del equipo -->
 		<sonar.organization>CAMBIAR_ORGANIZACION</sonar.organization>
@@ -71,6 +72,16 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>${springdoc.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>${zxing.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>${zxing.version}</version>
 		</dependency>
 
 		<dependency>
