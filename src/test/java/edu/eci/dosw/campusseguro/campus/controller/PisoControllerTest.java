@@ -45,7 +45,7 @@ class PisoControllerTest {
     private PisoService pisoService;
 
     private PisoResponse respuesta(Estado estado) {
-        return new PisoResponse(PISO, EDIFICIO, -1, "Sótano 1", estado);
+        return new PisoResponse(PISO, EDIFICIO, -1, "Sótano 1", estado, false);
     }
 
     @Test

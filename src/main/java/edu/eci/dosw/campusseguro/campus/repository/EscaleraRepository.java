@@ -12,5 +12,5 @@ public interface EscaleraRepository extends JpaRepository<Escalera, UUID> {
     List<Escalera> findByEdificioId(UUID edificioId);
 
     boolean existsByCodigo(String codigo);
-    boolean existsByPisos_IdAndEstado(UUID pisoId, Estado estado);
+    List<Escalera> findByPisos_IdAndEstado(UUID pisoId, Estado estado);
 }

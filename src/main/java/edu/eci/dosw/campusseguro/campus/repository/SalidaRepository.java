@@ -13,4 +13,6 @@ public interface SalidaRepository extends JpaRepository<Salida, UUID> {
     boolean existsByEdificioIdAndCodigo(UUID edificioId, String codigo);
 
     List<Salida> findByPisoId(UUID pisoId);
+
+    boolean existsByPisoIdAndEstado(UUID pisoId, edu.eci.dosw.campusseguro.campus.entity.Estado estado);
 }

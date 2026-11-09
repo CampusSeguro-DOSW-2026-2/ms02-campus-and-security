@@ -9,6 +9,7 @@ public record PisoResponse(
         UUID edificioId,
         Integer numero,
         String nombre,
-        Estado estado
+        Estado estado,
+        boolean tieneSalida
 ) {
 }
