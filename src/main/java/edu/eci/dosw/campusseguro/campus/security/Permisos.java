@@ -9,8 +9,8 @@ public final class Permisos {
     public static final String SAFE_ZONE_WRITE = "ms02:safe_zone:write";
     public static final String ROUTE_WRITE = "ms02:route:write";
     public static final String ROUTE_STATUS_WRITE = "ms02:route_status:write";
-    public static final String PREVENTIVE_RECOMMENDATION_WRITE = "ms02:preventive_recommendation:write";
     public static final String STAIR_STATUS_WRITE = "ms02:stair_status:write";
+    public static final String PREVENTIVE_RECOMMENDATION_WRITE = "ms02:preventive_recommendation:write";
 
     private Permisos() {
     }

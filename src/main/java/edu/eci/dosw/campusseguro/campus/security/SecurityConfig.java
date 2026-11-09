@@ -36,6 +36,30 @@ public class SecurityConfig {
                                 "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
 
+                        // Consulta pública de información mediante códigos QR.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers("/api/v1/public/**").denyAll()
+
+                        // Generación de códigos QR: permiso de administración del elemento.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/spaces/*/qr",
+                                "/api/v1/exits/*/qr").hasAuthority(Permisos.BUILDING_WRITE)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/safe-zones/*/qr")
+                        .hasAuthority(Permisos.SAFE_ZONE_WRITE)
+
+                        // Escaleras.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/stairs",
+                                "/api/v1/stairs/*").hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/stairs/*/status")
+                        .hasAuthority(Permisos.STAIR_STATUS_WRITE)
+                        .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
+                        // Imágenes.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/images/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/images", "/api/v1/images/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Consulta pública de los QR (ADR-003, D7): solo lectura y sin sesión; cualquier otro método se rechaza.
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/public/**").denyAll()
