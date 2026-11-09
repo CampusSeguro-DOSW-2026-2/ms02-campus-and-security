@@ -30,8 +30,11 @@ services:
       NAVIGATION_BASE_URL: ${NAVIGATION_BASE_URL:-https://routing.openstreetmap.de/routed-foot}
       NAVIGATION_PROFILE: ${NAVIGATION_PROFILE:-foot}
       QR_BASE_URL: ${QR_BASE_URL:-http://localhost:5173}
+      IMAGEN_STORAGE_DIR: /app/data
     ports:
       - "${APP_PORT:-8082}:8082"
+    volumes:
+      - ./data:/app/data
 
 volumes:
   pgdata:
