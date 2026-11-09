@@ -29,5 +29,8 @@ public interface RutaRepository extends JpaRepository<RutaEvacuacion, UUID> {
 
     List<RutaEvacuacion> findBySalidaOrigenId(UUID salidaId);
 
+    // Solo rutas exteriores (las de legado no tienen salida de origen).
+    List<RutaEvacuacion> findByZonaSeguraDestinoIdAndSalidaOrigenIdNotNull(UUID zonaSeguraId);
+
     List<RutaEvacuacion> findBySalidaOrigenIdIn(Collection<UUID> salidaIds);
 }
