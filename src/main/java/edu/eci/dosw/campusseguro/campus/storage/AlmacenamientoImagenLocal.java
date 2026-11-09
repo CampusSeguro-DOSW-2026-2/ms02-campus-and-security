@@ -5,11 +5,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Component
 public class AlmacenamientoImagenLocal {
 
@@ -34,9 +36,11 @@ public class AlmacenamientoImagenLocal {
                     StandardOpenOption.WRITE
             );
         } catch (IOException e) {
+            log.error("No fue posible almacenar la imagen en {}", destino, e);
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible almacenar la imagen."
+                    "No fue posible almacenar la imagen.",
+                    e
             );
         }
     }
