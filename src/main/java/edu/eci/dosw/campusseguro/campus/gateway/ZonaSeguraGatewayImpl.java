@@ -23,6 +23,8 @@ public class ZonaSeguraGatewayImpl implements ZonaSeguraGateway {
                         z.getId(),
                         z.getNombre(),
                         z.getUbicacion(),
-                        z.getEstado() == Estado.ACTIVO));
+                        z.getEstado() == Estado.ACTIVO,
+                        z.getLatitud(),
+                        z.getLongitud()));
     }
 }
