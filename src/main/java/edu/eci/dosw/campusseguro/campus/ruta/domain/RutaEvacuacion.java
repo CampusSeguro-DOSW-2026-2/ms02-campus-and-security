@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.ruta.domain;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -16,18 +18,26 @@ import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 
-// Una ruta por espacio de origen (unique en espacio_origen_id). Espacio y zona se guardan solo por id.
+// Dos tipos de ruta (ADR-003): de legado (espacio -> zona, descrita en texto, una por espacio) y
+// exterior (salida -> zona, con el último recorrido calculado). Origen y destino se guardan solo por id.
 @Entity
 @Table(name = "ruta_evacuacion",
-        uniqueConstraints = @UniqueConstraint(name = "uk_ruta_espacio_origen", columnNames = "espacio_origen_id"))
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_ruta_espacio_origen", columnNames = "espacio_origen_id"),
+                @UniqueConstraint(name = "uk_ruta_salida_zona",
+                        columnNames = {"salida_origen_id", "zona_segura_destino_id"})
+        })
 public class RutaEvacuacion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "espacio_origen_id", nullable = false)
+    @Column(name = "espacio_origen_id")
     private UUID espacioOrigenId;
+
+    @Column(name = "salida_origen_id")
+    private UUID salidaOrigenId;
 
     @Column(name = "zona_segura_destino_id", nullable = false)
     private UUID zonaSeguraDestinoId;
@@ -41,6 +51,22 @@ public class RutaEvacuacion {
 
     @Column(length = 255)
     private String motivo;
+
+    @Column(name = "distancia_metros", precision = 10, scale = 2)
+    private BigDecimal distanciaMetros;
+
+    @Column(name = "duracion_segundos", precision = 10, scale = 2)
+    private BigDecimal duracionSegundos;
+
+    // Recorrido calculado, en texto plano (ver CodificadorRutaExterior). Así la consulta no depende de internet.
+    @Column(columnDefinition = "TEXT")
+    private String geometria;
+
+    @Column(columnDefinition = "TEXT")
+    private String pasos;
+
+    @Column(name = "calculada_en")
+    private Instant calculadaEn;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -58,6 +84,27 @@ public class RutaEvacuacion {
         this.zonaSeguraDestinoId = zonaSeguraDestinoId;
         this.descripcion = descripcion;
         this.estado = estado;
+    }
+
+    // Ruta exterior: sale de una salida del edificio y llega a una zona segura.
+    public static RutaEvacuacion exterior(UUID salidaOrigenId, UUID zonaSeguraDestinoId, String descripcion) {
+        RutaEvacuacion ruta = new RutaEvacuacion(null, zonaSeguraDestinoId, descripcion, EstadoRuta.DISPONIBLE);
+        ruta.salidaOrigenId = salidaOrigenId;
+        return ruta;
+    }
+
+    public boolean esExterior() {
+        return salidaOrigenId != null;
+    }
+
+    // Guarda el último recorrido calculado (D2); se llama de nuevo cuando se recalcula.
+    public void registrarCalculo(double distanciaMetros, double duracionSegundos,
+                                 String geometria, String pasos, Instant calculadaEn) {
+        this.distanciaMetros = BigDecimal.valueOf(distanciaMetros).setScale(2, RoundingMode.HALF_UP);
+        this.duracionSegundos = BigDecimal.valueOf(duracionSegundos).setScale(2, RoundingMode.HALF_UP);
+        this.geometria = geometria;
+        this.pasos = pasos;
+        this.calculadaEn = calculadaEn;
     }
 
     @PrePersist
@@ -78,6 +125,30 @@ public class RutaEvacuacion {
 
     public UUID getEspacioOrigenId() {
         return espacioOrigenId;
+    }
+
+    public UUID getSalidaOrigenId() {
+        return salidaOrigenId;
+    }
+
+    public BigDecimal getDistanciaMetros() {
+        return distanciaMetros;
+    }
+
+    public BigDecimal getDuracionSegundos() {
+        return duracionSegundos;
+    }
+
+    public String getGeometria() {
+        return geometria;
+    }
+
+    public String getPasos() {
+        return pasos;
+    }
+
+    public Instant getCalculadaEn() {
+        return calculadaEn;
     }
 
     public UUID getZonaSeguraDestinoId() {

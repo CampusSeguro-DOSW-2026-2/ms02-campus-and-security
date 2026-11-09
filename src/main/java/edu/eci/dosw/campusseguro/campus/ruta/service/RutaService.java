@@ -11,12 +11,15 @@ import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway.SalidaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.ActualizarRutaRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +34,24 @@ public class RutaService {
     private final RutaRepository rutaRepository;
     private final EspacioGateway espacioGateway;
     private final ZonaSeguraGateway zonaGateway;
+    private final SalidaGateway salidaGateway;
 
+    @Autowired
     public RutaService(RutaRepository rutaRepository,
                        EspacioGateway espacioGateway,
-                       ZonaSeguraGateway zonaGateway) {
+                       ZonaSeguraGateway zonaGateway,
+                       SalidaGateway salidaGateway) {
         this.rutaRepository = rutaRepository;
         this.espacioGateway = espacioGateway;
         this.zonaGateway = zonaGateway;
+        this.salidaGateway = salidaGateway;
+    }
+
+    // Mantiene compatibilidad con las pruebas existentes (sin rutas exteriores).
+    public RutaService(RutaRepository rutaRepository,
+                       EspacioGateway espacioGateway,
+                       ZonaSeguraGateway zonaGateway) {
+        this(rutaRepository, espacioGateway, zonaGateway, null);
     }
 
     @Transactional
@@ -84,6 +98,10 @@ public class RutaService {
     @Transactional
     public RutaResponse actualizar(UUID id, ActualizarRutaRequest request) {
         RutaEvacuacion ruta = buscar(id);
+        if (ruta.esExterior()) {
+            throw new ReglaNegocioException(
+                    "Las rutas exteriores no se editan a mano; se recalculan con POST /api/v1/evacuation-routes/exterior");
+        }
 
         ZonaInfo zona = zonaGateway.buscarPorId(request.zonaSeguraDestinoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
@@ -129,11 +147,20 @@ public class RutaService {
     }
 
     private void validarOrigenYDestinoUtilizables(RutaEvacuacion ruta) {
-        boolean espacioDisponible = espacioGateway.buscarPorId(ruta.getEspacioOrigenId())
-                .map(EspacioInfo::disponible)
-                .orElse(false);
-        if (!espacioDisponible) {
-            throw new ReglaNegocioException("El espacio de origen no está disponible; la ruta solo puede quedar bloqueada");
+        if (ruta.esExterior()) {
+            boolean salidaDisponible = salidaGateway == null || salidaGateway.buscarPorId(ruta.getSalidaOrigenId())
+                    .map(SalidaInfo::disponible)
+                    .orElse(false);
+            if (!salidaDisponible) {
+                throw new ReglaNegocioException("La salida de origen no está disponible; la ruta solo puede quedar bloqueada");
+            }
+        } else {
+            boolean espacioDisponible = espacioGateway.buscarPorId(ruta.getEspacioOrigenId())
+                    .map(EspacioInfo::disponible)
+                    .orElse(false);
+            if (!espacioDisponible) {
+                throw new ReglaNegocioException("El espacio de origen no está disponible; la ruta solo puede quedar bloqueada");
+            }
         }
         boolean zonaActiva = zonaGateway.buscarPorId(ruta.getZonaSeguraDestinoId())
                 .map(ZonaInfo::activa)

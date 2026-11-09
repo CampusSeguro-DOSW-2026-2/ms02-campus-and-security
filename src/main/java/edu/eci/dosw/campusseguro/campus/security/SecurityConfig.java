@@ -70,6 +70,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/*/floors", "/api/v1/floors/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
+                        // Ruta exterior guardada de una salida: es una consulta de rutas (ROUTE_READ) y va antes de /exits/**.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/exits/*/evacuation-route")
+                        .hasAuthority(Permisos.ROUTE_READ)
+
                         // Salidas (ADR-003): van antes de /buildings/** para que su lectura no exija BUILDING_WRITE.
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/exits", "/api/v1/exits/*")
                         .hasAuthority(Permisos.CAMPUS_READ)

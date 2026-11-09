@@ -14,9 +14,14 @@ public interface EspacioGateway {
     List<EspacioInfo> listarPorEdificio(UUID edificioId);
 
     record EspacioInfo(UUID id, UUID edificioId, String nombre,
-            boolean disponible, TipoEspacio tipoEspacio) {
+            boolean disponible, TipoEspacio tipoEspacio, UUID pisoId, Integer pisoNumero) {
+
+        public EspacioInfo(UUID id, UUID edificioId, String nombre, boolean disponible, TipoEspacio tipoEspacio) {
+            this(id, edificioId, nombre, disponible, tipoEspacio, null, null);
+        }
+
         public EspacioInfo(UUID id, UUID edificioId, String nombre, boolean disponible) {
-            this(id, edificioId, nombre, disponible, null);
+            this(id, edificioId, nombre, disponible, null, null, null);
         }
     }
 }
