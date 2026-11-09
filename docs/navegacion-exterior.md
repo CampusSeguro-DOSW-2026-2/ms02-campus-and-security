@@ -61,3 +61,33 @@ GET /api/v1/exits/{id}/evacuation-route
 - Si la salida está en el mismo piso del espacio no hace falta escalera.
 - Entre varias salidas se elige la de recorrido exterior más corto, con ruta `DISPONIBLE` y zona de destino activa.
 - Si no hay escalera disponible o ninguna salida tiene ruta, `guia.mensaje` lo explica y `guia.salida` queda en `null`.
+
+## Generación automática de rutas exteriores
+
+El administrador ya no necesita crear cada ruta `salida → zona segura` con `POST /api/v1/evacuation-routes/exterior`.
+Las rutas se generan solas, y esa llamada queda para casos puntuales (forzar un par concreto).
+
+**Cuándo se generan** (después del commit y en otro hilo, para no hacer esperar la petición del administrador):
+
+| Cambio | Qué se genera |
+| --- | --- |
+| Se crea, se mueve (coordenadas o piso) o se reactiva una **salida** | Rutas hacia sus N zonas seguras más cercanas, y recalcula las que ya tenía |
+| Se crea, se mueve o se reactiva una **zona segura con coordenadas** | Rutas desde las salidas para las que es una de las N más cercanas, y recalcula las que ya llegaban a ella |
+
+- "Más cercanas" es distancia en línea recta (haversine), para no llamar al proveedor por cada combinación. El cálculo real del recorrido sigue haciéndolo `RutaExteriorService`.
+- Con esas rutas guardadas, la guía de `GET /api/v1/spaces/{id}/evacuation-route` ya funciona para todos los espacios del edificio sin registrar nada por espacio.
+- Si el proveedor falla, el error solo queda en el log y no afecta la operación del administrador. Para completar lo que faltó:
+
+```
+POST /api/v1/evacuation-routes/exterior/generate            # solo crea las que faltan
+POST /api/v1/evacuation-routes/exterior/generate?recalcular=true   # rehace también las existentes
+```
+
+Responde `{ "generadas": 4, "omitidas": 1, "interrumpida": false }`. `interrumpida` es `true` si el proveedor dejó de responder y se cortó; basta con repetir la llamada. Solo ADMIN (`ms02:route:write`).
+
+**Configuración**
+
+| Propiedad | Variable | Por defecto |
+| --- | --- | --- |
+| `campusseguro.rutas.auto.enabled` | `RUTAS_AUTO_ENABLED` | `true` |
+| `campusseguro.rutas.auto.max-zonas-por-salida` | `RUTAS_AUTO_MAX_ZONAS` | `3` |
