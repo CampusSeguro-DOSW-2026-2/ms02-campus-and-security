@@ -60,21 +60,21 @@ class CodigoQrServiceTest {
 
         byte[] png = servicio.generar(TipoQr.ESPACIO, ID);
 
-        assertThat(leer(png)).isEqualTo(BASE + "/api/v1/public/spaces/" + ID);
+        assertThat(leer(png)).isEqualTo(BASE + "/api/v1/public/spaces?id=" + ID);
     }
 
     @Test
     void salida_elQrApuntaALaConsultaPublicaDeSalidas() throws Exception {
         when(salidaRepository.existsById(ID)).thenReturn(true);
 
-        assertThat(leer(servicio.generar(TipoQr.SALIDA, ID))).isEqualTo(BASE + "/api/v1/public/exits/" + ID);
+        assertThat(leer(servicio.generar(TipoQr.SALIDA, ID))).isEqualTo(BASE + "/api/v1/public/exits?id=" + ID);
     }
 
     @Test
     void zonaSegura_elQrApuntaALaConsultaPublicaDeZonas() throws Exception {
         when(zonaSeguraRepository.existsById(ID)).thenReturn(true);
 
-        assertThat(leer(servicio.generar(TipoQr.ZONA_SEGURA, ID))).isEqualTo(BASE + "/api/v1/public/safe-zones/" + ID);
+        assertThat(leer(servicio.generar(TipoQr.ZONA_SEGURA, ID))).isEqualTo(BASE + "/api/v1/public/safe-zones?id=" + ID);
     }
 
     @Test
@@ -88,7 +88,7 @@ class CodigoQrServiceTest {
 
     @Test
     void enlace_quitaLaBarraFinalDeLaBase() {
-        assertThat(servicio.enlace(TipoQr.SALIDA, ID)).isEqualTo(BASE + "/api/v1/public/exits/" + ID);
+        assertThat(servicio.enlace(TipoQr.SALIDA, ID)).isEqualTo(BASE + "/api/v1/public/exits?id=" + ID);
     }
 
     @Test

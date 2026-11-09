@@ -64,7 +64,7 @@ public class CodigoQrService {
     }
 
     public String enlace(TipoQr tipo, UUID id) {
-        return baseUrl + "/api/v1/public/" + tipo.ruta + "/" + id;
+        return baseUrl + "/api/v1/public/" + tipo.ruta + "?id=" + id;
     }
 
     private void verificarQueExiste(TipoQr tipo, UUID id) {
