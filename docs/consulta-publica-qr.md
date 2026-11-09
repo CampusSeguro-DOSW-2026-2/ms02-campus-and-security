@@ -1,6 +1,6 @@
 # Consulta pública de los QR
 
-Al escanear el QR de un espacio, una salida o una zona segura en una emergencia, la persona ve la información del lugar **sin iniciar sesión** (ADR-003, D7). Crear, modificar y generar QR sigue protegido para ADMIN.
+Al escanear el QR de un espacio, una salida o una zona segura en una emergencia, la persona ve la información del lugar **sin iniciar sesión** (ADR-003, D7; decisiones de detalle en ADR-004). Crear, modificar y generar QR sigue protegido para ADMIN.
 
 ## Enlaces
 
