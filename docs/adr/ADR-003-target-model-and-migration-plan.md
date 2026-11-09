@@ -28,7 +28,7 @@ No new permissions, so MS01's matrix does not change. `ms02:building:write` cove
 ### D7: Public read-only endpoint for QR
 The public QR lookup is read-only (`GET` only) and `permitAll` in `SecurityConfig`. Any other method on those paths is rejected. Public DTOs are minimal and contain no sensitive data.
 
-Update (N4): the original plan assumed the Gateway could expose `GET /api/v1/public/**`, but the Gateway only accepts exact routes, without wildcards. So each public route is an exact path and the element id goes in the query string (`?id=<uuid>`), not in the path. The QR link uses that format. Rate limiting does not exist yet in MS02 or in the Gateway; it stays pending with the Gateway team. The risk is low for now: the lookup is read-only, returns minimal data and the UUIDs cannot be guessed.
+Update (N4): the original plan assumed the Gateway could expose `GET /api/v1/public/**`, but the Gateway only accepts exact routes, without wildcards. So each public route is an exact path and the element id goes in the query string (`?id=<uuid>`), not in the path. The QR link uses that format. The three routes are `GET /api/v1/public/spaces?id={uuid}`, `GET /api/v1/public/exits?id={uuid}` and `GET /api/v1/public/safe-zones?id={uuid}`. Rate limiting does not exist yet in MS02 or in the Gateway; it stays pending with the Gateway team. The risk is low for now: the lookup is read-only, returns minimal data and the UUIDs cannot be guessed.
 
 ## Other rules
 - `PuntoEncuentro` is not a separate entity: it is a `ZonaSegura` with `es_punto_encuentro = true`.
