@@ -8,7 +8,6 @@ import edu.eci.dosw.campusseguro.campus.dto.ModificarSalidaRequest;
 import edu.eci.dosw.campusseguro.campus.dto.SalidaRequest;
 import edu.eci.dosw.campusseguro.campus.dto.SalidaResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
-import edu.eci.dosw.campusseguro.campus.exception.SalidaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.exception.SalidaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.service.SalidaService;
@@ -38,7 +37,7 @@ class SalidaControllerTest {
     private static final UUID EDIFICIO = uuid(1);
     private static final UUID PISO = uuid(2);
     private static final UUID SALIDA = uuid(20);
-    private static final String SALIDA_JSON = "{\"pisoId\":\"" + PISO + "\",\"codigo\":\"G-S1\","
+    private static final String SALIDA_JSON = "{\"pisoId\":\"" + PISO + "\","
             + "\"nombre\":\"Salida principal\",\"latitud\":4.78271,\"longitud\":-74.04263}";
     private static final String MODIFICAR_JSON = "{\"pisoId\":\"" + PISO + "\",\"nombre\":\"Salida norte\","
             + "\"latitud\":4.78271,\"longitud\":-74.04263}";
@@ -50,7 +49,7 @@ class SalidaControllerTest {
     private SalidaService salidaService;
 
     private SalidaResponse respuesta(Estado estado) {
-        return new SalidaResponse(SALIDA, EDIFICIO, "Bloque G", PISO, 1, "G-S1", "Salida principal",
+        return new SalidaResponse(SALIDA, EDIFICIO, "Bloque G", PISO, 1, "Salida principal",
                 new BigDecimal("4.782710"), new BigDecimal("-74.042630"), estado, estado == Estado.ACTIVO, false);
     }
 
@@ -61,7 +60,7 @@ class SalidaControllerTest {
         mockMvc.perform(post("/api/v1/buildings/{id}/exits", EDIFICIO).contentType(MediaType.APPLICATION_JSON)
                         .content(SALIDA_JSON))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigo").value("G-S1"))
+                .andExpect(jsonPath("$.nombre").value("Salida principal"))
                 .andExpect(jsonPath("$.latitud").value(4.78271))
                 .andExpect(jsonPath("$.longitud").value(-74.04263))
                 .andExpect(jsonPath("$.pisoNumero").value(1))
@@ -71,11 +70,10 @@ class SalidaControllerTest {
     @Test
     void crear_sinCamposObligatorios_devuelve400ConLosCampos() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/exits", EDIFICIO).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"codigo\":\"\",\"nombre\":\"\"}"))
+                        .content("{\"nombre\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("VALIDACION"))
                 .andExpect(jsonPath("$.errores[?(@.campo == 'pisoId')]").exists())
-                .andExpect(jsonPath("$.errores[?(@.campo == 'codigo')]").exists())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'latitud')]").exists())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'longitud')]").exists());
@@ -84,23 +82,11 @@ class SalidaControllerTest {
     @Test
     void crear_conCoordenadasFueraDeRango_devuelve400() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/exits", EDIFICIO).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"pisoId\":\"" + PISO + "\",\"codigo\":\"G-S1\",\"nombre\":\"Salida\","
+                        .content("{\"pisoId\":\"" + PISO + "\",\"nombre\":\"Salida\","
                                 + "\"latitud\":95,\"longitud\":-190}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'latitud')].mensaje").value("La latitud debe estar entre -90 y 90"))
                 .andExpect(jsonPath("$.errores[?(@.campo == 'longitud')].mensaje").value("La longitud debe estar entre -180 y 180"));
-    }
-
-    @Test
-    void crear_conCodigoRepetido_devuelve409ConElCampo() throws Exception {
-        when(salidaService.crear(eq(EDIFICIO), any(SalidaRequest.class)))
-                .thenThrow(new SalidaDuplicadaException("G-S1"));
-
-        mockMvc.perform(post("/api/v1/buildings/{id}/exits", EDIFICIO).contentType(MediaType.APPLICATION_JSON)
-                        .content(SALIDA_JSON))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.codigo").value("CONFLICTO"))
-                .andExpect(jsonPath("$.errores[0].campo").value("codigo"));
     }
 
     @Test

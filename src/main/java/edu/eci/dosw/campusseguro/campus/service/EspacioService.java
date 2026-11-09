@@ -17,7 +17,6 @@ import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.exception.EspacioDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
@@ -55,22 +54,14 @@ public class EspacioService {
             throw new ReglaNegocioException("No se pueden registrar espacios en un piso inactivo");
         }
 
-        String codigo = request.codigo().trim();
-
-        if (espacioRepository.existsByEdificioIdAndCodigo(edificio.getId(), codigo)) {
-            throw new EspacioDuplicadoException(codigo);
-        }
-
         Espacio espacio = new Espacio();
         espacio.setEdificioId(edificio.getId());
         espacio.setPisoId(pisoId);
-        espacio.setCodigo(codigo);
         espacio.setNombre(request.nombre().trim());
         espacio.setTipo(request.tipo());
 
         Espacio guardado = espacioRepository.save(espacio);
-        log.info("Espacio {} creado en el piso {} con código {}",
-                guardado.getId(), pisoId, guardado.getCodigo());
+        log.info("Espacio {} creado en el piso {}", guardado.getId(), pisoId);
         return aRespuesta(guardado, piso, edificio);
     }
 
@@ -186,7 +177,6 @@ public class EspacioService {
                 edificio == null ? null : edificio.getNombre(),
                 e.getPisoId(),
                 piso == null ? null : piso.getNumero(),
-                e.getCodigo(),
                 e.getNombre(),
                 e.getTipo(),
                 e.getEstado(),

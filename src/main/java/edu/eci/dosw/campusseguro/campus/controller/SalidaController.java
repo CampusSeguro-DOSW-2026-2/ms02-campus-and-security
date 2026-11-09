@@ -33,7 +33,7 @@ public class SalidaController {
 
     private final SalidaService salidaService;
 
-    @Operation(summary = "Registrar salida", description = "Solo ADMIN. El edificio y el piso deben estar activos, el piso debe ser del edificio, las coordenadas son obligatorias y el código no se repite en el edificio.")
+    @Operation(summary = "Registrar salida", description = "Solo ADMIN. El edificio y el piso deben estar activos, el piso debe ser del edificio y las coordenadas son obligatorias.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PostMapping("/buildings/{edificioId}/exits")
     public ResponseEntity<SalidaResponse> crear(@PathVariable UUID edificioId,
@@ -56,7 +56,7 @@ public class SalidaController {
         return salidaService.obtener(id);
     }
 
-    @Operation(summary = "Modificar salida", description = "Solo ADMIN. Cambia piso, nombre y coordenadas; el código no se modifica.")
+    @Operation(summary = "Modificar salida", description = "Solo ADMIN. Cambia piso, nombre y coordenadas.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PutMapping("/exits/{id}")
     public SalidaResponse modificar(@PathVariable UUID id, @Valid @RequestBody ModificarSalidaRequest request) {

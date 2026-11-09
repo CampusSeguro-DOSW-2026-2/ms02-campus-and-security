@@ -37,7 +37,7 @@ public class SalidaGatewayImpl implements SalidaGateway {
                 .filter(p -> p.getEstado() == Estado.ACTIVO)
                 .map(Piso::getId)
                 .collect(Collectors.toSet());
-        return salidaRepository.findByEdificioIdOrderByCodigoAsc(edificioId).stream()
+        return salidaRepository.findByEdificioIdOrderByNombreAsc(edificioId).stream()
                 .map(s -> aInfo(s, edificioActivo && pisosActivos.contains(s.getPisoId())))
                 .toList();
     }

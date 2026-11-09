@@ -116,7 +116,7 @@ class SalidaGatewayImplTest {
     void listarPorEdificio_marcaDisponibilidadSegunElPiso() {
         contenedores(Estado.ACTIVO, Estado.ACTIVO);
         when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO)).thenReturn(List.of(piso(Estado.INACTIVO)));
-        when(salidaRepository.findByEdificioIdOrderByCodigoAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
+        when(salidaRepository.findByEdificioIdOrderByNombreAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
 
         assertThat(gateway.listarPorEdificio(EDIFICIO)).extracting(SalidaInfo::disponible).containsExactly(false);
     }
@@ -133,7 +133,7 @@ class SalidaGatewayImplTest {
     void listarPorEdificio_conEdificioInactivo_ningunaEstaDisponible() {
         contenedores(Estado.INACTIVO, Estado.ACTIVO);
         when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO)).thenReturn(List.of(piso(Estado.ACTIVO)));
-        when(salidaRepository.findByEdificioIdOrderByCodigoAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
+        when(salidaRepository.findByEdificioIdOrderByNombreAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
 
         assertThat(gateway.listarPorEdificio(EDIFICIO)).extracting(SalidaInfo::disponible).containsExactly(false);
     }

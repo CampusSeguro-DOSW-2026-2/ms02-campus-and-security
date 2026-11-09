@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "espacio",
-        uniqueConstraints = @UniqueConstraint(name = "uk_espacio_edificio_codigo", columnNames = {"edificio_id", "codigo"}))
+@Table(name = "espacio")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,9 +25,6 @@ public class Espacio {
 
     @Column(name = "piso_id", nullable = false)
     private UUID pisoId;
-
-    @Column(nullable = false, length = 50)
-    private String codigo;
 
     @Column(nullable = false, length = 100)
     private String nombre;

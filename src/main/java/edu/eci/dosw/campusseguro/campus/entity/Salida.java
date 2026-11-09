@@ -11,15 +11,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "salida",
-        uniqueConstraints = @UniqueConstraint(name = "uk_salida_edificio_codigo", columnNames = {"edificio_id", "codigo"}))
+@Table(name = "salida")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,9 +33,6 @@ public class Salida {
 
     @Column(name = "piso_id", nullable = false)
     private UUID pisoId;
-
-    @Column(nullable = false, length = 50)
-    private String codigo;
 
     @Column(nullable = false, length = 100)
     private String nombre;

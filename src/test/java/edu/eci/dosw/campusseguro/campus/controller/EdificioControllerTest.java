@@ -18,7 +18,6 @@ import edu.eci.dosw.campusseguro.campus.dto.EdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ModificarEdificioRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EdificioResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
-import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.service.EdificioService;
@@ -45,12 +44,11 @@ class EdificioControllerTest {
 
     private EdificioResponse respuesta(Estado estado) {
         return new EdificioResponse(
-                uuid(1), "ED-1", "Bloque H", "Descripción", estado, null, false);
+                uuid(1), "Bloque H", "Descripción", estado, uuid(10), false);
     }
 
-    private String json(String codigo, String nombre) {
-        return "{\"codigo\":\"" + codigo + "\",\"nombre\":\"" + nombre
-                + "\",\"descripcion\":\"Descripción\"}";
+    private String json(String nombre) {
+        return "{\"nombre\":\"" + nombre + "\",\"descripcion\":\"Descripción\",\"campusId\":\"" + uuid(10) + "\"}";
     }
 
     private String jsonModificar(String nombre) {
@@ -65,19 +63,21 @@ class EdificioControllerTest {
 
         mockMvc.perform(post(BASE)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("ED-1", "Bloque H")))
+                        .content(json("Bloque H")))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigo").value("ED-1"))
+                .andExpect(jsonPath("$.nombre").value("Bloque H"))
+                .andExpect(jsonPath("$.campusId").value(uuid(10).toString()))
+                .andExpect(jsonPath("$.codigo").doesNotExist())
                 .andExpect(jsonPath("$.estado").value("ACTIVO"));
     }
 
     @Test
-    void crear_sinCodigoNiNombre_devuelve400IndicandoLosCampos() throws Exception {
+    void crear_sinNombreNiCampus_devuelve400IndicandoLosCampos() throws Exception {
         mockMvc.perform(post(BASE)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"codigo\":\"\",\"nombre\":\"\"}"))
+                        .content("{\"nombre\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errores[?(@.campo == 'codigo')]").exists())
+                .andExpect(jsonPath("$.errores[?(@.campo == 'campusId')]").exists())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists());
     }
 
@@ -85,21 +85,9 @@ class EdificioControllerTest {
     void crear_conNombreMayorA100Caracteres_devuelve400() throws Exception {
         mockMvc.perform(post(BASE)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("ED-1", "a".repeat(101))))
+                        .content(json("a".repeat(101))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists());
-    }
-
-    @Test
-    void crear_codigoDuplicado_devuelve409() throws Exception {
-        when(edificioService.crear(any(EdificioRequest.class)))
-                .thenThrow(new CodigoDuplicadoException("ED-1"));
-
-        mockMvc.perform(post(BASE)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("ED-1", "Bloque H")))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.errores[0].campo").value("codigo"));
     }
 
     @Test
@@ -163,7 +151,7 @@ class EdificioControllerTest {
 
         mockMvc.perform(get(BASE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].codigo").value("ED-1"));
+                .andExpect(jsonPath("$[0].nombre").value("Bloque H"));
     }
 
     @Test

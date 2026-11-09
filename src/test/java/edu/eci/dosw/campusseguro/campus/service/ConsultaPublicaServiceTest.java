@@ -91,7 +91,6 @@ class ConsultaPublicaServiceTest {
         e.setId(ESPACIO);
         e.setEdificioId(EDIFICIO);
         e.setPisoId(PISO);
-        e.setCodigo("G-201");
         e.setNombre("Salón 201");
         e.setTipo(TipoEspacio.SALON);
         e.setEstado(estado);
@@ -115,7 +114,6 @@ class ConsultaPublicaServiceTest {
         EspacioPublicoResponse r = servicio.espacio(ESPACIO);
 
         assertThat(r.nombre()).isEqualTo("Salón 201");
-        assertThat(r.codigo()).isEqualTo("G-201");
         assertThat(r.edificio()).isEqualTo("Bloque G");
         assertThat(r.piso()).isEqualTo(2);
         assertThat(r.disponible()).isTrue();
@@ -163,7 +161,6 @@ class ConsultaPublicaServiceTest {
         s.setId(SALIDA);
         s.setEdificioId(EDIFICIO);
         s.setPisoId(PISO);
-        s.setCodigo("G-S1");
         s.setNombre("Salida principal");
         s.setLatitud(new BigDecimal("4.782710"));
         s.setLongitud(new BigDecimal("-74.042630"));

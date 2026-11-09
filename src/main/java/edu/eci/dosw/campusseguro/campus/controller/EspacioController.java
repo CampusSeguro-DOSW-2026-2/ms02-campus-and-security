@@ -26,7 +26,7 @@ public class EspacioController {
 
     private final EspacioService espacioService;
 
-    @Operation(summary = "Registrar espacio", description = "Solo ADMIN. El piso y su edificio deben estar activos y el código no se puede repetir en el edificio.")
+    @Operation(summary = "Registrar espacio", description = "Solo ADMIN. El piso y su edificio deben estar activos.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PostMapping("/floors/{pisoId}/spaces")
     public ResponseEntity<EspacioResponse> crear(@PathVariable UUID pisoId,
@@ -57,7 +57,7 @@ public class EspacioController {
         return espacioService.obtener(id);
     }
 
-    @Operation(summary = "Modificar espacio", description = "Solo ADMIN. Cambia nombre y tipo; el código no se modifica.")
+    @Operation(summary = "Modificar espacio", description = "Solo ADMIN. Cambia nombre y tipo.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PutMapping("/spaces/{id}")
     public EspacioResponse modificar(@PathVariable UUID id,

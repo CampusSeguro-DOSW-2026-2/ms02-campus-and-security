@@ -24,7 +24,7 @@ class SalidaSeguridadTest {
 
     private static final String USER = "X-User-Id";
     private static final String ROLE = "X-User-Role";
-    private static final String SALIDA_JSON = "{\"pisoId\":\"" + uuid(2) + "\",\"codigo\":\"G-S1\","
+    private static final String SALIDA_JSON = "{\"pisoId\":\"" + uuid(2) + "\","
             + "\"nombre\":\"Salida principal\",\"latitud\":4.78271,\"longitud\":-74.04263}";
     private static final String MODIFICAR_JSON = "{\"pisoId\":\"" + uuid(2) + "\",\"nombre\":\"Salida\","
             + "\"latitud\":4.78271,\"longitud\":-74.04263}";

@@ -7,7 +7,6 @@ import edu.eci.dosw.campusseguro.campus.entity.TipoEspacio;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 
 public record EspacioPublicoResponse(
-        String codigo,
         String nombre,
         TipoEspacio tipo,
         String edificio,

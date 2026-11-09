@@ -20,17 +20,13 @@ public class Edificio {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 50)
-    private String codigo;
-
     @Column(nullable = false, length = 100)
     private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    // Nullable: los edificios pueden registrarse sin campus (ADR-003).
-    @Column(name = "campus_id")
+    @Column(name = "campus_id", nullable = false)
     private UUID campusId;
 
     @Enumerated(EnumType.STRING)

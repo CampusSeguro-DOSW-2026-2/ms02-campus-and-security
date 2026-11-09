@@ -11,7 +11,6 @@ public record SalidaResponse(
         String edificioNombre,
         UUID pisoId,
         Integer pisoNumero,
-        String codigo,
         String nombre,
         BigDecimal latitud,
         BigDecimal longitud,

@@ -56,7 +56,7 @@ class ConsultaRutaServiceTest {
 
     private void edificio(boolean activo) {
         when(edificioGateway.buscarPorId(edificioId))
-                .thenReturn(Optional.of(new EdificioInfo(edificioId, "A", "Edificio A", activo)));
+                .thenReturn(Optional.of(new EdificioInfo(edificioId, "Edificio A", activo)));
     }
 
     private void espacio() {

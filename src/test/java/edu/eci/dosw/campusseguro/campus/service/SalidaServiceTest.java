@@ -15,7 +15,6 @@ import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.exception.SalidaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.exception.SalidaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
@@ -83,7 +82,6 @@ class SalidaServiceTest {
         s.setId(SALIDA);
         s.setEdificioId(EDIFICIO);
         s.setPisoId(PISO);
-        s.setCodigo("G-S1");
         s.setNombre("Salida principal");
         s.setLatitud(LATITUD);
         s.setLongitud(LONGITUD);
@@ -99,8 +97,8 @@ class SalidaServiceTest {
         when(salidaRepository.save(any(Salida.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
-    private static SalidaRequest request(String codigo) {
-        return new SalidaRequest(PISO, codigo, "  Salida principal  ", LATITUD, LONGITUD);
+    private static SalidaRequest request() {
+        return new SalidaRequest(PISO, "  Salida principal  ", LATITUD, LONGITUD);
     }
 
     @Test
@@ -109,9 +107,8 @@ class SalidaServiceTest {
         piso(Estado.ACTIVO);
         guardarDevuelveLoMismo();
 
-        SalidaResponse respuesta = salidaService.crear(EDIFICIO, request("  G-S1  "));
+        SalidaResponse respuesta = salidaService.crear(EDIFICIO, request());
 
-        assertThat(respuesta.codigo()).isEqualTo("G-S1");
         assertThat(respuesta.nombre()).isEqualTo("Salida principal");
         assertThat(respuesta.latitud()).isEqualTo(LATITUD);
         assertThat(respuesta.longitud()).isEqualTo(LONGITUD);
@@ -125,7 +122,7 @@ class SalidaServiceTest {
     void crear_enEdificioInexistente_falla() {
         when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request("G-S1")))
+        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request()))
                 .isInstanceOf(EdificioNoEncontradoException.class);
     }
 
@@ -133,7 +130,7 @@ class SalidaServiceTest {
     void crear_enEdificioInactivo_seRechaza() {
         edificio(Estado.INACTIVO);
 
-        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request("G-S1")))
+        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request()))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("edificio inactivo");
         verify(salidaRepository, never()).save(any());
@@ -144,7 +141,7 @@ class SalidaServiceTest {
         edificio(Estado.ACTIVO);
         when(pisoRepository.findById(PISO)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request("G-S1")))
+        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request()))
                 .isInstanceOf(PisoNoEncontradoException.class);
     }
 
@@ -153,7 +150,7 @@ class SalidaServiceTest {
         edificio(Estado.ACTIVO);
         when(pisoRepository.findById(PISO)).thenReturn(Optional.of(piso(PISO, uuid(9), 1, Estado.ACTIVO)));
 
-        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request("G-S1")))
+        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request()))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("no pertenece al edificio");
         verify(salidaRepository, never()).save(any());
@@ -164,24 +161,13 @@ class SalidaServiceTest {
         edificio(Estado.ACTIVO);
         piso(Estado.INACTIVO);
 
-        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request("G-S1")))
+        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request()))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("piso inactivo");
     }
 
     @Test
-    void crear_conCodigoRepetidoEnElEdificio_seRechaza() {
-        edificio(Estado.ACTIVO);
-        piso(Estado.ACTIVO);
-        when(salidaRepository.existsByEdificioIdAndCodigo(EDIFICIO, "G-S1")).thenReturn(true);
-
-        assertThatThrownBy(() -> salidaService.crear(EDIFICIO, request("G-S1")))
-                .isInstanceOf(SalidaDuplicadaException.class);
-        verify(salidaRepository, never()).save(any());
-    }
-
-    @Test
-    void modificar_cambiaNombreYCoordenadasSinTocarElCodigo() {
+    void modificar_cambiaNombreYCoordenadas() {
         existe(salida(Estado.ACTIVO));
         piso(Estado.ACTIVO);
         edificio(Estado.ACTIVO);
@@ -193,7 +179,6 @@ class SalidaServiceTest {
 
         assertThat(respuesta.nombre()).isEqualTo("Salida norte");
         assertThat(respuesta.latitud()).isEqualTo(nuevaLatitud);
-        assertThat(respuesta.codigo()).isEqualTo("G-S1");
     }
 
     @Test
@@ -301,7 +286,7 @@ class SalidaServiceTest {
                 .thenReturn(List.of(piso(PISO, EDIFICIO, 1, Estado.ACTIVO)));
         Salida inactiva = salida(Estado.INACTIVO);
         inactiva.setId(uuid(21));
-        when(salidaRepository.findByEdificioIdOrderByCodigoAsc(EDIFICIO))
+        when(salidaRepository.findByEdificioIdOrderByNombreAsc(EDIFICIO))
                 .thenReturn(List.of(salida(Estado.ACTIVO), inactiva));
 
         assertThat(salidaService.listarPorEdificio(EDIFICIO, false)).extracting(SalidaResponse::id)
@@ -315,7 +300,7 @@ class SalidaServiceTest {
         edificio(Estado.ACTIVO);
         when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO))
                 .thenReturn(List.of(piso(PISO, EDIFICIO, 1, Estado.INACTIVO)));
-        when(salidaRepository.findByEdificioIdOrderByCodigoAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
+        when(salidaRepository.findByEdificioIdOrderByNombreAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
 
         assertThat(salidaService.listarPorEdificio(EDIFICIO, false)).isEmpty();
         assertThat(salidaService.listarPorEdificio(EDIFICIO, true)).extracting(SalidaResponse::disponible)
