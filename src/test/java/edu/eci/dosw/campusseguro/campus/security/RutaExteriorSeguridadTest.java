@@ -3,6 +3,8 @@ package edu.eci.dosw.campusseguro.campus.security;
 import java.util.List;
 
 import edu.eci.dosw.campusseguro.campus.ruta.controller.RutaExteriorController;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.ResumenGeneracionResponse;
+import edu.eci.dosw.campusseguro.campus.ruta.service.GeneradorRutasExterioresService;
 import edu.eci.dosw.campusseguro.campus.ruta.service.RutaExteriorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,9 @@ class RutaExteriorSeguridadTest {
 
     @MockitoBean
     private RutaExteriorService rutaExteriorService;
+
+    @MockitoBean
+    private GeneradorRutasExterioresService generador;
 
     @Test
     void sinCabeceras_devuelve401() throws Exception {
@@ -77,5 +82,41 @@ class RutaExteriorSeguridadTest {
                         .header(USER, "USR-3").header(ROLE, "ADMIN")
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void estudiante_noPuedeGenerarRutas() throws Exception {
+        mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate")
+                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void coordinador_noPuedeGenerarRutas() throws Exception {
+        mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate")
+                        .header(USER, "USR-2").header(ROLE, "COORDINADOR"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void admin_puedeGenerarRutas() throws Exception {
+        when(generador.generarTodas(false)).thenReturn(new ResumenGeneracionResponse(4, 1, false));
+
+        mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate")
+                        .header(USER, "USR-3").header(ROLE, "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.generadas").value(4));
+    }
+
+    @Test
+    void admin_puedePedirRecalcularTodo() throws Exception {
+        when(generador.generarTodas(true)).thenReturn(new ResumenGeneracionResponse(6, 0, false));
+
+        mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate?recalcular=true")
+                        .header(USER, "USR-3").header(ROLE, "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.generadas").value(6));
     }
 }

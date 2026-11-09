@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.ruta.dto.CalcularRutaExteriorRequest;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.ResumenGeneracionResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaExteriorResponse;
+import edu.eci.dosw.campusseguro.campus.ruta.service.GeneradorRutasExterioresService;
 import edu.eci.dosw.campusseguro.campus.ruta.service.RutaExteriorService;
 import edu.eci.dosw.campusseguro.campus.security.Permiso;
 import edu.eci.dosw.campusseguro.campus.security.Permisos;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(
@@ -28,9 +31,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class RutaExteriorController {
 
     private final RutaExteriorService rutaExteriorService;
+    private final GeneradorRutasExterioresService generador;
 
-    public RutaExteriorController(RutaExteriorService rutaExteriorService) {
+    public RutaExteriorController(RutaExteriorService rutaExteriorService,
+                                  GeneradorRutasExterioresService generador) {
         this.rutaExteriorService = rutaExteriorService;
+        this.generador = generador;
     }
 
     @Operation(
@@ -47,6 +53,22 @@ public class RutaExteriorController {
     @PostMapping("/api/v1/evacuation-routes/exterior")
     public RutaExteriorResponse calcular(@Valid @RequestBody CalcularRutaExteriorRequest request) {
         return rutaExteriorService.calcular(request.salidaId(), request.zonaSeguraId());
+    }
+
+    @Operation(
+            summary = "Generar rutas exteriores del campus",
+            description = "Solo ADMIN. Conecta cada salida disponible con sus zonas seguras más cercanas. "
+                    + "Por defecto solo crea las rutas que faltan; con recalcular=true rehace también las existentes. "
+                    + "Normalmente no hace falta: las rutas se generan solas al crear o mover salidas y zonas."
+    )
+    @ApiResponse(responseCode = "200",
+            description = "Resumen; interrumpida=true si el proveedor de navegación dejó de responder (repetir luego).")
+    @Permiso(Permisos.ROUTE_WRITE)
+    @PostMapping("/api/v1/evacuation-routes/exterior/generate")
+    public ResumenGeneracionResponse generar(
+            @Parameter(description = "Si es true, recalcula también las rutas que ya existen")
+            @RequestParam(defaultValue = "false") boolean recalcular) {
+        return generador.generarTodas(recalcular);
     }
 
     @Operation(

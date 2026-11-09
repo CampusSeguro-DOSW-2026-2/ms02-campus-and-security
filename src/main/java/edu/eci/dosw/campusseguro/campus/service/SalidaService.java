@@ -2,6 +2,7 @@ package edu.eci.dosw.campusseguro.campus.service;
 
 import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
 import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
+import edu.eci.dosw.campusseguro.campus.ruta.event.SalidaUbicacionCambiadaEvent;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.SalidaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
@@ -24,6 +26,7 @@ import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,7 @@ public class SalidaService {
     private final SalidaRepository salidaRepository;
     private final PisoRepository pisoRepository;
     private final EdificioRepository edificioRepository;
+    private final ApplicationEventPublisher eventos;
 
     @Transactional
     public SalidaResponse crear(UUID edificioId, SalidaRequest request) {
@@ -57,16 +61,22 @@ public class SalidaService {
         Salida guardada = salidaRepository.save(salida);
         log.info("Salida {} creada en el edificio {} (piso {})",
                 guardada.getId(), edificioId, piso.getId());
+        eventos.publishEvent(new SalidaUbicacionCambiadaEvent(guardada.getId()));
         return aRespuesta(guardada, piso, edificio);
     }
 
     @Transactional
     public SalidaResponse modificar(UUID id, ModificarSalidaRequest request) {
         Salida salida = buscar(id);
+        UUID pisoAnterior = salida.getPisoId();
 
         if (!request.pisoId().equals(salida.getPisoId())) {
             salida.setPisoId(pisoActivoDelEdificio(request.pisoId(), salida.getEdificioId()).getId());
         }
+
+        boolean cambioUbicacion = distintos(salida.getLatitud(), request.latitud())
+                || distintos(salida.getLongitud(), request.longitud())
+                || !request.pisoId().equals(pisoAnterior);
 
         salida.setNombre(request.nombre().trim());
         salida.setLatitud(request.latitud());
@@ -74,6 +84,9 @@ public class SalidaService {
 
         Salida guardada = salidaRepository.save(salida);
         log.info("Salida {} modificada", guardada.getId());
+        if (cambioUbicacion) {
+            eventos.publishEvent(new SalidaUbicacionCambiadaEvent(guardada.getId()));
+        }
         return aRespuesta(guardada);
     }
 
@@ -111,6 +124,7 @@ public class SalidaService {
 
         Salida guardada = salidaRepository.save(salida);
         log.info("Salida {} reactivada", id);
+        eventos.publishEvent(new SalidaUbicacionCambiadaEvent(guardada.getId()));
         return aRespuesta(guardada);
     }
 
@@ -130,6 +144,10 @@ public class SalidaService {
     @Transactional(readOnly = true)
     public SalidaResponse obtener(UUID id) {
         return aRespuesta(buscar(id));
+    }
+
+    private static boolean distintos(BigDecimal a, BigDecimal b) {
+        return a == null || b == null ? a != b : a.compareTo(b) != 0;
     }
 
     private Piso pisoActivoDelEdificio(UUID pisoId, UUID edificioId) {

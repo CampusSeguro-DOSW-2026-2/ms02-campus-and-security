@@ -26,4 +26,17 @@ public record Coordenada(BigDecimal latitud, BigDecimal longitud) {
                 BigDecimal.valueOf(latitud).setScale(6, RoundingMode.HALF_UP),
                 BigDecimal.valueOf(longitud).setScale(6, RoundingMode.HALF_UP));
     }
+
+    private static final double RADIO_TIERRA_METROS = 6_371_000;
+
+    // Distancia en línea recta (haversine). Sirve para elegir las zonas más cercanas sin llamar al proveedor.
+    public double distanciaMetrosA(Coordenada otra) {
+        double lat1 = Math.toRadians(latitud.doubleValue());
+        double lat2 = Math.toRadians(otra.latitud.doubleValue());
+        double dLat = lat2 - lat1;
+        double dLng = Math.toRadians(otra.longitud.doubleValue() - longitud.doubleValue());
+        double h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return 2 * RADIO_TIERRA_METROS * Math.asin(Math.sqrt(h));
+    }
 }

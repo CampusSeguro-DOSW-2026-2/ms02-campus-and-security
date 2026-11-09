@@ -21,6 +21,8 @@ import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+import edu.eci.dosw.campusseguro.campus.ruta.event.SalidaUbicacionCambiadaEvent;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -52,6 +54,9 @@ class SalidaServiceTest {
     private EdificioRepository edificioRepository;
 
     @Mock private ImagenRepository imagenRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventos;
 
     @InjectMocks
     private SalidaService salidaService;
@@ -179,6 +184,54 @@ class SalidaServiceTest {
 
         assertThat(respuesta.nombre()).isEqualTo("Salida norte");
         assertThat(respuesta.latitud()).isEqualTo(nuevaLatitud);
+    }
+
+    @Test
+    void crear_publicaElEventoParaGenerarSusRutas() {
+        edificio(Estado.ACTIVO);
+        piso(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        salidaService.crear(EDIFICIO, request());
+
+        verify(eventos).publishEvent(any(SalidaUbicacionCambiadaEvent.class));
+    }
+
+    @Test
+    void modificar_conCoordenadasNuevas_publicaElEvento() {
+        existe(salida(Estado.ACTIVO));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        salidaService.modificar(SALIDA,
+                new ModificarSalidaRequest(PISO, "Salida principal", new BigDecimal("4.783000"), LONGITUD));
+
+        verify(eventos).publishEvent(new SalidaUbicacionCambiadaEvent(SALIDA));
+    }
+
+    @Test
+    void modificar_conLasMismasCoordenadas_noPublicaEvento() {
+        existe(salida(Estado.ACTIVO));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        salidaService.modificar(SALIDA, new ModificarSalidaRequest(PISO, "Otro nombre", LATITUD, LONGITUD));
+
+        verify(eventos, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    void reactivar_publicaElEvento() {
+        existe(salida(Estado.INACTIVO));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        salidaService.reactivar(SALIDA);
+
+        verify(eventos).publishEvent(new SalidaUbicacionCambiadaEvent(SALIDA));
     }
 
     @Test
