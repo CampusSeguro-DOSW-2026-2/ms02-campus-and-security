@@ -19,6 +19,7 @@ import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.SalidaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaSeguraNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.dto.RecomendacionPreventivaResponse;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
@@ -62,6 +63,8 @@ class ConsultaPublicaServiceTest {
     private EdificioRepository edificioRepository;
     @Mock
     private ConsultaRutaService consultaRutaService;
+    @Mock
+    private ImagenRepository imagenRepository;
 
     @InjectMocks
     private ConsultaPublicaService servicio;

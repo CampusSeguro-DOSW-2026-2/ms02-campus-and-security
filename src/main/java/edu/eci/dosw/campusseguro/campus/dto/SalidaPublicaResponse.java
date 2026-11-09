@@ -10,6 +10,7 @@ public record SalidaPublicaResponse(
         BigDecimal latitud,
         BigDecimal longitud,
         boolean disponible,
-        String aviso
+        String aviso,
+        boolean tieneFotografia
 ) {
 }

@@ -10,6 +10,7 @@ public record ZonaSeguraPublicaResponse(
         BigDecimal latitud,
         BigDecimal longitud,
         boolean disponible,
-        String aviso
+        String aviso,
+        boolean tieneFotografia
 ) {
 }

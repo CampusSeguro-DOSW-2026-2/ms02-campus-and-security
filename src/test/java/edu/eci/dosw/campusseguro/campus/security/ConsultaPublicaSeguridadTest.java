@@ -45,7 +45,7 @@ class ConsultaPublicaSeguridadTest {
                 new EspacioPublicoResponse.Evacuacion(true, "Plazoleta H", "Frente al bloque H",
                         "Baje por la escalera norte.", EstadoRuta.DISPONIBLE, null, null,
                         List.of(new EspacioPublicoResponse.Recomendacion("Escaleras", "Use la escalera norte."))),
-                null);
+                null, false);
     }
 
     @Test
@@ -68,7 +68,7 @@ class ConsultaPublicaSeguridadTest {
     @Test
     void salida_sinCabeceras_respondeSinIdsInternos() throws Exception {
         when(consultaPublicaService.salida(ID)).thenReturn(new SalidaPublicaResponse("G-S1", "Salida principal",
-                "Bloque G", 1, new BigDecimal("4.782710"), new BigDecimal("-74.042630"), true, null));
+                "Bloque G", 1, new BigDecimal("4.782710"), new BigDecimal("-74.042630"), true, null, false));
 
         mockMvc.perform(get("/api/v1/public/exits").param("id", ID.toString()))
                 .andExpect(status().isOk())
@@ -79,7 +79,7 @@ class ConsultaPublicaSeguridadTest {
     @Test
     void zonaSegura_sinCabeceras_respondeSinCapacidadNiIds() throws Exception {
         when(consultaPublicaService.zonaSegura(ID)).thenReturn(new ZonaSeguraPublicaResponse("MP-H-01", "Plazoleta H",
-                "Frente al bloque H", true, new BigDecimal("4.783100"), new BigDecimal("-74.043100"), true, null));
+                "Frente al bloque H", true, new BigDecimal("4.783100"), new BigDecimal("-74.043100"), true, null, false));
 
         mockMvc.perform(get("/api/v1/public/safe-zones").param("id", ID.toString()))
                 .andExpect(status().isOk())

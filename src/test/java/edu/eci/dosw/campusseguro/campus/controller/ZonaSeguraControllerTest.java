@@ -46,7 +46,7 @@ class ZonaSeguraControllerTest {
 
     private ZonaSeguraResponse respuesta(Estado estado) {
         return new ZonaSeguraResponse(uuid(1), "MP-H-01", "Punto H",
-                "Frente al bloque H", "Zona abierta", 200, estado, null, null, null, true);
+                "Frente al bloque H", "Zona abierta", 200, estado, null, null, null, true, false);
     }
 
     private String json(String codigo, String nombre, int capacidad) {
@@ -270,7 +270,7 @@ class ZonaSeguraControllerTest {
         when(zonaSeguraService.crear(any(ZonaSeguraRequest.class)))
                 .thenReturn(new ZonaSeguraResponse(uuid(1), "MP-H-01", "Punto H", "Frente al bloque H",
                         "Zona abierta", 200, Estado.ACTIVO, new BigDecimal("4.782000"),
-                        new BigDecimal("-74.042000"), uuid(10), true));
+                        new BigDecimal("-74.042000"), uuid(10), true, false));
 
         mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content(JSON_CON_UBICACION))
                 .andExpect(status().isCreated())

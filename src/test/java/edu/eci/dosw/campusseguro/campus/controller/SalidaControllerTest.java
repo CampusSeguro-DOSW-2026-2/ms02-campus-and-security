@@ -51,7 +51,7 @@ class SalidaControllerTest {
 
     private SalidaResponse respuesta(Estado estado) {
         return new SalidaResponse(SALIDA, EDIFICIO, "Bloque G", PISO, 1, "G-S1", "Salida principal",
-                new BigDecimal("4.782710"), new BigDecimal("-74.042630"), estado, estado == Estado.ACTIVO);
+                new BigDecimal("4.782710"), new BigDecimal("-74.042630"), estado, estado == Estado.ACTIVO, false);
     }
 
     @Test

@@ -50,7 +50,7 @@ class EspacioControllerTest {
 
     private EspacioResponse respuesta(Estado estado) {
         return new EspacioResponse(ESPACIO, EDIFICIO, "Bloque G", PISO, 1, "G-101", "Salón 101", TipoEspacio.SALON,
-                estado, estado == Estado.ACTIVO);
+                estado, estado == Estado.ACTIVO, false);
     }
 
     @Test

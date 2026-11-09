@@ -13,7 +13,8 @@ public record EspacioPublicoResponse(
         Integer piso,
         boolean disponible,
         Evacuacion evacuacion,
-        String aviso
+        String aviso,
+        boolean tieneFotografia
 ) {
 
     public record Evacuacion(

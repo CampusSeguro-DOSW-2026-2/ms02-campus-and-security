@@ -1,6 +1,7 @@
 
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,6 +45,8 @@ class EdificioServiceTest {
 
     @Mock
     private CampusRepository campusRepository;
+
+    @Mock private ImagenRepository imagenRepository;
 
     @InjectMocks
     private EdificioService edificioService;

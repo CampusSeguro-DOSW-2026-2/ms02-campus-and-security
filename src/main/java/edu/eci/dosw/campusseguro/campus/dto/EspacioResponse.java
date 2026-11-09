@@ -15,6 +15,7 @@ public record EspacioResponse(
         String nombre,
         TipoEspacio tipo,
         Estado estado,
-        boolean disponible
+        boolean disponible,
+        boolean tieneFotografia
 ) {
 }

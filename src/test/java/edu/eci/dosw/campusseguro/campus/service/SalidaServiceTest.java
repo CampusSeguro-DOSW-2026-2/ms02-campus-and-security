@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +51,8 @@ class SalidaServiceTest {
     private PisoRepository pisoRepository;
     @Mock
     private EdificioRepository edificioRepository;
+
+    @Mock private ImagenRepository imagenRepository;
 
     @InjectMocks
     private SalidaService salidaService;

@@ -10,6 +10,7 @@ public record EdificioResponse(
         String nombre,
         String descripcion,
         Estado estado,
-        UUID campusId
+        UUID campusId,
+        boolean tieneFotografia
 ) {
 }
