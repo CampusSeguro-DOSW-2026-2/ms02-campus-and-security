@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class QrConsultaPublicaIntegrationTest {
 
-    private static final String BASE_QR = "http://localhost:8080";
+    private static final String BASE_QR = "http://localhost:5173";
 
     @Autowired
     private MockMvc mockMvc;
@@ -73,9 +73,11 @@ class QrConsultaPublicaIntegrationTest {
                 .getText();
     }
 
+    // Lo que hace la pantalla pública del frontend: toma tipo e id de #/qr/{tipo}/{id} y llama a /api/v1/public.
     private static MockHttpServletRequestBuilder abrirSinSesion(String enlace) {
-        URI uri = URI.create(enlace);
-        return get(uri.getPath() + "?" + uri.getQuery());
+        String[] partes = URI.create(enlace).getFragment().split("/");
+        String recurso = Map.of("espacios", "spaces", "salidas", "exits", "zonas", "safe-zones").get(partes[2]);
+        return get("/api/v1/public/" + recurso).param("id", partes[3]);
     }
 
     @BeforeEach
@@ -99,7 +101,7 @@ class QrConsultaPublicaIntegrationTest {
     void espacio_delQrALaConsultaPublica() throws Exception {
         String enlace = enlaceDelQr("/api/v1/spaces/" + espacio + "/qr");
 
-        assertThat(enlace).isEqualTo(BASE_QR + "/api/v1/public/spaces?id=" + espacio);
+        assertThat(enlace).isEqualTo(BASE_QR + "/#/qr/espacios/" + espacio);
         mockMvc.perform(abrirSinSesion(enlace))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Salón 201"))
@@ -116,7 +118,7 @@ class QrConsultaPublicaIntegrationTest {
     void salida_delQrALaConsultaPublica() throws Exception {
         String enlace = enlaceDelQr("/api/v1/exits/" + salida + "/qr");
 
-        assertThat(enlace).isEqualTo(BASE_QR + "/api/v1/public/exits?id=" + salida);
+        assertThat(enlace).isEqualTo(BASE_QR + "/#/qr/salidas/" + salida);
         mockMvc.perform(abrirSinSesion(enlace))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Salida principal"))
@@ -129,7 +131,7 @@ class QrConsultaPublicaIntegrationTest {
     void zonaSegura_delQrALaConsultaPublica() throws Exception {
         String enlace = enlaceDelQr("/api/v1/safe-zones/" + zona + "/qr");
 
-        assertThat(enlace).isEqualTo(BASE_QR + "/api/v1/public/safe-zones?id=" + zona);
+        assertThat(enlace).isEqualTo(BASE_QR + "/#/qr/zonas/" + zona);
         mockMvc.perform(abrirSinSesion(enlace))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.codigo").value("QR-MP-01"))

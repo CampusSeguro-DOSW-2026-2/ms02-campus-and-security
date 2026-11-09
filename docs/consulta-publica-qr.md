@@ -4,17 +4,17 @@ Al escanear el QR de un espacio, una salida o una zona segura en una emergencia,
 
 ## Enlaces
 
-El QR solo contiene un enlace, sin datos del elemento. Se genera con el UUID, no hay otro código.
+El QR solo contiene un enlace a la pantalla pública del frontend, sin datos del elemento. Se genera con el UUID, no hay otro código. Esa pantalla toma el tipo y el id del enlace y llama al endpoint público.
 
-| Elemento | Enlace del QR (y endpoint público) | QR administrativo (PNG) |
-|---|---|---|
-| Espacio | `GET /api/v1/public/spaces?id={uuid}` | `GET /api/v1/spaces/{id}/qr` |
-| Salida | `GET /api/v1/public/exits?id={uuid}` | `GET /api/v1/exits/{id}/qr` |
-| Zona segura | `GET /api/v1/public/safe-zones?id={uuid}` | `GET /api/v1/safe-zones/{id}/qr` |
+| Elemento | Enlace del QR (pantalla del front) | Endpoint público que usa | QR administrativo (PNG) |
+|---|---|---|---|
+| Espacio | `{QR_BASE_URL}/#/qr/espacios/{uuid}` | `GET /api/v1/public/spaces?id={uuid}` | `GET /api/v1/spaces/{id}/qr` |
+| Salida | `{QR_BASE_URL}/#/qr/salidas/{uuid}` | `GET /api/v1/public/exits?id={uuid}` | `GET /api/v1/exits/{id}/qr` |
+| Zona segura | `{QR_BASE_URL}/#/qr/zonas/{uuid}` | `GET /api/v1/public/safe-zones?id={uuid}` | `GET /api/v1/safe-zones/{id}/qr` |
 
-El enlace empieza por `QR_BASE_URL` (por defecto `http://localhost:8080`, el Gateway).
+`QR_BASE_URL` es la dirección pública del frontend (por defecto `http://localhost:5173`). El QR abre el front y no la API porque quien escanea es una persona: la API solo mostraría JSON (ADR-004).
 
-El id va como parámetro (`?id=`) y no en la ruta porque el Gateway solo acepta rutas públicas **exactas**, sin comodines (`gateway.access.public-routes`). Así bastan tres entradas fijas.
+En los endpoints públicos el id va como parámetro (`?id=`) y no en la ruta porque el Gateway solo acepta rutas públicas **exactas**, sin comodines (`gateway.access.public-routes`). Así bastan tres entradas fijas. En el front el id sí puede ir en la ruta.
 
 ## Qué devuelve
 
