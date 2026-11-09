@@ -10,6 +10,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
+import edu.eci.dosw.campusseguro.campus.storage.AlmacenamientoImagenLocal;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class ImagenService {
     private final EspacioRepository espacioRepository;
     private final SalidaRepository salidaRepository;
     private final ZonaSeguraRepository zonaSeguraRepository;
+    private final AlmacenamientoImagenLocal almacenamiento;
 
     @Value("${campusseguro.imagen.max-size-bytes:5242880}")
     private long tamanioMaximo;
@@ -55,7 +57,41 @@ public class ImagenService {
         imagen.setTamanioBytes((long) contenido.length);
         imagen.setRutaArchivo("imagenes/" + nombreSeguro + formato.extension());
 
-        return imagenRepository.save(imagen);
+        almacenamiento.guardar(imagen.getRutaArchivo(), contenido);
+
+        try {
+            return imagenRepository.saveAndFlush(imagen);
+        } catch (RuntimeException e) {
+            try {
+                almacenamiento.eliminar(imagen.getRutaArchivo());
+            } catch (RuntimeException errorLimpieza) {
+                e.addSuppressed(errorLimpieza);
+            }
+            throw e;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Imagen obtener(UUID id) {
+        return imagenRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe una imagen con id " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] obtenerContenido(UUID id) {
+        Imagen imagen = obtener(id);
+        return almacenamiento.leer(imagen.getRutaArchivo());
+    }
+
+    @Transactional
+    public void eliminar(UUID id) {
+        Imagen imagen = obtener(id);
+
+        imagenRepository.delete(imagen);
+        imagenRepository.flush();
+
+        almacenamiento.eliminar(imagen.getRutaArchivo());
     }
 
     private void validarDatos(

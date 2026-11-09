@@ -12,6 +12,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
+import edu.eci.dosw.campusseguro.campus.storage.AlmacenamientoImagenLocal;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 
@@ -55,6 +56,9 @@ class ImagenServiceTest {
     @Mock
     private ZonaSeguraRepository zonaSeguraRepository;
 
+    @Mock
+    private AlmacenamientoImagenLocal almacenamiento;
+
     @InjectMocks
     private ImagenService imagenService;
 
@@ -77,7 +81,7 @@ class ImagenServiceTest {
     void registrar_pngValido_guardaMetadatosYGeneraRutaSegura() {
         edificio(Estado.ACTIVO);
 
-        when(imagenRepository.save(any(Imagen.class)))
+        when(imagenRepository.saveAndFlush(any(Imagen.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         Imagen resultado = imagenService.registrar(
@@ -96,7 +100,7 @@ class ImagenServiceTest {
                 .doesNotContain("foto.jpg")
                 .doesNotContain("..");
 
-        verify(imagenRepository).save(any(Imagen.class));
+        verify(imagenRepository).saveAndFlush(any(Imagen.class));
     }
 
     @Test
@@ -107,7 +111,7 @@ class ImagenServiceTest {
                 (byte) 0xFF, (byte) 0xD8, (byte) 0xFF
         };
 
-        when(imagenRepository.save(any(Imagen.class)))
+        when(imagenRepository.saveAndFlush(any(Imagen.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         Imagen resultado = imagenService.registrar(
@@ -131,7 +135,7 @@ class ImagenServiceTest {
                 'W', 'E', 'B', 'P'
         };
 
-        when(imagenRepository.save(any(Imagen.class)))
+        when(imagenRepository.saveAndFlush(any(Imagen.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         Imagen resultado = imagenService.registrar(
@@ -164,7 +168,7 @@ class ImagenServiceTest {
         ReflectionTestUtils.setField(imagenService, "tamanioMaximo", 8L);
         edificio(Estado.ACTIVO);
 
-        when(imagenRepository.save(any(Imagen.class)))
+        when(imagenRepository.saveAndFlush(any(Imagen.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         Imagen resultado = imagenService.registrar(

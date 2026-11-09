@@ -46,6 +46,8 @@ services:
 
   ms02-campus-and-security:
     build: .
+    volumes:
+      - ./data:/app/data
     environment:
       SERVER_PORT: 8082
       DB_HOST: ms02-db
@@ -53,15 +55,14 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      # Llamadas a otros MS: siempre a través del GW, con la clave propia.
       GATEWAY_URL: http://api-gateway:8080
       GATEWAY_SERVICE_KEY: ${SQUAD_SERVICE_KEY:-}
+      IMAGEN_STORAGE_DIR: /app/data
     depends_on:
       ms02-db:
         condition: service_healthy
     networks:
       - internal
-
   ms02-db:
     image: postgres:16
     environment:
