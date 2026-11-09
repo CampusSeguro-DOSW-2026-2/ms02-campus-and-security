@@ -34,3 +34,5 @@ build/
 .env
 *.pem
 *.log
+### Imágenes subidas (almacenamiento local) ###
+data/
