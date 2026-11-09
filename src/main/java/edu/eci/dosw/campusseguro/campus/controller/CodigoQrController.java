@@ -25,21 +25,21 @@ public class CodigoQrController {
 
     private final CodigoQrService codigoQrService;
 
-    @Operation(summary = "QR de un espacio", description = "Solo ADMIN. Imagen PNG con el enlace /api/v1/public/spaces/{id}.")
+    @Operation(summary = "QR de un espacio", description = "Solo ADMIN. Imagen PNG con el enlace /api/v1/public/spaces?id={id}.")
     @Permiso(Permisos.BUILDING_WRITE)
     @GetMapping("/spaces/{id}/qr")
     public ResponseEntity<byte[]> espacio(@PathVariable UUID id) {
         return imagen(TipoQr.ESPACIO, id);
     }
 
-    @Operation(summary = "QR de una salida", description = "Solo ADMIN. Imagen PNG con el enlace /api/v1/public/exits/{id}.")
+    @Operation(summary = "QR de una salida", description = "Solo ADMIN. Imagen PNG con el enlace /api/v1/public/exits?id={id}.")
     @Permiso(Permisos.BUILDING_WRITE)
     @GetMapping("/exits/{id}/qr")
     public ResponseEntity<byte[]> salida(@PathVariable UUID id) {
         return imagen(TipoQr.SALIDA, id);
     }
 
-    @Operation(summary = "QR de una zona segura", description = "Solo ADMIN. Imagen PNG con el enlace /api/v1/public/safe-zones/{id}.")
+    @Operation(summary = "QR de una zona segura", description = "Solo ADMIN. Imagen PNG con el enlace /api/v1/public/safe-zones?id={id}.")
     @Permiso(Permisos.SAFE_ZONE_WRITE)
     @GetMapping("/safe-zones/{id}/qr")
     public ResponseEntity<byte[]> zonaSegura(@PathVariable UUID id) {
