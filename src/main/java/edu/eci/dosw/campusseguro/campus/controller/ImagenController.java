@@ -1,6 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.controller;
 
 import java.util.UUID;
+import java.util.List;
 
 import edu.eci.dosw.campusseguro.campus.entity.Imagen;
 import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
@@ -44,6 +45,15 @@ public class ImagenController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(imagen);
+    }
+
+    @Operation(summary = "Listar imágenes asociadas a un elemento del campus")
+    @Permiso(Permisos.CAMPUS_READ)
+    @GetMapping
+    public ResponseEntity<List<Imagen>> listar(
+            @RequestParam TipoElementoImagen tipoElemento,
+            @RequestParam UUID elementoId) {
+        return ResponseEntity.ok(imagenService.listar(tipoElemento, elementoId));
     }
 
     @Operation(summary = "Consultar archivo de imagen")

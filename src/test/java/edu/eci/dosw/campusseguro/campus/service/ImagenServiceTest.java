@@ -1,6 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
@@ -240,4 +241,23 @@ class ImagenServiceTest {
 
         verify(imagenRepository, never()).save(any());
     }
+
+    @Test
+    void listar_retornaImagenesDelElemento() {
+        Imagen primera = new Imagen();
+        Imagen segunda = new Imagen();
+        List<Imagen> imagenes = List.of(primera, segunda);
+
+        when(imagenRepository.findAllByTipoElementoAndElementoId(
+                TipoElementoImagen.EDIFICIO, EDIFICIO_ID))
+                .thenReturn(imagenes);
+
+        List<Imagen> resultado = imagenService.listar(
+                TipoElementoImagen.EDIFICIO, EDIFICIO_ID);
+
+        assertThat(resultado).containsExactly(primera, segunda);
+        verify(imagenRepository).findAllByTipoElementoAndElementoId(
+                TipoElementoImagen.EDIFICIO, EDIFICIO_ID);
+    }
+
 }

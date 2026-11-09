@@ -54,8 +54,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
-                        // Imágenes.
-                        .requestMatchers(HttpMethod.GET, "/api/v1/images/*")
+                        // Imágenes: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/images", "/api/v1/images/*")
                         .hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers("/api/v1/images", "/api/v1/images/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
@@ -127,7 +127,7 @@ public class SecurityConfig {
                         .hasAuthority(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
 
                         // Imágenes: lectura para cualquier rol autorizado y escritura solo ADMIN.
-                        .requestMatchers(HttpMethod.GET, "/api/v1/images/*")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/images", "/api/v1/images/*")
                         .hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers("/api/v1/images", "/api/v1/images/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
