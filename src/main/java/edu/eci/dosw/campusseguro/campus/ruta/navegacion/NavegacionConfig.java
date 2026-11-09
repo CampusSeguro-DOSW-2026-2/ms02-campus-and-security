@@ -20,6 +20,8 @@ public class NavegacionConfig {
                 .build();
         JdkClientHttpRequestFactory fabrica = new JdkClientHttpRequestFactory(httpClient);
         fabrica.setReadTimeout(propiedades.readTimeout());
+        // El OSRM público responde gzip etiquetado como deflate; sin compresión la respuesta llega legible.
+        fabrica.enableCompression(false);
 
         RestClient restClient = RestClient.builder().requestFactory(fabrica).build();
         return new OsmProveedorNavegacion(restClient, propiedades.baseUrl(), propiedades.profile());
