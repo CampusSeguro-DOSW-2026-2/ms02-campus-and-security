@@ -93,4 +93,12 @@ class OpenApiTest {
         mockMvc.perform(get("/api/v1/buildings"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void losQrSeDocumentanComoImagenPng() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(jsonPath("$.paths['/api/v1/spaces/{id}/qr'].get.responses['200'].content['image/png']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}/qr'].get['x-permiso']").value("ms02:building:write"))
+                .andExpect(jsonPath("$.paths['/api/v1/safe-zones/{id}/qr'].get['x-permiso']").value("ms02:safe_zone:write"));
+    }
 }

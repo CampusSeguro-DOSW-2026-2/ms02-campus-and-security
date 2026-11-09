@@ -29,7 +29,12 @@ class ContratoPermisosTest {
     @Autowired
     private MockMvc mockMvc;
 
+    private static final String PUBLICO = "/api/v1/public/";
+
     private record Operacion(HttpMethod metodo, String ruta, String permiso, List<String> roles) {
+        boolean publica() {
+            return ruta.startsWith(PUBLICO);
+        }
     }
 
     private List<Operacion> operaciones() throws Exception {
@@ -47,7 +52,7 @@ class ContratoPermisosTest {
 
     @Test
     void todasLasOperacionesDeclaranPermisoYRolesCoherentes() throws Exception {
-        List<Operacion> operaciones = operaciones();
+        List<Operacion> operaciones = operaciones().stream().filter(op -> !op.publica()).toList();
 
         assertThat(operaciones).isNotEmpty();
         assertThat(operaciones).allSatisfy(op -> {
@@ -60,6 +65,9 @@ class ContratoPermisosTest {
     @Test
     void laSeguridadCumpleLoQueDiceElContrato() throws Exception {
         for (Operacion op : operaciones()) {
+            if (op.publica()) {
+                continue;
+            }
             for (String rol : RolPermisos.ROLES) {
                 int status = mockMvc.perform(peticion(op, rol)).andReturn().getResponse().getStatus();
                 if (op.roles().contains(rol)) {
@@ -68,6 +76,21 @@ class ContratoPermisosTest {
                     assertThat(status).as("%s %s con %s", op.metodo(), op.ruta(), rol).isEqualTo(403);
                 }
             }
+        }
+    }
+
+    @Test
+    void lasOperacionesPublicasSonSoloGetSinPermisoYRespondenSinCabeceras() throws Exception {
+        List<Operacion> publicas = operaciones().stream().filter(Operacion::publica).toList();
+
+        assertThat(publicas).extracting(Operacion::ruta)
+                .containsExactlyInAnyOrder("/api/v1/public/spaces", "/api/v1/public/exits", "/api/v1/public/safe-zones");
+        for (Operacion op : publicas) {
+            assertThat(op.metodo()).isEqualTo(HttpMethod.GET);
+            assertThat(op.permiso()).as("x-permiso de %s", op.ruta()).isNull();
+            int status = mockMvc.perform(get(op.ruta()).param("id", UUID.randomUUID().toString()))
+                    .andReturn().getResponse().getStatus();
+            assertThat(status).as("%s sin cabeceras", op.ruta()).isNotIn(401, 403);
         }
     }
 

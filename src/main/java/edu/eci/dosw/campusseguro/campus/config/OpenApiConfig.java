@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.BinarySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -38,6 +39,7 @@ import java.util.List;
 public class OpenApiConfig {
 
     private static final String JSON = "application/json";
+    private static final String PNG = "image/png";
     private static final String PARAMETROS = "#/components/parameters/";
     private static final String RESPUESTAS = "#/components/responses/";
     private static final String CABECERA_CORRELATION = "#/components/headers/XCorrelationID";
@@ -116,7 +118,7 @@ public class OpenApiConfig {
         boolean crea = metodo.hasMethodAnnotation(PostMapping.class);
         respuestas.addApiResponse(crea ? "201" : "200", new ApiResponse()
                 .description(crea ? "Creado." : "OK.")
-                .content(json(esquemaDe(metodo))));
+                .content(contenidoExitoso(metodo)));
         if (tiene(metodo, PathVariable.class, RequestParam.class, RequestBody.class)) {
             respuestas.addApiResponse("400", new ApiResponse().$ref(RESPUESTAS + "BadRequest"));
         }
@@ -145,6 +147,14 @@ public class OpenApiConfig {
     private static boolean tiene(HandlerMethod metodo, Class<? extends java.lang.annotation.Annotation>... anotaciones) {
         return Arrays.stream(metodo.getMethodParameters())
                 .anyMatch(p -> Arrays.stream(anotaciones).anyMatch(p::hasParameterAnnotation));
+    }
+
+    private static Content contenidoExitoso(HandlerMethod metodo) {
+        ResolvableType tipo = ResolvableType.forMethodReturnType(metodo.getMethod());
+        if (ResponseEntity.class.equals(tipo.toClass()) && byte[].class.equals(tipo.getGeneric(0).toClass())) {
+            return new Content().addMediaType(PNG, new MediaType().schema(new BinarySchema()));
+        }
+        return json(esquemaDe(metodo));
     }
 
     private static Schema<?> esquemaDe(HandlerMethod metodo) {

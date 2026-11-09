@@ -36,6 +36,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
 
+                        // Consulta pública de los QR (ADR-003, D7): solo lectura y sin sesión; cualquier otro método se rechaza.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers("/api/v1/public/**").denyAll()
+
                         // Rutas de evacuacion y su consulta
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/evacuation-routes",
                                 "/api/v1/spaces/*/evacuation-route").hasAuthority(Permisos.ROUTE_READ)

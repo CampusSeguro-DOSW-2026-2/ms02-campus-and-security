@@ -21,6 +21,24 @@ services:
       GATEWAY_ROUTES_1_URI: http://ms02-campus-and-security:8082
       GATEWAY_ROUTES_1_PATHS: ${SQUAD_PATHS:?SQUAD_PATHS es obligatoria (prefijos de swagger.yml separados por coma)}
       GW_SERVICE_KEY_MS02: ${SQUAD_SERVICE_KEY:-}
+      # Rutas públicas del GW (ruta exacta, sin comodines): reemplazan las de la imagen, así que las de MS01 se repiten.
+      # Las tres últimas son la consulta pública de los QR de MS02 (ADR-003, D7); el id va como parámetro ?id=.
+      GATEWAY_ACCESS_PUBLICROUTES_0_METHOD: GET
+      GATEWAY_ACCESS_PUBLICROUTES_0_PATH: /actuator/health
+      GATEWAY_ACCESS_PUBLICROUTES_1_METHOD: POST
+      GATEWAY_ACCESS_PUBLICROUTES_1_PATH: /api/v1/auth/register
+      GATEWAY_ACCESS_PUBLICROUTES_2_METHOD: POST
+      GATEWAY_ACCESS_PUBLICROUTES_2_PATH: /api/v1/auth/login
+      GATEWAY_ACCESS_PUBLICROUTES_3_METHOD: POST
+      GATEWAY_ACCESS_PUBLICROUTES_3_PATH: /api/v1/auth/password/forgot
+      GATEWAY_ACCESS_PUBLICROUTES_4_METHOD: POST
+      GATEWAY_ACCESS_PUBLICROUTES_4_PATH: /api/v1/auth/password/reset
+      GATEWAY_ACCESS_PUBLICROUTES_5_METHOD: GET
+      GATEWAY_ACCESS_PUBLICROUTES_5_PATH: /api/v1/public/spaces
+      GATEWAY_ACCESS_PUBLICROUTES_6_METHOD: GET
+      GATEWAY_ACCESS_PUBLICROUTES_6_PATH: /api/v1/public/exits
+      GATEWAY_ACCESS_PUBLICROUTES_7_METHOD: GET
+      GATEWAY_ACCESS_PUBLICROUTES_7_PATH: /api/v1/public/safe-zones
       GW_SERVICE_KEY_MS01: ${MS01_SERVICE_KEY:-}
     networks:
       - edge
