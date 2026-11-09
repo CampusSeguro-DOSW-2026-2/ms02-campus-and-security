@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class EdificioService {
+
+    private final ImagenRepository imagenRepository;
 
     private final EdificioRepository edificioRepository;
     private final VerificadorRutas verificadorRutas;
@@ -141,6 +145,7 @@ public class EdificioService {
                 e.getNombre(),
                 e.getDescripcion(),
                 e.getEstado(),
-                e.getCampusId());
+                e.getCampusId(),
+                imagenRepository.existsByTipoElementoAndElementoId(TipoElementoImagen.EDIFICIO, e.getId()));
     }
 }

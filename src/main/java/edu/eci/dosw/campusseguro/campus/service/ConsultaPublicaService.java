@@ -11,12 +11,14 @@ import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.entity.Salida;
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
 import edu.eci.dosw.campusseguro.campus.entity.ZonaSegura;
 import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.SalidaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaSeguraNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
@@ -38,6 +40,7 @@ public class ConsultaPublicaService {
     private final ZonaSeguraRepository zonaSeguraRepository;
     private final PisoRepository pisoRepository;
     private final EdificioRepository edificioRepository;
+    private final ImagenRepository imagenRepository;
     private final ConsultaRutaService consultaRutaService;
 
     @Transactional(readOnly = true)
@@ -47,6 +50,8 @@ public class ConsultaPublicaService {
         Piso piso = pisoRepository.findById(espacio.getPisoId()).orElse(null);
         Edificio edificio = edificioRepository.findById(espacio.getEdificioId()).orElse(null);
         boolean disponible = activo(espacio.getEstado()) && activo(piso) && activo(edificio);
+        boolean tieneFotografia = imagenRepository.existsByTipoElementoAndElementoId(
+                TipoElementoImagen.ESPACIO, id);
 
         return new EspacioPublicoResponse(
                 espacio.getCodigo(),
@@ -56,7 +61,8 @@ public class ConsultaPublicaService {
                 piso == null ? null : piso.getNumero(),
                 disponible,
                 disponible ? evacuacion(consultaRutaService.consultarPorEspacio(id)) : null,
-                disponible ? null : AVISO_NO_DISPONIBLE);
+                disponible ? null : AVISO_NO_DISPONIBLE,
+                tieneFotografia);
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +72,8 @@ public class ConsultaPublicaService {
         Piso piso = pisoRepository.findById(salida.getPisoId()).orElse(null);
         Edificio edificio = edificioRepository.findById(salida.getEdificioId()).orElse(null);
         boolean disponible = activo(salida.getEstado()) && activo(piso) && activo(edificio);
+        boolean tieneFotografia = imagenRepository.existsByTipoElementoAndElementoId(
+                TipoElementoImagen.SALIDA, id);
 
         return new SalidaPublicaResponse(
                 salida.getCodigo(),
@@ -75,7 +83,8 @@ public class ConsultaPublicaService {
                 salida.getLatitud(),
                 salida.getLongitud(),
                 disponible,
-                disponible ? null : AVISO_NO_DISPONIBLE);
+                disponible ? null : AVISO_NO_DISPONIBLE,
+                tieneFotografia);
     }
 
     @Transactional(readOnly = true)
@@ -83,6 +92,8 @@ public class ConsultaPublicaService {
         ZonaSegura zona = zonaSeguraRepository.findById(id)
                 .orElseThrow(() -> new ZonaSeguraNoEncontradaException(id));
         boolean disponible = activo(zona.getEstado());
+        boolean tieneFotografia = imagenRepository.existsByTipoElementoAndElementoId(
+                TipoElementoImagen.ZONA_SEGURA, id);
 
         return new ZonaSeguraPublicaResponse(
                 zona.getCodigo(),
@@ -92,7 +103,8 @@ public class ConsultaPublicaService {
                 zona.getLatitud(),
                 zona.getLongitud(),
                 disponible,
-                disponible ? null : AVISO_NO_DISPONIBLE);
+                disponible ? null : AVISO_NO_DISPONIBLE,
+                tieneFotografia);
     }
 
     private static EspacioPublicoResponse.Evacuacion evacuacion(RutaConsultadaResponse ruta) {

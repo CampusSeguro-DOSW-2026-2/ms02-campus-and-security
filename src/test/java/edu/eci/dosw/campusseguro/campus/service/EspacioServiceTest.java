@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.EspacioRequest;
@@ -51,6 +52,8 @@ class EspacioServiceTest {
     private EdificioRepository edificioRepository;
     @Mock
     private VerificadorRutas verificadorRutas;
+
+    @Mock private ImagenRepository imagenRepository;
 
     @InjectMocks
     private EspacioService espacioService;

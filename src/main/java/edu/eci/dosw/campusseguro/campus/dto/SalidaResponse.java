@@ -16,6 +16,7 @@ public record SalidaResponse(
         BigDecimal latitud,
         BigDecimal longitud,
         Estado estado,
-        boolean disponible
+        boolean disponible,
+        boolean tieneFotografia
 ) {
 }

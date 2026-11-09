@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ZonaSeguraService {
+
+    private final ImagenRepository imagenRepository;
 
     private final ZonaSeguraRepository zonaSeguraRepository;
     private final VerificadorRutas verificadorRutas;
@@ -186,6 +190,7 @@ public class ZonaSeguraService {
                 z.getLatitud(),
                 z.getLongitud(),
                 z.getZonaAbiertaId(),
-                z.isPuntoEncuentro());
+                z.isPuntoEncuentro(),
+                imagenRepository.existsByTipoElementoAndElementoId(TipoElementoImagen.ZONA_SEGURA, z.getId()));
     }
 }

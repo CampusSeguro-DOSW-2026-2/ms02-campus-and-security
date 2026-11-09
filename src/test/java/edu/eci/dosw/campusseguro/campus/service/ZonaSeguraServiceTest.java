@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,7 +46,9 @@ class ZonaSeguraServiceTest {
         @Mock
         private ZonaAbiertaRepository zonaAbiertaRepository;
 
-        @InjectMocks
+        @Mock private ImagenRepository imagenRepository;
+
+    @InjectMocks
         private ZonaSeguraService zonaSeguraService;
 
         private ZonaSeguraRequest request(String codigo) {

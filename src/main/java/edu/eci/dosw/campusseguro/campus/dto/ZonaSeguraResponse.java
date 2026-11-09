@@ -16,6 +16,7 @@ public record ZonaSeguraResponse(
         BigDecimal latitud,
         BigDecimal longitud,
         UUID zonaAbiertaId,
-        boolean puntoEncuentro
+        boolean puntoEncuentro,
+        boolean tieneFotografia
 ) {
 }

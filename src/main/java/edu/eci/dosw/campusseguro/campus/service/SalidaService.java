@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class SalidaService {
+
+    private final ImagenRepository imagenRepository;
 
     private final SalidaRepository salidaRepository;
     private final PisoRepository pisoRepository;
@@ -170,7 +174,7 @@ public class SalidaService {
                 edificioRepository.findById(s.getEdificioId()).orElse(null));
     }
 
-    private static SalidaResponse aRespuesta(Salida s, Piso piso, Edificio edificio) {
+    private SalidaResponse aRespuesta(Salida s, Piso piso, Edificio edificio) {
         boolean disponible = s.getEstado() == Estado.ACTIVO
                 && piso != null && piso.getEstado() == Estado.ACTIVO
                 && edificio != null && edificio.getEstado() == Estado.ACTIVO;
@@ -186,7 +190,8 @@ public class SalidaService {
                 s.getLatitud(),
                 s.getLongitud(),
                 s.getEstado(),
-                disponible
+                disponible,
+                imagenRepository.existsByTipoElementoAndElementoId(TipoElementoImagen.SALIDA, s.getId())
         );
     }
 }

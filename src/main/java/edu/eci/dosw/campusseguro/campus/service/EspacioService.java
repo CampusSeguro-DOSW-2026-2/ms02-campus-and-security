@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class EspacioService {
+
+    private final ImagenRepository imagenRepository;
 
     private final EspacioRepository espacioRepository;
     private final PisoRepository pisoRepository;
@@ -171,7 +175,7 @@ public class EspacioService {
                 edificioRepository.findById(e.getEdificioId()).orElse(null));
     }
 
-    private static EspacioResponse aRespuesta(Espacio e, Piso piso, Edificio edificio) {
+    private EspacioResponse aRespuesta(Espacio e, Piso piso, Edificio edificio) {
         boolean disponible = e.getEstado() == Estado.ACTIVO
                 && piso != null && piso.getEstado() == Estado.ACTIVO
                 && edificio != null && edificio.getEstado() == Estado.ACTIVO;
@@ -186,7 +190,8 @@ public class EspacioService {
                 e.getNombre(),
                 e.getTipo(),
                 e.getEstado(),
-                disponible
+                disponible,
+                imagenRepository.existsByTipoElementoAndElementoId(TipoElementoImagen.ESPACIO, e.getId())
         );
     }
 }
