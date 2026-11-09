@@ -26,7 +26,9 @@ Files go to a configurable directory (`campusseguro.storage.path`) mounted as a 
 No new permissions, so MS01's matrix does not change. `ms02:building:write` covers campus, open zones, stairs, exits and images of buildings, spaces and exits. `ms02:safe_zone:write` covers safe zones and their images. Reads use `ms02:campus:read`.
 
 ### D7: Public read-only endpoint for QR
-`GET /api/v1/public/**` is `permitAll` in `SecurityConfig` and must be exposed by the Gateway without a session. Any other method on that path is rejected. Public DTOs are minimal and contain no sensitive data.
+The public QR lookup is read-only (`GET` only) and `permitAll` in `SecurityConfig`. Any other method on those paths is rejected. Public DTOs are minimal and contain no sensitive data.
+
+Update (N4): the original plan assumed the Gateway could expose `GET /api/v1/public/**`, but the Gateway only accepts exact routes, without wildcards. So each public route is an exact path and the element id goes in the query string (`?id=<uuid>`), not in the path. The QR link uses that format. Rate limiting does not exist yet in MS02 or in the Gateway; it stays pending with the Gateway team. The risk is low for now: the lookup is read-only, returns minimal data and the UUIDs cannot be guessed.
 
 ## Other rules
 - `PuntoEncuentro` is not a separate entity: it is a `ZonaSegura` with `es_punto_encuentro = true`.
@@ -65,4 +67,4 @@ Order: V10, V11 and V12 can be merged in any order after P1. V13 needs V10. V15 
 ## Consequences
 - Consumers of `RutaConsultadaResponse` are not broken: fields are only added.
 - Responsibilities are split across PRs P1 to P5, N1 to N5 and M1 to M5 (see the detailed plan).
-- Pending confirmation: D3 with the instructor, and the public QR route with the Gateway owner.
+- Pending confirmation: D3 with the instructor, and rate limiting for the public QR routes with the Gateway owner.
