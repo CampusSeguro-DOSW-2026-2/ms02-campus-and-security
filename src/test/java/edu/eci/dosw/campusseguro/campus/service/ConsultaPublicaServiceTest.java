@@ -207,4 +207,62 @@ class ConsultaPublicaServiceTest {
 
         assertThatThrownBy(() -> servicio.zonaSegura(ZONA)).isInstanceOf(ZonaSeguraNoEncontradaException.class);
     }
+
+    @Test
+    void espacio_sinPisoNiEdificioRegistrados_noEstaDisponibleYNoFalla() {
+        espacio(Estado.ACTIVO);
+        when(pisoRepository.findById(PISO)).thenReturn(Optional.empty());
+        when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.empty());
+
+        EspacioPublicoResponse r = servicio.espacio(ESPACIO);
+
+        assertThat(r.disponible()).isFalse();
+        assertThat(r.edificio()).isNull();
+        assertThat(r.piso()).isNull();
+    }
+
+    @Test
+    void espacio_sinRecomendaciones_devuelveListaVacia() {
+        espacio(Estado.ACTIVO);
+        contenedores(Estado.ACTIVO, Estado.ACTIVO);
+        when(consultaRutaService.consultarPorEspacio(ESPACIO)).thenReturn(new RutaConsultadaResponse(ESPACIO,
+                "Salón 201", false, null, null, null, null, null, null, false,
+                "No existe una ruta recomendada para la selección.", null));
+
+        EspacioPublicoResponse.Evacuacion evacuacion = servicio.espacio(ESPACIO).evacuacion();
+
+        assertThat(evacuacion.tieneRuta()).isFalse();
+        assertThat(evacuacion.recomendaciones()).isEmpty();
+    }
+
+    @Test
+    void salida_inactivaOEnEdificioInactivo_avisaQueNoEstaDisponible() {
+        Salida s = new Salida();
+        s.setId(SALIDA);
+        s.setEdificioId(EDIFICIO);
+        s.setPisoId(PISO);
+        s.setEstado(Estado.ACTIVO);
+        when(salidaRepository.findById(SALIDA)).thenReturn(Optional.of(s));
+        contenedores(Estado.INACTIVO, Estado.ACTIVO);
+
+        SalidaPublicaResponse r = servicio.salida(SALIDA);
+
+        assertThat(r.disponible()).isFalse();
+        assertThat(r.aviso()).isEqualTo(ConsultaPublicaService.AVISO_NO_DISPONIBLE);
+    }
+
+    @Test
+    void zonaSegura_activaQueNoEsPuntoDeEncuentro() {
+        ZonaSegura z = new ZonaSegura();
+        z.setId(ZONA);
+        z.setNombre("Cancha");
+        z.setPuntoEncuentro(false);
+        when(zonaSeguraRepository.findById(ZONA)).thenReturn(Optional.of(z));
+
+        ZonaSeguraPublicaResponse r = servicio.zonaSegura(ZONA);
+
+        assertThat(r.disponible()).isTrue();
+        assertThat(r.puntoEncuentro()).isFalse();
+        assertThat(r.aviso()).isNull();
+    }
 }

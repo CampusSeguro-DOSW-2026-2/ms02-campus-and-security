@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -100,5 +101,27 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.paths['/api/v1/spaces/{id}/qr'].get.responses['200'].content['image/png']").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/exits/{id}/qr'].get['x-permiso']").value("ms02:building:write"))
                 .andExpect(jsonPath("$.paths['/api/v1/safe-zones/{id}/qr'].get['x-permiso']").value("ms02:safe_zone:write"));
+    }
+
+    @Test
+    void lasConsultasPublicasNoPidenIdentidadNiAnuncian401() throws Exception {
+        String espacioPublico = "$.paths['/api/v1/public/spaces'].get";
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(jsonPath(espacioPublico + "['x-permiso']").doesNotExist())
+                .andExpect(jsonPath(espacioPublico + ".parameters[*].$ref", not(hasItem("#/components/parameters/XUserId"))))
+                .andExpect(jsonPath(espacioPublico + ".parameters[?(@.name == 'id')].required", hasItem(true)))
+                .andExpect(jsonPath(espacioPublico + ".responses['401']").doesNotExist())
+                .andExpect(jsonPath(espacioPublico + ".responses['403']").doesNotExist())
+                .andExpect(jsonPath("$.paths['/api/v1/public/exits'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/public/safe-zones'].get").exists());
+    }
+
+    @Test
+    void lasSalidasSeDocumentanConSuPermiso() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(jsonPath("$.paths['/api/v1/buildings/{edificioId}/exits'].post['x-permiso']").value("ms02:building:write"))
+                .andExpect(jsonPath("$.paths['/api/v1/buildings/{edificioId}/exits'].get['x-permiso']").value("ms02:campus:read"))
+                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}'].put['x-roles']", contains("ADMIN")))
+                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}/deactivate'].patch.summary").value("Inactivar salida"));
     }
 }

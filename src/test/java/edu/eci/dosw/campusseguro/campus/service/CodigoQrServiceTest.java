@@ -2,12 +2,14 @@ package edu.eci.dosw.campusseguro.campus.service;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
 import com.google.zxing.BinaryBitmap;
-import com.google.zxing.MultiFormatReader;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.qrcode.QRCodeReader;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
@@ -51,7 +53,7 @@ class CodigoQrServiceTest {
     private static String leer(byte[] png) throws Exception {
         BufferedImage imagen = ImageIO.read(new ByteArrayInputStream(png));
         BinaryBitmap mapa = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(imagen)));
-        return new MultiFormatReader().decode(mapa).getText();
+        return new QRCodeReader().decode(mapa, Map.of(DecodeHintType.PURE_BARCODE, Boolean.TRUE)).getText();
     }
 
     @Test
