@@ -120,4 +120,21 @@ class SalidaGatewayImplTest {
 
         assertThat(gateway.listarPorEdificio(EDIFICIO)).extracting(SalidaInfo::disponible).containsExactly(false);
     }
+
+    @Test
+    void buscarPorId_sinEdificioNiPisoRegistrados_noEstaDisponible() {
+        when(salidaRepository.findById(SALIDA)).thenReturn(Optional.of(salida(Estado.ACTIVO)));
+        when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.empty());
+
+        assertThat(gateway.buscarPorId(SALIDA).orElseThrow().disponible()).isFalse();
+    }
+
+    @Test
+    void listarPorEdificio_conEdificioInactivo_ningunaEstaDisponible() {
+        contenedores(Estado.INACTIVO, Estado.ACTIVO);
+        when(pisoRepository.findByEdificioIdOrderByNumeroAsc(EDIFICIO)).thenReturn(List.of(piso(Estado.ACTIVO)));
+        when(salidaRepository.findByEdificioIdOrderByCodigoAsc(EDIFICIO)).thenReturn(List.of(salida(Estado.ACTIVO)));
+
+        assertThat(gateway.listarPorEdificio(EDIFICIO)).extracting(SalidaInfo::disponible).containsExactly(false);
+    }
 }
