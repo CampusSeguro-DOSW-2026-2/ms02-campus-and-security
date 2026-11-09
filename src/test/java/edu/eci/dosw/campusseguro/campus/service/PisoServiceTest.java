@@ -7,6 +7,7 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Escalera;
 import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
@@ -166,8 +167,8 @@ class PisoServiceTest {
 
         when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
 
-        when(escaleraRepository.existsByPisos_IdAndEstado(PISO, Estado.ACTIVO))
-                .thenReturn(false);
+        when(escaleraRepository.findByPisos_IdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(List.of());
 
         guardarDevuelveLoMismo();
 
@@ -218,6 +219,24 @@ class PisoServiceTest {
         piso();
 
         assertThat(pisoService.obtener(PISO).numero()).isEqualTo(1);
+    }
+
+    @Test
+    void obtener_pisoConSalidaActiva_indicaQueTieneSalida() {
+        piso();
+        when(salidaRepository.existsByPisoIdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(true);
+
+        assertThat(pisoService.obtener(PISO).tieneSalida()).isTrue();
+    }
+
+    @Test
+    void obtener_pisoSinSalidaActiva_indicaQueNoTieneSalida() {
+        piso();
+        when(salidaRepository.existsByPisoIdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(false);
+
+        assertThat(pisoService.obtener(PISO).tieneSalida()).isFalse();
     }
 
     @Test
@@ -286,12 +305,16 @@ class PisoServiceTest {
 
         when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
 
-        when(escaleraRepository.existsByPisos_IdAndEstado(PISO, Estado.ACTIVO))
-                .thenReturn(true);
+        Escalera escalera = new Escalera();
+        escalera.setCodigo("ESC-01");
+
+        when(escaleraRepository.findByPisos_IdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(List.of(escalera));
 
         assertThatThrownBy(() -> pisoService.inactivar(PISO))
                 .isInstanceOf(ReglaNegocioException.class)
-                .hasMessageContaining("escaleras activas");
+                .hasMessageContaining("escaleras activas")
+                .hasMessageContaining("ESC-01");
 
         verify(pisoRepository, never()).save(any());
     }

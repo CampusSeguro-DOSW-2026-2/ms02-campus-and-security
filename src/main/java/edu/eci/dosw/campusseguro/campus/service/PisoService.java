@@ -9,6 +9,7 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Escalera;
 import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
@@ -95,13 +96,16 @@ public class PisoService {
                             + "; deben inactivarse antes");
         }
 
-        boolean tieneEscalerasActivas =
-                escaleraRepository.existsByPisos_IdAndEstado(id, Estado.ACTIVO);
+        List<String> escalerasActivas =
+                escaleraRepository.findByPisos_IdAndEstado(id, Estado.ACTIVO).stream()
+                        .map(Escalera::getCodigo)
+                        .toList();
 
-        if (tieneEscalerasActivas) {
-            log.warn("No se inactivó el piso {}: tiene escaleras activas", id);
+        if (!escalerasActivas.isEmpty()) {
+            log.warn("No se inactivó el piso {}: tiene escaleras activas {}", id, escalerasActivas);
             throw new ReglaNegocioException(
-                    "El piso tiene escaleras activas; deben inactivarse antes");
+                    "El piso tiene escaleras activas " + escalerasActivas
+                            + "; deben inactivarse antes");
         }
 
         List<String> salidasActivas = salidaRepository.findByPisoId(id).stream()
@@ -176,7 +180,8 @@ public class PisoService {
                 p.getEdificioId(),
                 p.getNumero(),
                 p.getNombre(),
-                p.getEstado()
+                p.getEstado(),
+                salidaRepository.existsByPisoIdAndEstado(p.getId(), Estado.ACTIVO)
         );
     }
 }
