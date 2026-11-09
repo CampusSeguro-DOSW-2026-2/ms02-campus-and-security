@@ -102,6 +102,12 @@ public class SecurityConfig {
                                 "/api/v1/preventive-recommendations/**")
                         .hasAuthority(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
 
+                        // Imágenes: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/images/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/images", "/api/v1/images/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Cualquier otro endpoint exige al menos estar autenticado.
                         // Quien lo agregue debe declarar aqui su permiso.
                         .anyRequest().authenticated());
