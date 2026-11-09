@@ -1,6 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.UUID;
+import java.util.List;
 
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Imagen;
@@ -34,7 +35,11 @@ public class ImagenService {
     @Value("${campusseguro.imagen.max-size-bytes:5242880}")
     private long tamanioMaximo;
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public List<Imagen> listar(TipoElementoImagen tipoElemento, UUID elementoId) {
+        return imagenRepository.findAllByTipoElementoAndElementoId(tipoElemento, elementoId);
+    }
+
     public Imagen registrar(
             TipoElementoImagen tipoElemento,
             UUID elementoId,
