@@ -114,23 +114,23 @@ Reglas: el piso debe ser del mismo edificio y estar activo, las coordenadas son 
 
 ### Códigos QR
 
-Se generan al vuelo a partir del UUID del elemento y solo contienen el enlace de la consulta pública (ADR-004).
+Se generan al vuelo a partir del UUID del elemento y solo contienen el enlace a la pantalla pública del frontend, que muestra la información y llama a la consulta pública (ADR-004).
 
 | Método | Ruta | Permiso | Enlace que contiene el QR |
 |---|---|---|---|
-| GET | `/api/v1/spaces/{id}/qr` | `ms02:building:write` | `{QR_BASE_URL}/api/v1/public/spaces?id={id}` |
-| GET | `/api/v1/exits/{id}/qr` | `ms02:building:write` | `{QR_BASE_URL}/api/v1/public/exits?id={id}` |
-| GET | `/api/v1/safe-zones/{id}/qr` | `ms02:safe_zone:write` | `{QR_BASE_URL}/api/v1/public/safe-zones?id={id}` |
+| GET | `/api/v1/spaces/{id}/qr` | `ms02:building:write` | `{QR_BASE_URL}/#/qr/espacios/{id}` |
+| GET | `/api/v1/exits/{id}/qr` | `ms02:building:write` | `{QR_BASE_URL}/#/qr/salidas/{id}` |
+| GET | `/api/v1/safe-zones/{id}/qr` | `ms02:safe_zone:write` | `{QR_BASE_URL}/#/qr/zonas/{id}` |
 
 ```bash
 curl -o qr-salida.png http://localhost:8080/api/v1/exits/{id}/qr -H "Authorization: Bearer <token>"
 ```
 
-`QR_BASE_URL` (en `.env`) debe ser la dirección pública definitiva del Gateway antes de imprimir los QR: si cambia, los QR impresos dejan de funcionar.
+`QR_BASE_URL` (en `.env`) debe ser la dirección pública definitiva del frontend antes de imprimir los QR: si cambia, los QR impresos dejan de funcionar.
 
 ### Consulta pública (sin sesión)
 
-Lo que ve una persona al escanear el QR en una emergencia. Solo GET y solo datos mínimos, sin ids internos.
+La usa la pantalla pública del front que abre el QR. Solo GET y solo datos mínimos, sin ids internos.
 
 ```bash
 curl "http://localhost:8080/api/v1/public/spaces?id={id}"
