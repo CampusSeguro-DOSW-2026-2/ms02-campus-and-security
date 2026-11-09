@@ -29,6 +29,8 @@ import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+import edu.eci.dosw.campusseguro.campus.ruta.event.ZonaSeguraUbicacionCambiadaEvent;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -47,6 +49,9 @@ class ZonaSeguraServiceTest {
         private ZonaAbiertaRepository zonaAbiertaRepository;
 
         @Mock private ImagenRepository imagenRepository;
+
+        @Mock
+        private ApplicationEventPublisher eventos;
 
     @InjectMocks
         private ZonaSeguraService zonaSeguraService;
@@ -334,6 +339,52 @@ class ZonaSeguraServiceTest {
 
                 assertThat(respuesta.latitud()).isEqualTo(new BigDecimal("4.790000"));
                 assertThat(respuesta.longitud()).isEqualTo(new BigDecimal("-74.050000"));
+        }
+
+        @Test
+        void modificar_conCoordenadasNuevas_publicaElEvento() {
+                when(zonaSeguraRepository.findById(uuid(1))).thenReturn(Optional.of(zonaConUbicacion()));
+                when(zonaSeguraRepository.save(any(ZonaSegura.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                zonaSeguraService.modificar(uuid(1),
+                                modificarCon(new BigDecimal("4.790000"), new BigDecimal("-74.050000"), null, null));
+
+                verify(eventos).publishEvent(any(ZonaSeguraUbicacionCambiadaEvent.class));
+        }
+
+        @Test
+        void modificar_sinCambiarCoordenadas_noPublicaEvento() {
+                when(zonaSeguraRepository.findById(uuid(1))).thenReturn(Optional.of(zonaConUbicacion()));
+                when(zonaSeguraRepository.save(any(ZonaSegura.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                zonaSeguraService.modificar(uuid(1), modificarCon(null, null, null, null));
+
+                verify(eventos, never()).publishEvent(any(Object.class));
+        }
+
+        @Test
+        void reactivar_conCoordenadas_publicaElEvento() {
+                ZonaSegura zona = zonaConUbicacion();
+                zona.setEstado(Estado.INACTIVO);
+                when(zonaSeguraRepository.findById(uuid(1))).thenReturn(Optional.of(zona));
+                when(zonaSeguraRepository.save(any(ZonaSegura.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                zonaSeguraService.reactivar(uuid(1));
+
+                verify(eventos).publishEvent(any(ZonaSeguraUbicacionCambiadaEvent.class));
+        }
+
+        @Test
+        void reactivar_sinCoordenadas_noPublicaEvento() {
+                ZonaSegura zona = new ZonaSegura();
+                zona.setId(uuid(1));
+                zona.setEstado(Estado.INACTIVO);
+                when(zonaSeguraRepository.findById(uuid(1))).thenReturn(Optional.of(zona));
+                when(zonaSeguraRepository.save(any(ZonaSegura.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                zonaSeguraService.reactivar(uuid(1));
+
+                verify(eventos, never()).publishEvent(any(Object.class));
         }
 
         @Test
