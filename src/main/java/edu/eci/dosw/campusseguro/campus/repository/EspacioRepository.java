@@ -15,7 +15,5 @@ public interface EspacioRepository extends JpaRepository<Espacio, UUID> {
 
     boolean existsByPisoIdAndEstado(UUID pisoId, Estado estado);
 
-    boolean existsByEdificioIdAndCodigo(UUID edificioId, String codigo);
 
-    boolean existsByEdificioIdAndCodigoAndIdNot(UUID edificioId, String codigo, UUID id);
 }

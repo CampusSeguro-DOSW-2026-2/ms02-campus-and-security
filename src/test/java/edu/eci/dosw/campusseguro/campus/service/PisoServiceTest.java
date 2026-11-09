@@ -177,11 +177,11 @@ class PisoServiceTest {
     }
 
     @Test
-    void inactivar_conEspaciosActivos_seRechazaYListaLosCodigos() {
+    void inactivar_conEspaciosActivos_seRechazaYListaLosNombres() {
         piso();
 
         Espacio espacio = new Espacio();
-        espacio.setCodigo("SALON-101");
+        espacio.setNombre("Salón 101");
         espacio.setEstado(Estado.ACTIVO);
 
         when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of(espacio));
@@ -189,7 +189,7 @@ class PisoServiceTest {
         assertThatThrownBy(() -> pisoService.inactivar(PISO))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("espacios activos")
-                .hasMessageContaining("SALON-101");
+                .hasMessageContaining("Salón 101");
 
         verify(pisoRepository, never()).save(any());
     }
@@ -319,25 +319,25 @@ class PisoServiceTest {
         verify(pisoRepository, never()).save(any());
     }
 
-    private static Salida salida(String codigo, Estado estado) {
+    private static Salida salida(String nombre, Estado estado) {
         Salida s = new Salida();
         s.setPisoId(PISO);
-        s.setCodigo(codigo);
+        s.setNombre(nombre);
         s.setEstado(estado);
         return s;
     }
 
     @Test
-    void inactivar_conSalidaActiva_seRechazaYListaLosCodigos() {
+    void inactivar_conSalidaActiva_seRechazaYListaLosNombres() {
         piso();
         when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
         when(salidaRepository.findByPisoId(PISO))
-                .thenReturn(List.of(salida("G-S1", Estado.ACTIVO), salida("G-S2", Estado.INACTIVO)));
+                .thenReturn(List.of(salida("Salida norte", Estado.ACTIVO), salida("Salida sur", Estado.INACTIVO)));
 
         assertThatThrownBy(() -> pisoService.inactivar(PISO))
                 .isInstanceOf(ReglaNegocioException.class)
-                .hasMessageContaining("salidas activas [G-S1]")
-                .hasMessageNotContaining("G-S2");
+                .hasMessageContaining("salidas activas [Salida norte]")
+                .hasMessageNotContaining("Salida sur");
 
         verify(pisoRepository, never()).save(any());
     }

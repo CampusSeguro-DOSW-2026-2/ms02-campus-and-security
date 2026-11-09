@@ -65,7 +65,7 @@ class ConsultaRutaGuiaTest {
                 null, salidaGateway, escaleraGateway);
         EspacioInfo salon = new EspacioInfo(espacioId, edificioId, "Salón 301", true, null, piso3, 3);
         when(edificioGateway.buscarPorId(edificioId))
-                .thenReturn(Optional.of(new EdificioInfo(edificioId, "A", "Edificio A", true)));
+                .thenReturn(Optional.of(new EdificioInfo(edificioId, "Edificio A", true)));
         when(espacioGateway.buscarPorId(espacioId)).thenReturn(Optional.of(salon));
         lenient().when(rutaRepository.findByEspacioOrigenId(espacioId)).thenReturn(Optional.empty());
         lenient().when(zonaGateway.buscarPorId(zonaId))

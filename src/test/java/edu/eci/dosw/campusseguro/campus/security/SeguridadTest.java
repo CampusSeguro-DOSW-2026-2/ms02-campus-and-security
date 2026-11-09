@@ -26,7 +26,7 @@ class SeguridadTest {
 
     private static final String USER = "X-User-Id";
     private static final String ROLE = "X-User-Role";
-    private static final String EDIFICIO_JSON = "{\"codigo\":\"A\",\"nombre\":\"Edificio A\"}";
+    private static final String EDIFICIO_JSON = "{\"nombre\":\"Edificio A\",\"campusId\":\"" + uuid(10) + "\"}";
     private static final String ESTADO_JSON = "{\"estado\":\"BLOQUEADA\"}";
 
     @Autowired

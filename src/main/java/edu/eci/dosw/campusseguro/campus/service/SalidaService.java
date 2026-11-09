@@ -17,7 +17,6 @@ import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.exception.SalidaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.exception.SalidaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
@@ -48,23 +47,16 @@ public class SalidaService {
         }
 
         Piso piso = pisoActivoDelEdificio(request.pisoId(), edificioId);
-        String codigo = request.codigo().trim();
-
-        if (salidaRepository.existsByEdificioIdAndCodigo(edificioId, codigo)) {
-            throw new SalidaDuplicadaException(codigo);
-        }
-
         Salida salida = new Salida();
         salida.setEdificioId(edificioId);
         salida.setPisoId(piso.getId());
-        salida.setCodigo(codigo);
         salida.setNombre(request.nombre().trim());
         salida.setLatitud(request.latitud());
         salida.setLongitud(request.longitud());
 
         Salida guardada = salidaRepository.save(salida);
-        log.info("Salida {} creada en el edificio {} (piso {}) con código {}",
-                guardada.getId(), edificioId, piso.getId(), guardada.getCodigo());
+        log.info("Salida {} creada en el edificio {} (piso {})",
+                guardada.getId(), edificioId, piso.getId());
         return aRespuesta(guardada, piso, edificio);
     }
 
@@ -129,7 +121,7 @@ public class SalidaService {
         Map<UUID, Piso> pisos = pisoRepository.findByEdificioIdOrderByNumeroAsc(edificioId).stream()
                 .collect(Collectors.toMap(Piso::getId, Function.identity()));
 
-        return salidaRepository.findByEdificioIdOrderByCodigoAsc(edificioId).stream()
+        return salidaRepository.findByEdificioIdOrderByNombreAsc(edificioId).stream()
                 .map(s -> aRespuesta(s, pisos.get(s.getPisoId()), edificio))
                 .filter(s -> incluirInactivos || s.disponible())
                 .toList();
@@ -185,7 +177,6 @@ public class SalidaService {
                 edificio == null ? null : edificio.getNombre(),
                 s.getPisoId(),
                 piso == null ? null : piso.getNumero(),
-                s.getCodigo(),
                 s.getNombre(),
                 s.getLatitud(),
                 s.getLongitud(),

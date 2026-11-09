@@ -82,12 +82,13 @@ class QrConsultaPublicaIntegrationTest {
 
     @BeforeEach
     void registrarElCampus() throws Exception {
-        edificio = crear("/api/v1/buildings", "{\"codigo\":\"QR-G\",\"nombre\":\"Bloque G\"}");
+        String campus = crear("/api/v1/campuses", "{\"nombre\":\"Campus principal\"}");
+        edificio = crear("/api/v1/buildings", "{\"nombre\":\"Bloque G\",\"campusId\":\"" + campus + "\"}");
         piso1 = crear("/api/v1/buildings/" + edificio + "/floors", "{\"numero\":1,\"nombre\":\"Primer piso\"}");
         piso2 = crear("/api/v1/buildings/" + edificio + "/floors", "{\"numero\":2}");
         espacio = crear("/api/v1/floors/" + piso2 + "/spaces",
-                "{\"codigo\":\"G-201\",\"nombre\":\"Salón 201\",\"tipo\":\"SALON\"}");
-        salida = crear("/api/v1/buildings/" + edificio + "/exits", "{\"pisoId\":\"" + piso1 + "\",\"codigo\":\"G-S1\","
+                "{\"nombre\":\"Salón 201\",\"tipo\":\"SALON\"}");
+        salida = crear("/api/v1/buildings/" + edificio + "/exits", "{\"pisoId\":\"" + piso1 + "\","
                 + "\"nombre\":\"Salida principal\",\"latitud\":4.78271,\"longitud\":-74.04263}");
         zona = crear("/api/v1/safe-zones", "{\"codigo\":\"QR-MP-01\",\"nombre\":\"Plazoleta H\","
                 + "\"ubicacion\":\"Frente al bloque H\",\"descripcion\":\"Punto de encuentro\",\"capacidad\":300,"

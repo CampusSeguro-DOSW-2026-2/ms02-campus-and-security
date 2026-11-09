@@ -12,7 +12,6 @@ import edu.eci.dosw.campusseguro.campus.entity.Campus;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.exception.CampusNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.exception.CodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.CampusRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
@@ -36,22 +35,18 @@ public class EdificioService {
 
     @Transactional
     public EdificioResponse crear(EdificioRequest request) {
-        String codigo = request.codigo().trim();
-
-        if (edificioRepository.existsByCodigo(codigo)) {
-            throw new CodigoDuplicadoException(codigo);
+        if (request.campusId() == null) {
+            throw new ReglaNegocioException("El edificio debe pertenecer a un campus");
         }
-
         validarCampus(request.campusId());
 
         Edificio edificio = new Edificio();
-        edificio.setCodigo(codigo);
         edificio.setCampusId(request.campusId());
         edificio.setNombre(request.nombre().trim());
         edificio.setDescripcion(request.descripcion());
 
         Edificio guardado = edificioRepository.save(edificio);
-        log.info("Edificio {} creado con código {}", guardado.getId(), guardado.getCodigo());
+        log.info("Edificio {} creado en el campus {}", guardado.getId(), guardado.getCampusId());
         return aRespuesta(guardado);
     }
 
@@ -141,7 +136,6 @@ public class EdificioService {
     private EdificioResponse aRespuesta(Edificio e) {
         return new EdificioResponse(
                 e.getId(),
-                e.getCodigo(),
                 e.getNombre(),
                 e.getDescripcion(),
                 e.getEstado(),

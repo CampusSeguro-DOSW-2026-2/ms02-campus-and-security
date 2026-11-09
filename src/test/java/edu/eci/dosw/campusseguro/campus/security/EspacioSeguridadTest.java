@@ -24,7 +24,7 @@ class EspacioSeguridadTest {
 
     private static final String USER = "X-User-Id";
     private static final String ROLE = "X-User-Role";
-    private static final String ESPACIO_JSON = "{\"codigo\":\"G-101\",\"nombre\":\"Salón 101\",\"tipo\":\"SALON\"}";
+    private static final String ESPACIO_JSON = "{\"nombre\":\"Salón 101\",\"tipo\":\"SALON\"}";
     private static final String MODIFICAR_JSON = "{\"nombre\":\"Salón 101\",\"tipo\":\"LABORATORIO\"}";
 
     @Autowired

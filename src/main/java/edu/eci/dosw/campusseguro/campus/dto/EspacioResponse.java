@@ -11,7 +11,6 @@ public record EspacioResponse(
         String edificioNombre,
         UUID pisoId,
         Integer pisoNumero,
-        String codigo,
         String nombre,
         TipoEspacio tipo,
         Estado estado,

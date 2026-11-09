@@ -57,7 +57,6 @@ public class ConsultaPublicaService {
                 TipoElementoImagen.ESPACIO, id);
 
         return new EspacioPublicoResponse(
-                espacio.getCodigo(),
                 espacio.getNombre(),
                 espacio.getTipo(),
                 edificio == null ? null : edificio.getNombre(),
@@ -80,7 +79,6 @@ public class ConsultaPublicaService {
                 TipoElementoImagen.SALIDA, id);
 
         return new SalidaPublicaResponse(
-                salida.getCodigo(),
                 salida.getNombre(),
                 edificio == null ? null : edificio.getNombre(),
                 piso == null ? null : piso.getNumero(),

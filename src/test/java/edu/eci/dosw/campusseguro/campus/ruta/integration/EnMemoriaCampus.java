@@ -27,7 +27,7 @@ class EnMemoriaCampus {
     }
 
     EdificioInfo edificio(String nombre, boolean activo) {
-        EdificioInfo e = new EdificioInfo(UUID.randomUUID(), nombre.substring(0, 1), nombre, activo);
+        EdificioInfo e = new EdificioInfo(UUID.randomUUID(), nombre, activo);
         edificios.put(e.id(), e);
         return e;
     }

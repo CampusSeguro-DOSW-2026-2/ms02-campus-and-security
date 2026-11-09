@@ -86,7 +86,7 @@ public class PisoService {
 
         List<String> espaciosActivos = espacioRepository.findByPisoId(id).stream()
                 .filter(espacio -> espacio.getEstado() == Estado.ACTIVO)
-                .map(Espacio::getCodigo)
+                .map(Espacio::getNombre)
                 .toList();
 
         if (!espaciosActivos.isEmpty()) {
@@ -110,7 +110,7 @@ public class PisoService {
 
         List<String> salidasActivas = salidaRepository.findByPisoId(id).stream()
                 .filter(salida -> salida.getEstado() == Estado.ACTIVO)
-                .map(Salida::getCodigo)
+                .map(Salida::getNombre)
                 .toList();
 
         if (!salidasActivas.isEmpty()) {

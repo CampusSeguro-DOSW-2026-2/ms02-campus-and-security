@@ -41,7 +41,7 @@ class ConsultaPublicaSeguridadTest {
     private ConsultaPublicaService consultaPublicaService;
 
     private static EspacioPublicoResponse espacio() {
-        return new EspacioPublicoResponse("G-201", "Salón 201", TipoEspacio.SALON, "Bloque G", 2, true,
+        return new EspacioPublicoResponse("Salón 201", TipoEspacio.SALON, "Bloque G", 2, true,
                 new EspacioPublicoResponse.Evacuacion(true, "Plazoleta H", "Frente al bloque H",
                         "Baje por la escalera norte.", EstadoRuta.DISPONIBLE, null, null,
                         List.of(new EspacioPublicoResponse.Recomendacion("Escaleras", "Use la escalera norte."))),
@@ -75,7 +75,7 @@ class ConsultaPublicaSeguridadTest {
 
     @Test
     void salida_sinCabeceras_respondeSinIdsInternos() throws Exception {
-        when(consultaPublicaService.salida(ID)).thenReturn(new SalidaPublicaResponse("G-S1", "Salida principal",
+        when(consultaPublicaService.salida(ID)).thenReturn(new SalidaPublicaResponse("Salida principal",
                 "Bloque G", 1, new BigDecimal("4.782710"), new BigDecimal("-74.042630"), true, null, false));
 
         mockMvc.perform(get("/api/v1/public/exits").param("id", ID.toString()))

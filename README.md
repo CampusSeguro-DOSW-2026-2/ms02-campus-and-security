@@ -46,10 +46,10 @@ erDiagram
     EDIFICIO ||--o{ RECOMENDACION_PREVENTIVA : "ambito EDIFICIO"
 ```
 
-- **Edificio**: id, codigo (único), nombre, descripcion, estado (ACTIVO/INACTIVO)
+- **Edificio**: id, campusId (obligatorio), nombre, descripcion, estado (ACTIVO/INACTIVO)
 - **Piso**: id, edificioId, numero (puede ser negativo para sótanos), nombre, estado. Único por (edificio, número)
-- **Espacio**: id, edificioId, pisoId, codigo (único por edificio), nombre, tipo (SALON/LABORATORIO/AUDITORIO/OFICINA/ESPACIO_COMUN), estado
-- **Salida**: id, edificioId, pisoId, codigo (único por edificio), nombre, latitud, longitud (obligatorias), estado
+- **Espacio**: id, edificioId, pisoId, nombre, tipo (SALON/LABORATORIO/AUDITORIO/OFICINA/ESPACIO_COMUN), estado
+- **Salida**: id, edificioId, pisoId, nombre, latitud, longitud (obligatorias), estado
 - **ZonaSegura**: id, codigo (fijo, no se puede cambiar), nombre, ubicacion, descripcion, capacidad, estado
 - **RutaEvacuacion**: id, espacioOrigenId (único), zonaSeguraDestinoId, descripcion, estado (DISPONIBLE/BLOQUEADA/RESTRINGIDA), motivo (obligatorio si no está disponible)
 - **RecomendacionPreventiva**: ambito (EDIFICIO o TIPO_ESPACIO), edificioId o tipoEspacio, titulo, recomendacion, estado
@@ -103,14 +103,14 @@ Salida física del edificio al exterior, asociada al piso desde el que se sale. 
 | POST | `/api/v1/buildings/{edificioId}/exits` | `ms02:building:write` | Registra una salida en un piso activo del edificio |
 | GET | `/api/v1/buildings/{edificioId}/exits` | `ms02:campus:read` | Lista las salidas disponibles (`?incluirInactivos=true` para todas) |
 | GET | `/api/v1/exits/{id}` | `ms02:campus:read` | Consulta una salida |
-| PUT | `/api/v1/exits/{id}` | `ms02:building:write` | Cambia piso, nombre y coordenadas (el código es fijo) |
+| PUT | `/api/v1/exits/{id}` | `ms02:building:write` | Cambia piso, nombre y coordenadas |
 | PATCH | `/api/v1/exits/{id}/deactivate` · `/reactivate` | `ms02:building:write` | Inactiva o reactiva |
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/buildings/{edificioId}/exits   -H "Authorization: Bearer <token>" -H "Content-Type: application/json"   -d '{"pisoId":"<pisoId>","codigo":"G-S1","nombre":"Salida principal","latitud":4.78271,"longitud":-74.04263}'
+curl -X POST http://localhost:8080/api/v1/buildings/{edificioId}/exits   -H "Authorization: Bearer <token>" -H "Content-Type: application/json"   -d '{"pisoId":"<pisoId>","nombre":"Salida principal","latitud":4.78271,"longitud":-74.04263}'
 ```
 
-Reglas: el piso debe ser del mismo edificio y estar activo, las coordenadas son obligatorias y el código no se repite en el edificio (409). Una salida cuyo piso o edificio está inactivo responde `disponible: false` y no se usa como origen de rutas exteriores.
+Reglas: el piso debe ser del mismo edificio y estar activo y las coordenadas son obligatorias. Una salida cuyo piso o edificio está inactivo responde `disponible: false` y no se usa como origen de rutas exteriores.
 
 ### Códigos QR
 
@@ -138,7 +138,7 @@ curl "http://localhost:8080/api/v1/public/spaces?id={id}"
 
 ```json
 {
-  "codigo": "G-201", "nombre": "Salón 201", "tipo": "SALON",
+  "nombre": "Salón 201", "tipo": "SALON",
   "edificio": "Bloque G", "piso": 2, "disponible": true,
   "evacuacion": {
     "tieneRuta": true, "zonaSegura": "Plazoleta H", "ubicacionZonaSegura": "Frente al bloque H",

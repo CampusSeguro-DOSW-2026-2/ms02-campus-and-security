@@ -8,9 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SalidaRepository extends JpaRepository<Salida, UUID> {
 
-    List<Salida> findByEdificioIdOrderByCodigoAsc(UUID edificioId);
+    List<Salida> findByEdificioIdOrderByNombreAsc(UUID edificioId);
 
-    boolean existsByEdificioIdAndCodigo(UUID edificioId, String codigo);
 
     List<Salida> findByPisoId(UUID pisoId);
 
