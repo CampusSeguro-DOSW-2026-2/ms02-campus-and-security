@@ -49,7 +49,7 @@ Versions are reserved so parallel PRs do not collide.
 | V14 | M3 | Create `imagen` | New table, no effect |
 | V15 | P5 | `ruta_evacuacion`: add `salida_origen_id`, make `espacio_origen_id` nullable, add distance, duration and geometry columns, add check that at least one origin is present | All current rows stay valid as legacy routes |
 
-Order: V10, V11 and V12 can be merged in any order after P1. V13 needs V10. V15 needs V11, V12 and V13.
+Order: migrations must be merged in version order (V10, V11, V12, V13, V14, V15). Flyway refuses to start on a database that already has a newer version applied when an older one arrives later.
 
 ### Rules for every migration
 1. New columns that touch existing tables are nullable or have a default.
