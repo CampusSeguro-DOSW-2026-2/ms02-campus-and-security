@@ -9,6 +9,7 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Salida;
 import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoDuplicadoException;
@@ -17,6 +18,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
+import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class PisoService {
     private final EdificioRepository edificioRepository;
     private final EspacioRepository espacioRepository;
     private final EscaleraRepository escaleraRepository;
+    private final SalidaRepository salidaRepository;
 
     @Transactional
     public PisoResponse crear(UUID edificioId, PisoRequest request) {
@@ -99,6 +102,18 @@ public class PisoService {
             log.warn("No se inactivó el piso {}: tiene escaleras activas", id);
             throw new ReglaNegocioException(
                     "El piso tiene escaleras activas; deben inactivarse antes");
+        }
+
+        List<String> salidasActivas = salidaRepository.findByPisoId(id).stream()
+                .filter(salida -> salida.getEstado() == Estado.ACTIVO)
+                .map(Salida::getCodigo)
+                .toList();
+
+        if (!salidasActivas.isEmpty()) {
+            log.warn("No se inactivó el piso {}: tiene salidas activas {}", id, salidasActivas);
+            throw new ReglaNegocioException(
+                    "El piso tiene salidas activas " + salidasActivas
+                            + "; deben inactivarse antes");
         }
 
         piso.setEstado(Estado.INACTIVO);
