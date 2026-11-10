@@ -91,8 +91,8 @@ class ConsultaRutaGuiaTest {
     void guia_conEscaleraDisponible_indicaEscaleraSalidaYRutaExterior() {
         when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
         when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
-        when(escaleraGateway.listarDisponiblesQueConectan(edificioId, piso3, piso1))
-                .thenReturn(List.of(escalera("E-1")));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"))));
 
         RutaConsultadaResponse respuesta = service.consultarPorEspacio(espacioId);
 
@@ -107,6 +107,52 @@ class ConsultaRutaGuiaTest {
         assertThat(guia.zonaSeguraNombre()).isEqualTo("Plazoleta");
         assertThat(guia.indicacion()).contains("escalera Escalera E-1").contains("Plazoleta");
         assertThat(guia.mensaje()).isNull();
+    }
+
+    @Test
+    void guia_conVariasEscaleras_recomiendaLaPrincipalYMencionaLaAlterna() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"), escalera("E-2"))));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.escaleras()).extracting("codigo").containsExactly("E-1", "E-2");
+        assertThat(guia.escaleras()).extracting("principal").containsExactly(true, false);
+        assertThat(guia.indicacion())
+                .contains("escalera Escalera E-1 (alterna: Escalera E-2)");
+    }
+
+    @Test
+    void guia_conEscalerasEncadenadas_indicaUnaPorTramoEnOrden() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-A")), List.of(escalera("E-B"))));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.requiereEscalera()).isTrue();
+        assertThat(guia.escaleras()).extracting("codigo").containsExactly("E-A", "E-B");
+        assertThat(guia.escaleras()).extracting("tramo").containsExactly(1, 2);
+        assertThat(guia.indicacion()).contains("escalera Escalera E-A, luego por la escalera Escalera E-B");
+    }
+
+    @Test
+    void guia_prefiereLaSalidaConMenosTramosAunqueElRecorridoExteriorSeaMasLargo() {
+        UUID salidaEnPiso1 = uuid(31);
+        when(salidaGateway.listarPorEdificio(edificioId))
+                .thenReturn(List.of(salida(salidaEnPiso1, piso1, true), salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any()))
+                .thenReturn(List.of(rutaExterior(salidaEnPiso1, 100), rutaExterior(salidaId, 400)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"))));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida().id()).isEqualTo(salidaId);
+        assertThat(guia.requiereEscalera()).isFalse();
     }
 
     @Test
@@ -125,7 +171,7 @@ class ConsultaRutaGuiaTest {
     void guia_sinEscalerasDisponibles_avisaYNoRecomiendaSalida() {
         when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
         when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
-        when(escaleraGateway.listarDisponiblesQueConectan(edificioId, piso3, piso1)).thenReturn(List.of());
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1)).thenReturn(List.of());
 
         GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
 
