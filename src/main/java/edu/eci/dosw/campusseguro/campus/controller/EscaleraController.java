@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.CambiarDisponibilidadEscaleraRequest;
+import edu.eci.dosw.campusseguro.campus.dto.CambiarPrioridadEscaleraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EscaleraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EscaleraResponse;
 import edu.eci.dosw.campusseguro.campus.security.Permiso;
@@ -60,6 +61,16 @@ public class EscaleraController {
             @PathVariable UUID id,
             @Valid @RequestBody CambiarDisponibilidadEscaleraRequest request) {
         return escaleraService.cambiarDisponibilidad(id, request);
+    }
+
+    @Operation(summary = "Cambiar la prioridad de una escalera",
+            description = "1 es la escalera principal del edificio. La guia de evacuacion recomienda primero las de menor numero.")
+    @Permiso(Permisos.BUILDING_WRITE)
+    @PatchMapping("/stairs/{id}/priority")
+    public EscaleraResponse cambiarPrioridad(
+            @PathVariable UUID id,
+            @Valid @RequestBody CambiarPrioridadEscaleraRequest request) {
+        return escaleraService.cambiarPrioridad(id, request);
     }
 
     @Operation(summary = "Inactivar escalera")

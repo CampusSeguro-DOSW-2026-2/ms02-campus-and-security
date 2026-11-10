@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import edu.eci.dosw.campusseguro.campus.dto.CambiarDisponibilidadEscaleraRequest;
+import edu.eci.dosw.campusseguro.campus.dto.CambiarPrioridadEscaleraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EscaleraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.EscaleraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.DisponibilidadEscalera;
@@ -51,6 +52,8 @@ public class EscaleraService {
         escalera.setCodigo(generarCodigo());
         escalera.setNombre(request.nombre().trim());
         escalera.setPisos(new HashSet<>(pisos));
+        escalera.setPrioridad(request.prioridad() != null
+                ? request.prioridad() : siguientePrioridad(edificioId));
 
         Escalera guardada = escaleraRepository.save(escalera);
         log.info("Escalera {} creada en el edificio {}", guardada.getCodigo(), edificioId);
@@ -93,6 +96,23 @@ public class EscaleraService {
         log.info("Disponibilidad de escalera {} actualizada a {}",
                 guardada.getCodigo(), guardada.getDisponibilidad());
         return aRespuesta(guardada);
+    }
+
+    @Transactional
+    public EscaleraResponse cambiarPrioridad(UUID id, CambiarPrioridadEscaleraRequest request) {
+        Escalera escalera = buscar(id);
+        escalera.setPrioridad(request.prioridad());
+        Escalera guardada = escaleraRepository.save(escalera);
+        log.info("Prioridad de escalera {} actualizada a {}", guardada.getCodigo(), guardada.getPrioridad());
+        return aRespuesta(guardada);
+    }
+
+    // Sin prioridad explicita, la escalera nueva queda despues de las que ya tiene el edificio.
+    private int siguientePrioridad(UUID edificioId) {
+        return escaleraRepository.findByEdificioId(edificioId).stream()
+                .filter(e -> e.getEstado() == Estado.ACTIVO)
+                .mapToInt(Escalera::getPrioridad)
+                .max().orElse(0) + 1;
     }
 
     @Transactional
@@ -195,6 +215,7 @@ public class EscaleraService {
                 escalera.getDisponibilidad(),
                 escalera.getMotivo(),
                 escalera.getEstado(),
+                escalera.getPrioridad(),
                 pisoIds);
     }
 }
