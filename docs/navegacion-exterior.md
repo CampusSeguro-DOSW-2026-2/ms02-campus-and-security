@@ -91,3 +91,18 @@ Responde `{ "generadas": 4, "omitidas": 1, "interrumpida": false }`. `interrumpi
 | --- | --- | --- |
 | `campusseguro.rutas.auto.enabled` | `RUTAS_AUTO_ENABLED` | `true` |
 | `campusseguro.rutas.auto.max-zonas-por-salida` | `RUTAS_AUTO_MAX_ZONAS` | `3` |
+
+## Escaleras en la guía: prioridad y recorrido por tramos
+
+El admin no necesita crear rutas internas por espacio: la guía se arma al consultar un espacio con las escaleras,
+salidas y rutas exteriores que ya existen. No se modelan ascensores; solo escaleras.
+
+- Cada escalera tiene una `prioridad` (1 es la principal del edificio). Si no se envía al crearla, queda
+  después de las que ya hay. Se cambia con `PATCH /api/v1/stairs/{id}/priority` (`{"prioridad": 2}`).
+- La guía recomienda la escalera de menor prioridad y nombra las demás como alternas. Las bloqueadas, fuera de
+  servicio o inactivas nunca se recomiendan.
+- Si ninguna escalera cubre desde el piso del espacio hasta el de la salida, se encadenan varias
+  (por ejemplo piso 3 a 2 con una y piso 2 a 1 con otra). Se usa el recorrido con menos tramos.
+- Entre las salidas alcanzables gana la de menos tramos de escalera; a igual número, la de recorrido exterior
+  más corto.
+- La respuesta de `escaleras` incluye `tramo` (orden en el recorrido) y `principal` (recomendada del tramo).

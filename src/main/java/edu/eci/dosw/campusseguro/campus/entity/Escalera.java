@@ -38,6 +38,10 @@ public class Escalera {
     @Column(length = 255)
     private String motivo;
 
+    // 1 = escalera principal del edificio; las de numero mayor se ofrecen como alternas.
+    @Column(nullable = false)
+    private int prioridad = 1;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Estado estado = Estado.ACTIVO;

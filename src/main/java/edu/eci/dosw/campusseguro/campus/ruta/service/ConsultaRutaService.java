@@ -147,7 +147,7 @@ public class ConsultaRutaService {
                                 .map(ZonaInfo::activa).orElse(false))
                         .collect(Collectors.groupingBy(RutaEvacuacion::getSalidaOrigenId));
 
-        record Opcion(SalidaInfo salida, RutaEvacuacion ruta, List<EscaleraInfo> escaleras) {
+        record Opcion(SalidaInfo salida, RutaEvacuacion ruta, List<List<EscaleraInfo>> tramos) {
         }
 
         List<Opcion> opciones = new ArrayList<>();
@@ -157,11 +157,11 @@ public class ConsultaRutaService {
             if (rutas.isEmpty()) {
                 continue;
             }
-            List<EscaleraInfo> escaleras = List.of();
+            List<List<EscaleraInfo>> tramos = List.of();
             if (!salida.pisoId().equals(espacio.pisoId())) {
-                escaleras = escaleraGateway.listarDisponiblesQueConectan(
+                tramos = escaleraGateway.tramosEntre(
                         espacio.edificioId(), espacio.pisoId(), salida.pisoId());
-                if (escaleras.isEmpty()) {
+                if (tramos.isEmpty()) {
                     hayRutaSinEscalera = true;
                     continue;
                 }
@@ -170,7 +170,7 @@ public class ConsultaRutaService {
                     .min(Comparator.comparing(r -> r.getDistanciaMetros() == null
                             ? java.math.BigDecimal.valueOf(Long.MAX_VALUE) : r.getDistanciaMetros()))
                     .orElseThrow();
-            opciones.add(new Opcion(salida, mejor, escaleras));
+            opciones.add(new Opcion(salida, mejor, tramos));
         }
 
         if (opciones.isEmpty()) {
@@ -179,17 +179,25 @@ public class ConsultaRutaService {
                     espacio.pisoNumero(), hayRutaSinEscalera, List.of(), null, null, null, null, mensaje);
         }
 
+        // Primero la salida con menos tramos de escalera (menos tiempo dentro del edificio); a igual
+        // numero de tramos, la de recorrido exterior mas corto.
         Opcion elegida = opciones.stream()
-                .min(Comparator.comparing((Opcion o) -> o.ruta().getDistanciaMetros() == null
-                        ? java.math.BigDecimal.valueOf(Long.MAX_VALUE) : o.ruta().getDistanciaMetros()))
+                .min(Comparator.comparingInt((Opcion o) -> o.tramos().size())
+                        .thenComparing(o -> o.ruta().getDistanciaMetros() == null
+                                ? java.math.BigDecimal.valueOf(Long.MAX_VALUE) : o.ruta().getDistanciaMetros()))
                 .orElseThrow();
 
         RutaExteriorResponse exterior = RutaExteriorService.aResponse(elegida.ruta());
         String zonaNombre = zonaGateway.buscarPorId(elegida.ruta().getZonaSeguraDestinoId())
                 .map(ZonaInfo::nombre).orElse(null);
-        List<EscaleraGuia> escaleras = elegida.escaleras().stream()
-                .map(e -> new EscaleraGuia(e.id(), e.codigo(), e.nombre()))
-                .toList();
+        List<EscaleraGuia> escaleras = new ArrayList<>();
+        for (int i = 0; i < elegida.tramos().size(); i++) {
+            List<EscaleraInfo> candidatas = elegida.tramos().get(i);
+            for (int j = 0; j < candidatas.size(); j++) {
+                EscaleraInfo e = candidatas.get(j);
+                escaleras.add(new EscaleraGuia(e.id(), e.codigo(), e.nombre(), i + 1, j == 0));
+            }
+        }
         SalidaInfo salida = elegida.salida();
 
         return new GuiaEvacuacionResponse(
@@ -204,9 +212,13 @@ public class ConsultaRutaService {
                                      RutaExteriorResponse exterior, String zonaNombre) {
         StringBuilder sb = new StringBuilder();
         if (!escaleras.isEmpty()) {
-            sb.append("Baje por la escalera ")
-                    .append(escaleras.stream().map(EscaleraGuia::nombre).collect(Collectors.joining(" o ")))
-                    .append(" hasta el piso de salida, ");
+            // Una escalera principal por tramo, en orden; las alternas se mencionan entre parentesis.
+            Map<Integer, List<EscaleraGuia>> porTramo = escaleras.stream()
+                    .collect(Collectors.groupingBy(EscaleraGuia::tramo, java.util.TreeMap::new, Collectors.toList()));
+            sb.append("Baje por la escalera ");
+            sb.append(porTramo.values().stream().map(ConsultaRutaService::textoTramo)
+                    .collect(Collectors.joining(", luego por la escalera ")));
+            sb.append(" hasta el piso de salida, ");
         }
         sb.append(escaleras.isEmpty() ? "Salga" : "salga").append(" por '").append(salida.nombre()).append("'");
         sb.append(" y siga la ruta exterior");
@@ -225,6 +237,15 @@ public class ConsultaRutaService {
             sb.append(" '").append(zonaNombre).append("'");
         }
         return sb.append(".").toString();
+    }
+
+    private static String textoTramo(List<EscaleraGuia> candidatas) {
+        String texto = candidatas.get(0).nombre();
+        if (candidatas.size() > 1) {
+            texto += " (alterna: " + candidatas.stream().skip(1).map(EscaleraGuia::nombre)
+                    .collect(Collectors.joining(", ")) + ")";
+        }
+        return texto;
     }
 
     public List<RutaConsultadaResponse> consultarPorEdificio(UUID edificioId) {

@@ -18,7 +18,12 @@ public record GuiaEvacuacionResponse(
         String indicacion,
         String mensaje) {
 
-    public record EscaleraGuia(UUID id, String codigo, String nombre) {
+    // tramo: orden en el recorrido (1 es el primero). principal: la recomendada del tramo; las demas son alternas.
+    public record EscaleraGuia(UUID id, String codigo, String nombre, int tramo, boolean principal) {
+
+        public EscaleraGuia(UUID id, String codigo, String nombre) {
+            this(id, codigo, nombre, 1, true);
+        }
     }
 
     public record SalidaGuia(UUID id, String nombre, BigDecimal latitud, BigDecimal longitud) {

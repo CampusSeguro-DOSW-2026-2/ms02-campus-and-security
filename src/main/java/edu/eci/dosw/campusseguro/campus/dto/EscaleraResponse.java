@@ -14,6 +14,7 @@ public record EscaleraResponse(
         DisponibilidadEscalera disponibilidad,
         String motivo,
         Estado estado,
+        int prioridad,
         List<UUID> pisoIds
 ) {
 }
