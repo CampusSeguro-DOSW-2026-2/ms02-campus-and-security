@@ -151,5 +151,10 @@ curl "http://localhost:8080/api/v1/public/spaces?id={id}"
 
 `/api/v1/public/exits?id=` devuelve nombre, edificio, piso y coordenadas; `/api/v1/public/safe-zones?id=` devuelve ubicación, coordenadas y si es punto de encuentro. Si el elemento está inactivo responde `disponible: false` con un aviso; si no existe, `404 NO_ENCONTRADO`. Más detalle en [docs/consulta-publica-qr.md](docs/consulta-publica-qr.md).
 
+## Despliegue en la nube
+
+MS02 se despliega en Azure detrás del API Gateway, con un runner self-hosted y la imagen publicada en GHCR por el CI. El
+paso a paso está en [docs/despliegue-azure.md](docs/despliegue-azure.md).
+
 ## Contratos API
 https://editor.swagger.io/
