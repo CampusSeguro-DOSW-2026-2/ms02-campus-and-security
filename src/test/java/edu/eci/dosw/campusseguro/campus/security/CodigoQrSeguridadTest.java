@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import edu.eci.dosw.campusseguro.campus.controller.CodigoQrController;
 import edu.eci.dosw.campusseguro.campus.service.CodigoQrService;
 import org.junit.jupiter.api.Test;
@@ -34,27 +36,27 @@ class CodigoQrSeguridadTest {
 
     @Test
     void estudiante_noPuedeGenerarQr() throws Exception {
-        mockMvc.perform(get("/api/v1/spaces/{id}/qr", uuid(30)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/spaces/{id}/qr", uuid(30)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/v1/exits/{id}/qr", uuid(30)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/exits/{id}/qr", uuid(30)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/v1/safe-zones/{id}/qr", uuid(30)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/safe-zones/{id}/qr", uuid(30)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void coordinador_noPuedeGenerarQr() throws Exception {
-        mockMvc.perform(get("/api/v1/safe-zones/{id}/qr", uuid(30)).header(USER, "USR-2").header(ROLE, "COORDINADOR"))
+        mockMvc.perform(get("/api/v1/safe-zones/{id}/qr", uuid(30)).header(USER, "USR-2").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void admin_puedeGenerarLosTresQr() throws Exception {
-        mockMvc.perform(get("/api/v1/spaces/{id}/qr", uuid(30)).header(USER, "USR-9").header(ROLE, "ADMIN"))
+        mockMvc.perform(get("/api/v1/spaces/{id}/qr", uuid(30)).header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/v1/exits/{id}/qr", uuid(30)).header(USER, "USR-9").header(ROLE, "ADMIN"))
+        mockMvc.perform(get("/api/v1/exits/{id}/qr", uuid(30)).header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/v1/safe-zones/{id}/qr", uuid(30)).header(USER, "USR-9").header(ROLE, "ADMIN"))
+        mockMvc.perform(get("/api/v1/safe-zones/{id}/qr", uuid(30)).header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 }

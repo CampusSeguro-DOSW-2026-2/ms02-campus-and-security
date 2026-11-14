@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -48,24 +50,24 @@ class CampusSeguridadTest {
 
     @Test
     void estudiante_puedeListarYConsultarCampus() throws Exception {
-        mockMvc.perform(get("/api/v1/campuses").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/campuses").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/v1/campuses/{id}", uuid(1)).header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/campuses/{id}", uuid(1)).header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_puedeConsultarZonasAbiertas() throws Exception {
         mockMvc.perform(get("/api/v1/campuses/{id}/open-zones", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/v1/open-zones/{id}", uuid(2)).header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/open-zones/{id}", uuid(2)).header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeCrearCampus_devuelve403() throws Exception {
-        mockMvc.perform(post("/api/v1/campuses").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE")
+        mockMvc.perform(post("/api/v1/campuses").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(CAMPUS_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.codigo").value("PROHIBIDO"));
@@ -73,7 +75,7 @@ class CampusSeguridadTest {
 
     @Test
     void coordinador_noPuedeModificarCampus() throws Exception {
-        mockMvc.perform(put("/api/v1/campuses/{id}", uuid(1)).header(USER, "USR-1").header(ROLE, "COORDINADOR")
+        mockMvc.perform(put("/api/v1/campuses/{id}", uuid(1)).header(USER, "USR-1").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"Campus\"}"))
                 .andExpect(status().isForbidden());
     }
@@ -81,7 +83,7 @@ class CampusSeguridadTest {
     @Test
     void estudiante_noPuedeCrearZonasAbiertas_devuelve403() throws Exception {
         mockMvc.perform(post("/api/v1/campuses/{id}/open-zones", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE")
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(ZONA_JSON))
                 .andExpect(status().isForbidden());
     }
@@ -89,28 +91,28 @@ class CampusSeguridadTest {
     @Test
     void estudiante_noPuedeInactivarNiReactivarZonasAbiertas() throws Exception {
         mockMvc.perform(patch("/api/v1/open-zones/{id}/deactivate", uuid(2))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
         mockMvc.perform(patch("/api/v1/open-zones/{id}/reactivate", uuid(2))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void admin_puedeCrearCampusYZonasAbiertas() throws Exception {
-        mockMvc.perform(post("/api/v1/campuses").header(USER, "USR-1").header(ROLE, "ADMIN")
+        mockMvc.perform(post("/api/v1/campuses").header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(CAMPUS_JSON))
                 .andExpect(status().isCreated());
-        mockMvc.perform(post("/api/v1/campuses/{id}/open-zones", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN")
+        mockMvc.perform(post("/api/v1/campuses/{id}/open-zones", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(ZONA_JSON))
                 .andExpect(status().isCreated());
     }
 
     @Test
     void admin_puedeInactivarYReactivarCampus() throws Exception {
-        mockMvc.perform(patch("/api/v1/campuses/{id}/deactivate", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN"))
+        mockMvc.perform(patch("/api/v1/campuses/{id}/deactivate", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
-        mockMvc.perform(patch("/api/v1/campuses/{id}/reactivate", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN"))
+        mockMvc.perform(patch("/api/v1/campuses/{id}/reactivate", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 }

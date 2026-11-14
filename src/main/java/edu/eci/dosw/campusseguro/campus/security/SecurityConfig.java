@@ -40,17 +40,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/public/**").denyAll()
 
-                        // Generación de códigos QR: permiso de administración del elemento.
+                        // Generación de códigos QR: permiso ms02:qr:manage del catálogo.
                         .requestMatchers(HttpMethod.GET, "/api/v1/spaces/*/qr",
-                                "/api/v1/exits/*/qr").hasAuthority(Permisos.BUILDING_WRITE)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/safe-zones/*/qr")
-                        .hasAuthority(Permisos.SAFE_ZONE_WRITE)
+                                "/api/v1/exits/*/qr", "/api/v1/safe-zones/*/qr").hasAuthority(Permisos.QR_MANAGE)
 
                         // Escaleras.
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/stairs",
                                 "/api/v1/stairs/*").hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/stairs/*/status")
-                        .hasAuthority(Permisos.STAIR_STATUS_WRITE)
+                        .hasAuthority(Permisos.ROUTE_STATUS_WRITE)
                         .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
@@ -77,13 +75,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/floors/*/spaces", "/api/v1/buildings/*/spaces",
                                 "/api/v1/spaces/*").hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers("/api/v1/floors/*/spaces", "/api/v1/spaces/**")
-                        .hasAuthority(Permisos.BUILDING_WRITE)
+                        .hasAuthority(Permisos.SPACE_WRITE)
 
                         // Escaleras: lectura general, administración para ADMIN y estado para COORDINADOR.
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/stairs", "/api/v1/stairs/*")
                         .hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/stairs/*/status")
-                        .hasAuthority(Permisos.STAIR_STATUS_WRITE)
+                        .hasAuthority(Permisos.ROUTE_STATUS_WRITE)
                         .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
@@ -118,13 +116,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/**").hasAuthority(Permisos.BUILDING_WRITE)
                         .requestMatchers("/api/v1/safe-zones/**").hasAuthority(Permisos.SAFE_ZONE_WRITE)
 
-                        // Recomendaciones preventivas: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        // Recomendaciones preventivas: consulta con ms02:preventive_info:read y escritura con
+                        // ms02:building:write, porque el catálogo no define un permiso de escritura propio.
                         .requestMatchers(HttpMethod.GET, "/api/v1/preventive-recommendations",
                                 "/api/v1/preventive-recommendations/**")
-                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .hasAuthority(Permisos.PREVENTIVE_INFO_READ)
                         .requestMatchers("/api/v1/preventive-recommendations",
                                 "/api/v1/preventive-recommendations/**")
-                        .hasAuthority(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
+                        .hasAuthority(Permisos.BUILDING_WRITE)
 
                         // Imágenes: lectura para cualquier rol autorizado y escritura solo ADMIN.
                         .requestMatchers(HttpMethod.GET, "/api/v1/images", "/api/v1/images/*")

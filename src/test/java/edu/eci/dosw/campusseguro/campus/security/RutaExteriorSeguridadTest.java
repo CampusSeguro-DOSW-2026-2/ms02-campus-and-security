@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import java.util.List;
 
 import edu.eci.dosw.campusseguro.campus.ruta.controller.RutaExteriorController;
@@ -48,14 +50,14 @@ class RutaExteriorSeguridadTest {
         when(rutaExteriorService.listarPorSalida(uuid(30))).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/exits/{id}/evacuation-route", uuid(30))
-                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeCalcularRutas() throws Exception {
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior")
-                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE")
+                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(CUERPO))
                 .andExpect(status().isForbidden());
     }
@@ -63,7 +65,7 @@ class RutaExteriorSeguridadTest {
     @Test
     void coordinador_noPuedeCalcularRutas() throws Exception {
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior")
-                        .header(USER, "USR-2").header(ROLE, "COORDINADOR")
+                        .header(USER, "USR-2").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content(CUERPO))
                 .andExpect(status().isForbidden());
     }
@@ -71,7 +73,7 @@ class RutaExteriorSeguridadTest {
     @Test
     void admin_puedeCalcularRutas() throws Exception {
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior")
-                        .header(USER, "USR-3").header(ROLE, "ADMIN")
+                        .header(USER, "USR-3").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(CUERPO))
                 .andExpect(status().isOk());
     }
@@ -79,7 +81,7 @@ class RutaExteriorSeguridadTest {
     @Test
     void admin_conCuerpoIncompleto_devuelve400() throws Exception {
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior")
-                        .header(USER, "USR-3").header(ROLE, "ADMIN")
+                        .header(USER, "USR-3").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
     }
@@ -87,14 +89,14 @@ class RutaExteriorSeguridadTest {
     @Test
     void estudiante_noPuedeGenerarRutas() throws Exception {
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate")
-                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void coordinador_noPuedeGenerarRutas() throws Exception {
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate")
-                        .header(USER, "USR-2").header(ROLE, "COORDINADOR"))
+                        .header(USER, "USR-2").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR")))
                 .andExpect(status().isForbidden());
     }
 
@@ -103,7 +105,7 @@ class RutaExteriorSeguridadTest {
         when(generador.generarTodas(false)).thenReturn(new ResumenGeneracionResponse(4, 1, false));
 
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate")
-                        .header(USER, "USR-3").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-3").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
                         .jsonPath("$.generadas").value(4));
@@ -114,7 +116,7 @@ class RutaExteriorSeguridadTest {
         when(generador.generarTodas(true)).thenReturn(new ResumenGeneracionResponse(6, 0, false));
 
         mockMvc.perform(post("/api/v1/evacuation-routes/exterior/generate?recalcular=true")
-                        .header(USER, "USR-3").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-3").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
                         .jsonPath("$.generadas").value(6));

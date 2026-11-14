@@ -26,28 +26,28 @@ public class RecomendacionPreventivaController {
     private final RecomendacionPreventivaService service;
 
     @Operation(summary = "Listar recomendaciones activas", description = "Consulta disponible para cualquier rol.")
-    @Permiso(Permisos.CAMPUS_READ)
+    @Permiso(Permisos.PREVENTIVE_INFO_READ)
     @GetMapping
     public List<RecomendacionPreventivaResponse> listar() {
         return service.listarActivas();
     }
 
     @Operation(summary = "Consultar recomendaciones de un edificio", description = "Consulta disponible para cualquier rol.")
-    @Permiso(Permisos.CAMPUS_READ)
+    @Permiso(Permisos.PREVENTIVE_INFO_READ)
     @GetMapping("/building/{buildingId}")
     public List<RecomendacionPreventivaResponse> porEdificio(@PathVariable UUID buildingId) {
         return service.consultarPorEdificio(buildingId);
     }
 
     @Operation(summary = "Consultar recomendaciones por tipo de espacio", description = "Consulta disponible para cualquier rol.")
-    @Permiso(Permisos.CAMPUS_READ)
+    @Permiso(Permisos.PREVENTIVE_INFO_READ)
     @GetMapping("/space-type/{type}")
     public List<RecomendacionPreventivaResponse> porTipo(@PathVariable TipoEspacio type) {
         return service.consultarPorTipo(type);
     }
 
     @Operation(summary = "Crear recomendación preventiva", description = "Solo ADMIN.")
-    @Permiso(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
+    @Permiso(Permisos.BUILDING_WRITE)
     @PostMapping
     public ResponseEntity<RecomendacionPreventivaResponse> crear(
             @Valid @RequestBody RecomendacionPreventivaRequest request) {
@@ -55,7 +55,7 @@ public class RecomendacionPreventivaController {
     }
 
     @Operation(summary = "Modificar recomendación preventiva", description = "Solo ADMIN.")
-    @Permiso(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
+    @Permiso(Permisos.BUILDING_WRITE)
     @PutMapping("/{id}")
     public RecomendacionPreventivaResponse modificar(
             @PathVariable UUID id,
@@ -64,7 +64,7 @@ public class RecomendacionPreventivaController {
     }
 
     @Operation(summary = "Inactivar recomendación preventiva", description = "Solo ADMIN.")
-    @Permiso(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
+    @Permiso(Permisos.BUILDING_WRITE)
     @PatchMapping("/{id}/deactivate")
     public RecomendacionPreventivaResponse inactivar(@PathVariable UUID id) {
         return service.inactivar(id);
