@@ -51,7 +51,13 @@ class QrConsultaPublicaIntegrationTest {
     private String zona;
 
     private static MockHttpServletRequestBuilder comoAdmin(MockHttpServletRequestBuilder peticion) {
-        return peticion.header("X-User-Id", "USR-ADMIN").header("X-User-Role", "ADMIN");
+        return peticion
+                .header("X-User-Id", "USR-ADMIN")
+                .header("X-User-Role", "ADMIN")
+                .header("X-User-Permission",
+                        "ms02:campus:read,ms02:route:read,ms02:preventive_info:read,"
+                        + "ms02:building:write,ms02:space:write,ms02:safe_zone:write,"
+                        + "ms02:route:write,ms02:route_status:write,ms02:qr:manage");
     }
 
     private String crear(String url, String json) throws Exception {
@@ -168,7 +174,10 @@ class QrConsultaPublicaIntegrationTest {
     @Test
     void unEstudianteNoGeneraQrPeroSiPuedeConsultarloSinSesion() throws Exception {
         mockMvc.perform(get("/api/v1/spaces/" + espacio + "/qr")
-                        .header("X-User-Id", "USR-1034").header("X-User-Role", "ESTUDIANTE"))
+                        .header("X-User-Id", "USR-1034")
+                        .header("X-User-Role", "ESTUDIANTE")
+                        .header("X-User-Permission",
+                                "ms02:campus:read,ms02:route:read,ms02:preventive_info:read"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/v1/public/spaces").param("id", espacio))
