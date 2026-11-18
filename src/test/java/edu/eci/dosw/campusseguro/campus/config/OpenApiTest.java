@@ -57,6 +57,8 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.components.parameters.XUserId.name").value("X-User-Id"))
                 .andExpect(jsonPath("$.components.parameters.XUserId.required").value(true))
                 .andExpect(jsonPath("$.components.parameters.XUserRole.name").value("X-User-Role"))
+                .andExpect(jsonPath("$.components.parameters.XUserPermission.name").value("X-User-Permission"))
+                .andExpect(jsonPath("$.components.parameters.XUserPermission.required").value(true))
                 .andExpect(jsonPath("$.components.parameters.XCorrelationId.required").value(false))
                 .andExpect(jsonPath(CAMBIAR_ESTADO + ".parameters[*].$ref", hasItem("#/components/parameters/XUserId")))
                 .andExpect(jsonPath(CAMBIAR_ESTADO + ".parameters[*].$ref",
@@ -64,10 +66,10 @@ class OpenApiTest {
     }
 
     @Test
-    void cadaOperacionDeclaraPermisoYRoles() throws Exception {
+    void cadaOperacionDeclaraSuPermiso() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(jsonPath(CAMBIAR_ESTADO + "['x-permiso']").value("ms02:route_status:write"))
-                .andExpect(jsonPath(CAMBIAR_ESTADO + "['x-roles']", contains("COORDINADOR", "ADMIN")));
+                .andExpect(jsonPath(CAMBIAR_ESTADO + "['x-roles']").doesNotExist());
     }
 
     @Test
@@ -99,8 +101,8 @@ class OpenApiTest {
     void losQrSeDocumentanComoImagenPng() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(jsonPath("$.paths['/api/v1/spaces/{id}/qr'].get.responses['200'].content['image/png']").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}/qr'].get['x-permiso']").value("ms02:building:write"))
-                .andExpect(jsonPath("$.paths['/api/v1/safe-zones/{id}/qr'].get['x-permiso']").value("ms02:safe_zone:write"));
+                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}/qr'].get['x-permiso']").value("ms02:qr:manage"))
+                .andExpect(jsonPath("$.paths['/api/v1/safe-zones/{id}/qr'].get['x-permiso']").value("ms02:qr:manage"));
     }
 
     @Test
@@ -121,7 +123,8 @@ class OpenApiTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(jsonPath("$.paths['/api/v1/buildings/{edificioId}/exits'].post['x-permiso']").value("ms02:building:write"))
                 .andExpect(jsonPath("$.paths['/api/v1/buildings/{edificioId}/exits'].get['x-permiso']").value("ms02:campus:read"))
-                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}'].put['x-roles']", contains("ADMIN")))
+                .andExpect(jsonPath("$.paths['/api/v1/exits/{id}'].put.parameters[*].$ref",
+                        hasItem("#/components/parameters/XUserPermission")))
                 .andExpect(jsonPath("$.paths['/api/v1/exits/{id}/deactivate'].patch.summary").value("Inactivar salida"));
     }
 }

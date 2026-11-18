@@ -55,7 +55,7 @@ public class EscaleraController {
 
     @Operation(summary = "Cambiar disponibilidad de una escalera",
             description = "Coordinación puede bloquear o habilitar una escalera. Para estados no disponibles, el motivo es obligatorio.")
-    @Permiso(Permisos.STAIR_STATUS_WRITE)
+    @Permiso(Permisos.ROUTE_STATUS_WRITE)
     @PatchMapping("/stairs/{id}/status")
     public EscaleraResponse cambiarDisponibilidad(
             @PathVariable UUID id,

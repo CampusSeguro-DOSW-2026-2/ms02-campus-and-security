@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import edu.eci.dosw.campusseguro.campus.controller.PisoController;
 import edu.eci.dosw.campusseguro.campus.service.PisoService;
 import org.junit.jupiter.api.Test;
@@ -43,21 +45,21 @@ class PisoSeguridadTest {
     @Test
     void estudiante_puedeListarLosPisosDeUnEdificio() throws Exception {
         mockMvc.perform(get("/api/v1/buildings/{id}/floors", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_puedeConsultarUnPiso() throws Exception {
         mockMvc.perform(get("/api/v1/floors/{id}", uuid(2))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeCrearPisos_devuelve403() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/floors", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE")
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(PISO_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.codigo").value("PROHIBIDO"));
@@ -66,7 +68,7 @@ class PisoSeguridadTest {
     @Test
     void coordinador_noPuedeModificarPisos() throws Exception {
         mockMvc.perform(put("/api/v1/floors/{id}", uuid(2))
-                        .header(USER, "USR-1").header(ROLE, "COORDINADOR")
+                        .header(USER, "USR-1").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content(PISO_JSON))
                 .andExpect(status().isForbidden());
     }
@@ -74,7 +76,7 @@ class PisoSeguridadTest {
     @Test
     void admin_puedeCrearPisos() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/floors", uuid(1))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN")
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(PISO_JSON))
                 .andExpect(status().isCreated());
     }
@@ -82,21 +84,21 @@ class PisoSeguridadTest {
     @Test
     void admin_puedeInactivarPisos() throws Exception {
         mockMvc.perform(patch("/api/v1/floors/{id}/deactivate", uuid(2))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeReactivarPisos() throws Exception {
         mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", uuid(2))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void admin_puedeReactivarPisos() throws Exception {
         mockMvc.perform(patch("/api/v1/floors/{id}/reactivate", uuid(2))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 }

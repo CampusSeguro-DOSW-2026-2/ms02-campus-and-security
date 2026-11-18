@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import edu.eci.dosw.campusseguro.campus.controller.SalidaController;
 import edu.eci.dosw.campusseguro.campus.service.SalidaService;
 import org.junit.jupiter.api.Test;
@@ -45,21 +47,21 @@ class SalidaSeguridadTest {
     @Test
     void estudiante_puedeListarLasSalidasDeUnEdificio() throws Exception {
         mockMvc.perform(get("/api/v1/buildings/{id}/exits", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_puedeConsultarUnaSalida() throws Exception {
         mockMvc.perform(get("/api/v1/exits/{id}", uuid(20))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeRegistrarSalidas_devuelve403() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/exits", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE")
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(SALIDA_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.codigo").value("PROHIBIDO"));
@@ -68,7 +70,7 @@ class SalidaSeguridadTest {
     @Test
     void coordinador_noPuedeModificarSalidas_devuelve403() throws Exception {
         mockMvc.perform(put("/api/v1/exits/{id}", uuid(20))
-                        .header(USER, "USR-2").header(ROLE, "COORDINADOR")
+                        .header(USER, "USR-2").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content(MODIFICAR_JSON))
                 .andExpect(status().isForbidden());
     }
@@ -76,14 +78,14 @@ class SalidaSeguridadTest {
     @Test
     void brigadista_noPuedeInactivarSalidas_devuelve403() throws Exception {
         mockMvc.perform(patch("/api/v1/exits/{id}/deactivate", uuid(20))
-                        .header(USER, "USR-3").header(ROLE, "BRIGADISTA"))
+                        .header(USER, "USR-3").header(ROLE, "BRIGADISTA").header(Cabeceras.PERM, Cabeceras.permisosDe("BRIGADISTA")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void admin_puedeRegistrarSalidas() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/exits", uuid(1))
-                        .header(USER, "USR-9").header(ROLE, "ADMIN")
+                        .header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(SALIDA_JSON))
                 .andExpect(status().isCreated());
     }
@@ -91,14 +93,14 @@ class SalidaSeguridadTest {
     @Test
     void admin_puedeModificarInactivarYReactivar() throws Exception {
         mockMvc.perform(put("/api/v1/exits/{id}", uuid(20))
-                        .header(USER, "USR-9").header(ROLE, "ADMIN")
+                        .header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(MODIFICAR_JSON))
                 .andExpect(status().isOk());
         mockMvc.perform(patch("/api/v1/exits/{id}/deactivate", uuid(20))
-                        .header(USER, "USR-9").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
         mockMvc.perform(patch("/api/v1/exits/{id}/reactivate", uuid(20))
-                        .header(USER, "USR-9").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-9").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 }

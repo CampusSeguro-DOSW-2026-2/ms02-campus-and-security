@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -127,10 +129,12 @@ class ConsultaPublicaSeguridadTest {
     @Test
     void otrosMetodos_inclusoComoAdmin_seRechazanCon403() throws Exception {
         mockMvc.perform(post("/api/v1/public/spaces").param("id", ID.toString())
-                        .header("X-User-Id", "USR-9").header("X-User-Role", "ADMIN"))
+                        .header("X-User-Id", "USR-9").header("X-User-Role", "ADMIN")
+                        .header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/v1/public/spaces").param("id", ID.toString())
-                        .header("X-User-Id", "USR-9").header("X-User-Role", "ADMIN"))
+                        .header("X-User-Id", "USR-9").header("X-User-Role", "ADMIN")
+                        .header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isForbidden());
     }
 
