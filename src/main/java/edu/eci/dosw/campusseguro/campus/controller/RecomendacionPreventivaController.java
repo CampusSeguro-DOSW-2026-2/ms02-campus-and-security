@@ -17,7 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Recomendaciones preventivas", description = "RF-13. Información preventiva para edificios y tipos de espacio.")
+@Tag(name = "Recomendaciones preventivas", description = "RF-MS02-08. Información preventiva para edificios y tipos de espacio.")
 @RestController
 @RequestMapping("/api/v1/preventive-recommendations")
 @RequiredArgsConstructor

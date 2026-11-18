@@ -1,62 +1,22 @@
 # ms02-campus-and-security
 MS02 - Buildings, spaces, safe zones, meeting points, and evacuation routes service.
 
-## Requerimientos funcionales
+## Documentación
 
-**RF-01 · Gestionar edificios**
-El administrador podrá crear, modificar e inactivar edificios.
+Los requerimientos, formularios, modelo de datos, contrato y diagramas de MS02 están en el repositorio
+[documentation](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security):
 
-**RF-02 · Gestionar pisos**
-El administrador podrá registrar pisos asociados a un edificio.
+| Documento | Contenido |
+|---|---|
+| [`1_requirements.md`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/1_requirements.md) | RF-MS02-01 a 16, reglas de negocio, RNF y tabla de endpoints con permisos |
+| [`2_forms-inputs.md`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/2_forms-inputs.md) | Campos, validaciones y mensajes de cada formulario |
+| [`3_modelo-datos.md`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/3_modelo-datos.md) | Tablas, restricciones y migraciones |
+| [`api/swagger.yml`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/api/swagger.yml) | Contrato OpenAPI (el mismo que expone `/v3/api-docs`) |
+| [`diagramas/`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/diagramas) | Componentes, clases, modelo de datos físico y despliegue |
 
-**RF-03 · Gestionar espacios**
-El administrador podrá registrar, modificar e inactivar espacios (salones, laboratorios, auditorios, oficinas y espacios comunes) asociados a un piso de un edificio.
-
-**RF-04 · Gestionar zonas seguras / puntos de encuentro**
-El administrador podrá registrar, modificar e inactivar zonas seguras, indicando código, nombre, ubicación, descripción y capacidad aproximada.
-
-**RF-05 · Gestionar rutas de evacuación**
-El administrador podrá asociar espacios con rutas recomendadas y definir su estado (disponible, bloqueada, restringida).
-
-**RF-06 · Consultar ruta de evacuación**
-El usuario podrá consultar la ruta recomendada según el edificio o espacio seleccionado.
-
-**RF-07 · Reactivar elementos del campus**
-El administrador podrá reactivar un edificio, piso, espacio o zona segura que fue inactivado, conservando todos sus datos.
-
-**RF-08 · Gestionar información preventiva**
-El administrador podrá registrar, modificar e inactivar recomendaciones preventivas asociadas a un edificio o a un tipo de espacio, y al usuario consultarlas.
-
-**RF-09 · Consultar catálogo del campus**
-Los usuarios y otros servicios podrán consultar los edificios, pisos, espacios y zonas seguras del campus con sus identificadores y estado.
+Las decisiones de diseño están en [`docs/adr`](docs/adr).
 
 ## Modelo de datos
-
-### Estado actual (develop)
-
-```mermaid
-erDiagram
-    EDIFICIO ||--o{ PISO : tiene
-    PISO ||--o{ ESPACIO : contiene
-    EDIFICIO ||--o{ ESPACIO : "pertenece a"
-    EDIFICIO ||--o{ SALIDA : tiene
-    PISO ||--o{ SALIDA : "sale desde"
-    ESPACIO ||--o| RUTA_EVACUACION : "origen (una por espacio)"
-    ZONA_SEGURA ||--o{ RUTA_EVACUACION : destino
-    EDIFICIO ||--o{ RECOMENDACION_PREVENTIVA : "ambito EDIFICIO"
-```
-
-- **Edificio**: id, campusId (obligatorio), nombre, descripcion, estado (ACTIVO/INACTIVO)
-- **Piso**: id, edificioId, numero (puede ser negativo para sótanos), nombre, estado. Único por (edificio, número)
-- **Espacio**: id, edificioId, pisoId, nombre, tipo (SALON/LABORATORIO/AUDITORIO/OFICINA/ESPACIO_COMUN), estado
-- **Salida**: id, edificioId, pisoId, nombre, latitud, longitud (obligatorias), estado
-- **ZonaSegura**: id, codigo (fijo, no se puede cambiar), nombre, ubicacion, descripcion, capacidad, estado
-- **RutaEvacuacion**: id, espacioOrigenId (único), zonaSeguraDestinoId, descripcion, estado (DISPONIBLE/BLOQUEADA/RESTRINGIDA), motivo (obligatorio si no está disponible)
-- **RecomendacionPreventiva**: ambito (EDIFICIO o TIPO_ESPACIO), edificioId o tipoEspacio, titulo, recomendacion, estado
-
-**Regla de dominio actual:** `Edificio`, `Espacio` y `ZonaSegura` no se eliminan (hard delete) si tienen una `RutaEvacuacion` con estado distinto de inactiva referenciándolos: solo se inactivan.
-
-### Modelo objetivo (en construcción, ver ADR-003)
 
 ```mermaid
 erDiagram
@@ -66,28 +26,29 @@ erDiagram
     PISO ||--o{ ESPACIO : contiene
     EDIFICIO ||--o{ ESCALERA : tiene
     ESCALERA }o--o{ PISO : conecta
-    EDIFICIO ||--o{ SALIDA : tiene
     PISO ||--o{ SALIDA : "sale desde"
-    ZONA_ABIERTA ||--o{ ZONA_SEGURA : ubica
-    SALIDA ||--o{ RUTA_EVACUACION : origen
+    ZONA_ABIERTA |o--o{ ZONA_SEGURA : ubica
+    ESPACIO |o--o| RUTA_EVACUACION : "origen (ruta de texto)"
+    SALIDA |o--o{ RUTA_EVACUACION : "origen (ruta exterior)"
     ZONA_SEGURA ||--o{ RUTA_EVACUACION : destino
-    IMAGEN }o--|| EDIFICIO : "foto de"
-    IMAGEN }o--|| ESPACIO : "foto de"
-    IMAGEN }o--|| SALIDA : "foto de"
-    IMAGEN }o--|| ZONA_SEGURA : "foto de"
+    EDIFICIO ||--o{ RECOMENDACION_PREVENTIVA : "ambito EDIFICIO"
 ```
 
-**Cómo funciona la evacuación**
-1. **Dentro del edificio:** el sistema identifica edificio y piso y recomienda una escalera disponible hasta el piso de salida. No hay ruta salón → escalera ni coordenadas interiores.
-2. **Fuera del edificio:** la ruta va de la salida exterior a una zona segura y se calcula con OpenStreetMap (servicio de ruteo peatonal) detrás de la abstracción `ProveedorNavegacion`.
+Las imágenes se asocian a edificios, espacios, salidas y zonas seguras por tipo e id. El detalle de cada tabla está en
+[`3_modelo-datos.md`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/3_modelo-datos.md).
 
-**Reglas de dominio del modelo objetivo**
-- `Edificio`, `Piso`, `Espacio`, `Escalera`, `Salida` y `ZonaSegura` no se eliminan: se inactivan.
-- Una escalera bloqueada o fuera de servicio nunca se recomienda.
+**Cómo funciona la evacuación**
+1. **Dentro del edificio:** el sistema identifica edificio y piso y recomienda escaleras disponibles hasta el piso de una salida. No hay ruta salón → escalera ni coordenadas interiores.
+2. **Fuera del edificio:** la ruta va de la salida a una zona segura y se calcula con OpenStreetMap (ruteo peatonal) detrás de la interfaz `ProveedorNavegacion`. Ver [docs/navegacion-exterior.md](docs/navegacion-exterior.md).
+
+**Reglas de dominio**
+- Nada se elimina, solo se inactiva (salvo las imágenes).
+- Edificios, espacios y salidas se identifican solo por su UUID. Las zonas seguras tienen un código fijo y las escaleras uno generado.
+- Todo edificio pertenece a un campus.
+- Una escalera bloqueada, fuera de servicio o inactiva nunca se recomienda.
 - Una zona segura sin coordenadas no puede ser destino de una ruta exterior.
-- Solo llevan coordenadas los elementos exteriores: salidas, zonas seguras y zonas abiertas que participen en la navegación.
+- Solo llevan coordenadas los elementos exteriores: salidas, zonas seguras y zonas abiertas.
 - No existe la entidad `PuntoEncuentro`: es una `ZonaSegura` marcada como punto de encuentro.
-- Los QR se generan automáticamente a partir del UUID del elemento; la consulta pública es de solo lectura.
 - MS02 no maneja asistencia ni control de evacuados (eso es de MS04).
 
 ## Salidas, códigos QR y consulta pública
@@ -118,9 +79,9 @@ Se generan al vuelo a partir del UUID del elemento y solo contienen el enlace a 
 
 | Método | Ruta | Permiso | Enlace que contiene el QR |
 |---|---|---|---|
-| GET | `/api/v1/spaces/{id}/qr` | `ms02:building:write` | `{QR_BASE_URL}/#/qr/espacios/{id}` |
-| GET | `/api/v1/exits/{id}/qr` | `ms02:building:write` | `{QR_BASE_URL}/#/qr/salidas/{id}` |
-| GET | `/api/v1/safe-zones/{id}/qr` | `ms02:safe_zone:write` | `{QR_BASE_URL}/#/qr/zonas/{id}` |
+| GET | `/api/v1/spaces/{id}/qr` | `ms02:qr:manage` | `{QR_BASE_URL}/#/qr/espacios/{id}` |
+| GET | `/api/v1/exits/{id}/qr` | `ms02:qr:manage` | `{QR_BASE_URL}/#/qr/salidas/{id}` |
+| GET | `/api/v1/safe-zones/{id}/qr` | `ms02:qr:manage` | `{QR_BASE_URL}/#/qr/zonas/{id}` |
 
 ```bash
 curl -o qr-salida.png http://localhost:8080/api/v1/exits/{id}/qr -H "Authorization: Bearer <token>"
@@ -156,5 +117,9 @@ curl "http://localhost:8080/api/v1/public/spaces?id={id}"
 MS02 se despliega en Azure detrás del API Gateway, con un runner self-hosted y la imagen publicada en GHCR por el CI. El
 paso a paso está en [docs/despliegue-azure.md](docs/despliegue-azure.md).
 
-## Contratos API
-https://editor.swagger.io/
+## Contrato API
+
+Con el servicio en marcha, el contrato está en `http://localhost:8082/v3/api-docs` (Swagger UI en
+`/swagger-ui.html`). La copia publicada para el Gateway y los demás squads es
+[`api/swagger.yml`](https://github.com/CampusSeguro-DOSW-2026-2/documentation/blob/develop/ms02-campus-and-security/api/swagger.yml); se actualiza exportando `/v3/api-docs.yaml` cada vez que cambia un
+endpoint o un permiso.

@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(
         name = "Rutas de evacuación",
-        description = "RF-05. Gestión de rutas: cada espacio tiene como máximo una ruta hacia una zona segura."
+        description = "RF-MS02-05. Gestión de rutas: cada espacio tiene como máximo una ruta hacia una zona segura."
 )
 @RestController
 @RequestMapping("/api/v1/evacuation-routes")

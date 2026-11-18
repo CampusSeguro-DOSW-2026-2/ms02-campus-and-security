@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Edificios", description = "RF-01. Gestión de edificios del campus.")
+@Tag(name = "Edificios", description = "RF-MS02-01. Gestión de edificios del campus.")
 @RestController
 @RequestMapping("/api/v1/buildings")
 @RequiredArgsConstructor

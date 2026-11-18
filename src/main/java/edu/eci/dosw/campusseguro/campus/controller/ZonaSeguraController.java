@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(
     name = "Zonas seguras",
-    description = "RF-04. Zonas seguras o puntos de encuentro a los que se evacúa."
+    description = "RF-MS02-04. Zonas seguras o puntos de encuentro a los que se evacúa."
 )
 @RestController
 @RequestMapping("/api/v1/safe-zones")

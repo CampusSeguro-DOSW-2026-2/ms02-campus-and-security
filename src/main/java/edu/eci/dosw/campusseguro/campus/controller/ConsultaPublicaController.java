@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Consulta pública", description = "ADR-003 (D7). Lo que se ve al escanear un QR en una emergencia: solo lectura, sin sesión y con datos mínimos.")
+@Tag(name = "Consulta pública", description = "RF-MS02-16. Lo que se ve al escanear un QR en una emergencia: solo lectura, sin sesión y con datos mínimos.")
 @RestController
 @RequestMapping("/api/v1/public")
 @RequiredArgsConstructor

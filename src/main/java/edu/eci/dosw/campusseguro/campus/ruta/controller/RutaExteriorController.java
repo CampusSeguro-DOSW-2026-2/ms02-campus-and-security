@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(
         name = "Rutas exteriores",
-        description = "ADR-003. Recorrido peatonal desde una salida del edificio hasta una zona segura."
+        description = "RF-MS02-13. Recorrido peatonal desde una salida del edificio hasta una zona segura."
 )
 @RestController
 public class RutaExteriorController {

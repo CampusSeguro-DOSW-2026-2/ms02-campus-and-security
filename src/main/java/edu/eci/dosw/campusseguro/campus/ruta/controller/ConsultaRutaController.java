@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(
         name = "Consulta de rutas",
-        description = "RF-06. Ruta recomendada para el usuario según el edificio o el espacio donde está."
+        description = "RF-MS02-06. Ruta recomendada para el usuario según el edificio o el espacio donde está."
 )
 @RestController
 public class ConsultaRutaController {
