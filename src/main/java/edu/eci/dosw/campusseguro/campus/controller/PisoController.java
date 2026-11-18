@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 // RF-02: los pisos se crean y listan desde su edificio; el resto de operaciones van por id del piso.
-@Tag(name = "Pisos", description = "RF-02. Pisos de un edificio, identificados por número (negativo para sótanos).")
+@Tag(name = "Pisos", description = "RF-MS02-02. Pisos de un edificio, identificados por número (negativo para sótanos).")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

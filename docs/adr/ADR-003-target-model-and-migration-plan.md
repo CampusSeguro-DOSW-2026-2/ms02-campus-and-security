@@ -50,8 +50,12 @@ Versions are reserved so parallel PRs do not collide.
 | V13 | P3 | Add `latitud`, `longitud`, `zona_abierta_id`, `es_punto_encuentro` to `zona_segura` | Columns nullable; `es_punto_encuentro` defaults to true. Safe zones without coordinates cannot be a route destination until completed |
 | V14 | M3 | Create `imagen` | New table, no effect |
 | V15 | P5 | `ruta_evacuacion`: add `salida_origen_id`, make `espacio_origen_id` nullable, add distance, duration and geometry columns, add check that at least one origin is present | All current rows stay valid as legacy routes |
+| V16 | — | Drop `codigo` from `edificio`, `espacio` and `salida`. Make `edificio.campus_id` NOT NULL | Buildings without a campus are linked to "Campus principal" first |
+| V17 | — | Add `escalera.prioridad` (default 1, check ≥ 1) | Existing stairs get priority 1 |
 
-Order: migrations must be merged in version order (V10, V11, V12, V13, V14, V15). Flyway refuses to start on a database that already has a newer version applied when an older one arrives later.
+Order: migrations must be merged in version order (V10 to V17).
+
+Update (V16): the building's campus is now required. Buildings, spaces and exits no longer have a code; they are identified only by their UUID. Safe zones keep their code because MS04 shows it as the meeting point identifier. Flyway refuses to start on a database that already has a newer version applied when an older one arrives later.
 
 ### Rules for every migration
 1. New columns that touch existing tables are nullable or have a default.

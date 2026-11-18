@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // Las zonas abiertas se crean y listan desde su campus; el resto de operaciones van por id de la zona.
-@Tag(name = "Zonas abiertas", description = "ADR-003. Espacios exteriores del campus (zonas verdes, plazoletas...).")
+@Tag(name = "Zonas abiertas", description = "RF-MS02-10. Espacios exteriores del campus (zonas verdes, plazoletas...).")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

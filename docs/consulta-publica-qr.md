@@ -20,8 +20,8 @@ En los endpoints públicos el id va como parámetro (`?id=`) y no en la ruta por
 
 Solo lo necesario para orientarse; sin ids internos, capacidad ni datos de administración.
 
-- **Espacio:** código, nombre, tipo, edificio, número de piso, si está disponible y la evacuación recomendada (zona segura, ubicación, recorrido, estado, motivo, aviso y recomendaciones preventivas).
-- **Salida:** código, nombre, edificio, piso y coordenadas.
+- **Espacio:** nombre, tipo, edificio, número de piso, si está disponible y la evacuación recomendada (zona segura, ubicación, recorrido, estado, motivo, aviso y recomendaciones preventivas).
+- **Salida:** nombre, edificio, piso y coordenadas.
 - **Zona segura:** código, nombre, ubicación, si es punto de encuentro y coordenadas.
 
 Si el elemento, su piso o su edificio está inactivo, responde `disponible: false` con un aviso para seguir las indicaciones del personal. Si el id no existe, `404 NO_ENCONTRADO`.

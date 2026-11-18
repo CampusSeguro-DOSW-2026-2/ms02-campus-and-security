@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Escaleras", description = "RF-04. Escaleras y pisos que conectan dentro de un edificio.")
+@Tag(name = "Escaleras", description = "RF-MS02-12. Escaleras y pisos que conectan dentro de un edificio.")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

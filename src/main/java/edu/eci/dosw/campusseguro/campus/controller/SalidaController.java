@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Salidas", description = "ADR-003. Salidas del edificio al exterior, con el piso desde el que se sale y sus coordenadas.")
+@Tag(name = "Salidas", description = "RF-MS02-11. Salidas del edificio al exterior, con el piso desde el que se sale y sus coordenadas.")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

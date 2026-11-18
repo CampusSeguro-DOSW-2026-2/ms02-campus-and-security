@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Códigos QR", description = "ADR-003. QR generados a partir del UUID del elemento. Solo contienen el enlace a la pantalla pública del frontend.")
+@Tag(name = "Códigos QR", description = "RF-MS02-15. QR generados a partir del UUID del elemento. Solo contienen el enlace a la pantalla pública del frontend.")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

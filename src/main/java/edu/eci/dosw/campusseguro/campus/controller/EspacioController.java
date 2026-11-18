@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Espacios", description = "RF-03. Salones, laboratorios, auditorios, oficinas y espacios comunes de un piso.")
+@Tag(name = "Espacios", description = "RF-MS02-03. Salones, laboratorios, auditorios, oficinas y espacios comunes de un piso.")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

@@ -16,7 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Campus", description = "ADR-003. Gestión de campus; agrupa edificios y zonas abiertas.")
+@Tag(name = "Campus", description = "RF-MS02-10. Gestión de campus; agrupa edificios y zonas abiertas.")
 @RestController
 @RequestMapping("/api/v1/campuses")
 @RequiredArgsConstructor

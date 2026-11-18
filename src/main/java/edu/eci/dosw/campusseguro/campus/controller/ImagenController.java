@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Tag(
     name = "Imágenes",
-    description = "Almacenamiento y consulta de fotografías de elementos del campus."
+    description = "RF-MS02-14. Almacenamiento y consulta de fotografías de elementos del campus."
 )
 @RestController
 @RequestMapping("/api/v1/images")
