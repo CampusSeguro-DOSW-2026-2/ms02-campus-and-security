@@ -7,13 +7,15 @@ import java.nio.file.StandardOpenOption;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Component
-public class AlmacenamientoImagenLocal {
+@ConditionalOnProperty(prefix = "campusseguro.imagen", name = "storage-type", havingValue = "local", matchIfMissing = true)
+public class AlmacenamientoImagenLocal implements AlmacenamientoImagen {
 
     private final Path directorioBase;
 
@@ -24,6 +26,7 @@ public class AlmacenamientoImagenLocal {
                 .normalize();
     }
 
+    @Override
     public void guardar(String rutaRelativa, byte[] contenido) {
         Path destino = resolver(rutaRelativa);
 
@@ -45,6 +48,7 @@ public class AlmacenamientoImagenLocal {
         }
     }
 
+    @Override
     public byte[] leer(String rutaRelativa) {
         Path archivo = resolver(rutaRelativa);
 
@@ -65,6 +69,7 @@ public class AlmacenamientoImagenLocal {
         }
     }
 
+    @Override
     public void eliminar(String rutaRelativa) {
         Path archivo = resolver(rutaRelativa);
 

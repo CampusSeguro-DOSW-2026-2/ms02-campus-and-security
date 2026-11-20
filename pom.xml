@@ -32,6 +32,7 @@
 		<jacoco.version>0.8.12</jacoco.version>
 		<springdoc.version>3.1.1</springdoc.version>
 		<zxing.version>3.5.4</zxing.version>
+		<azure-storage-blob.version>12.33.4</azure-storage-blob.version>
 
 		<!-- SonarCloud: cambiar por los valores reales del equipo -->
 		<sonar.organization>CAMBIAR_ORGANIZACION</sonar.organization>
@@ -83,6 +84,11 @@
 			<groupId>com.google.zxing</groupId>
 			<artifactId>javase</artifactId>
 			<version>${zxing.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.azure</groupId>
+			<artifactId>azure-storage-blob</artifactId>
+			<version>${azure-storage-blob.version}</version>
 		</dependency>
 
 		<dependency>
