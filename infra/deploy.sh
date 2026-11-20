@@ -12,6 +12,11 @@ for VAR in ENTORNO DB_PASSWORD QR_BASE_URL; do
 done
 [[ "$ENTORNO" =~ ^(test|prod)$ ]] || { echo "::error::ENTORNO debe ser test o prod" >&2; exit 1; }
 
+# Fotografías: local (volumen "imagenes", por defecto) o azure (Azure Blob Storage, un contenedor por entorno).
+TIPO_IMAGENES="${IMAGEN_STORAGE_TYPE:-local}"
+[[ "$TIPO_IMAGENES" =~ ^(local|azure)$ ]] || { echo "::error::IMAGEN_STORAGE_TYPE debe ser local o azure" >&2; exit 1; }
+[ "$TIPO_IMAGENES" != azure ] || [ -n "${AZURE_STORAGE_CONNECTION_STRING:-}" ] || falta AZURE_STORAGE_CONNECTION_STRING
+
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 # Misma etiqueta que publica el CI (docker/metadata-action, type=sha): los 7 primeros caracteres del commit.
 TAG="${TAG:-sha-$(git -C "$REPO_DIR" rev-parse HEAD | cut -c1-7)}"
@@ -45,6 +50,9 @@ cp "$REPO_DIR/infra/docker-compose.prod.yml" "$STACK_DIR/docker-compose.yml"
     linea_env QR_BASE_URL "$QR_BASE_URL"
     [ -z "${NAVIGATION_BASE_URL:-}" ] || linea_env NAVIGATION_BASE_URL "$NAVIGATION_BASE_URL"
     [ -z "${NAVIGATION_PROFILE:-}" ] || linea_env NAVIGATION_PROFILE "$NAVIGATION_PROFILE"
+    [ -z "${IMAGEN_STORAGE_TYPE:-}" ] || linea_env IMAGEN_STORAGE_TYPE "$IMAGEN_STORAGE_TYPE"
+    [ -z "${AZURE_STORAGE_CONNECTION_STRING:-}" ] || linea_env AZURE_STORAGE_CONNECTION_STRING "$AZURE_STORAGE_CONNECTION_STRING"
+    [ -z "${AZURE_STORAGE_CONTAINER:-}" ] || linea_env AZURE_STORAGE_CONTAINER "$AZURE_STORAGE_CONTAINER"
 } > "$STACK_DIR/.env"
 printf '%s\n' "${MS02_EXTRA_ENV:-}" > "$STACK_DIR/extra.env"
 
