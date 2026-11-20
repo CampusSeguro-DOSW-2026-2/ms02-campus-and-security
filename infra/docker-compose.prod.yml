@@ -42,6 +42,10 @@ services:
       NAVIGATION_BASE_URL: ${NAVIGATION_BASE_URL:-https://routing.openstreetmap.de/routed-foot}
       NAVIGATION_PROFILE: ${NAVIGATION_PROFILE:-foot}
       IMAGEN_STORAGE_DIR: /app/data
+      # Fotografías: local (volumen "imagenes") o azure (Azure Blob Storage, un contenedor por entorno)
+      IMAGEN_STORAGE_TYPE: ${IMAGEN_STORAGE_TYPE:-local}
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-}
+      AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-imagenes}
     # Variables opcionales del entorno (p. ej. RUTAS_AUTO_MAX_ZONAS), si las hay.
     env_file:
       - path: extra.env

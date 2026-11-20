@@ -13,7 +13,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
-import edu.eci.dosw.campusseguro.campus.storage.AlmacenamientoImagenLocal;
+import edu.eci.dosw.campusseguro.campus.storage.AlmacenamientoImagen;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 
@@ -58,7 +58,7 @@ class ImagenServiceTest {
     private ZonaSeguraRepository zonaSeguraRepository;
 
     @Mock
-    private AlmacenamientoImagenLocal almacenamiento;
+    private AlmacenamientoImagen almacenamiento;
 
     @InjectMocks
     private ImagenService imagenService;

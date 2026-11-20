@@ -133,3 +133,48 @@ docker compose ps
 docker compose logs --tail=100 ms02
 docker compose restart ms02      # reinicia solo MS02, sin tocar la base
 ```
+
+## 8. Fotografías en Azure Blob Storage
+Por defecto MS02 guarda las fotografías en el volumen `imagenes` de la VM (`IMAGEN_STORAGE_TYPE=local`). Para guardarlas
+en Azure Blob Storage, con un contenedor por entorno:
+
+1. En el portal de Azure: **Storage accounts › Create**. Misma región que la VM, rendimiento *Standard*, redundancia
+   *LRS* y *Allow Blob anonymous access* desactivado: las fotos no se publican directamente, MS02 las sigue sirviendo en
+   `GET /api/v1/images/{id}` con los mismos permisos.
+2. En **Security + networking › Access keys**, copia una **Connection string**. MS02 crea el contenedor al arrancar si
+   no existe.
+3. En `ms02-test` y `ms02-prod` (**Settings › Environments**):
+
+| Nombre | Tipo | Valor |
+|---|---|---|
+| `AZURE_STORAGE_CONNECTION_STRING` | Secreto | La cadena de conexión de la cuenta. No puede contener comillas simples (`'`). |
+| `AZURE_STORAGE_CONTAINER` | Variable | Un contenedor por entorno: `imagenes-test` e `imagenes-prod`. |
+| `IMAGEN_STORAGE_TYPE` | Variable | `azure`. Sin esta variable, o con `local`, se usa el volumen. |
+
+### Pasar las fotos que ya están en el volumen
+La base de datos guarda rutas como `imagenes/<uuid>.jpg`, que son el mismo nombre del blob: no se toca la base. El orden
+importa, porque al cambiar a `azure` las fotos que sigan solo en el volumen dejarían de verse:
+
+1. Despliega esta versión **sin** `IMAGEN_STORAGE_TYPE`: sigue en `local` y nada cambia.
+2. Copia las fotos al contenedor *(VM)*. La cadena de conexión se pide sin mostrarla ni guardarla en el historial:
+   ```bash
+   ENTORNO=prod                     # o test
+   CONTENEDOR=imagenes-$ENTORNO
+   read -rsp "Cadena de conexión: " AZURE_STORAGE_CONNECTION_STRING; export AZURE_STORAGE_CONNECTION_STRING
+   docker run --rm -e AZURE_STORAGE_CONNECTION_STRING mcr.microsoft.com/azure-cli \
+     az storage container create --name "$CONTENEDOR"
+   docker run --rm -e AZURE_STORAGE_CONNECTION_STRING -v "ms02-${ENTORNO}_imagenes:/datos:ro" \
+     mcr.microsoft.com/azure-cli az storage blob upload-batch --destination "$CONTENEDOR" --source /datos
+   ```
+3. Comprueba que las dos cuentas den el mismo número *(VM)*:
+   ```bash
+   docker run --rm -v "ms02-${ENTORNO}_imagenes:/datos:ro" alpine sh -c 'find /datos/imagenes -type f | wc -l'
+   docker run --rm -e AZURE_STORAGE_CONNECTION_STRING mcr.microsoft.com/azure-cli \
+     az storage blob list --container-name "$CONTENEDOR" --query "length(@)" -o tsv
+   ```
+4. Crea el secreto y las variables del Environment (tabla de arriba) y vuelve a desplegar el mismo tag.
+5. Repite el comando `upload-batch` del paso 2 una vez más, por si se subió alguna foto entre la copia y el cambio.
+6. El volumen `imagenes` se queda como respaldo: no lo borres.
+
+**Volver atrás.** Cambia `IMAGEN_STORAGE_TYPE` a `local` y despliega de nuevo. Las fotos subidas mientras estuvo en `azure`
+solo existen en el contenedor, así que habría que copiarlas de vuelta al volumen.

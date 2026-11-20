@@ -11,7 +11,7 @@ import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
-import edu.eci.dosw.campusseguro.campus.storage.AlmacenamientoImagenLocal;
+import edu.eci.dosw.campusseguro.campus.storage.AlmacenamientoImagen;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class ImagenService {
     private final EspacioRepository espacioRepository;
     private final SalidaRepository salidaRepository;
     private final ZonaSeguraRepository zonaSeguraRepository;
-    private final AlmacenamientoImagenLocal almacenamiento;
+    private final AlmacenamientoImagen almacenamiento;
 
     @Value("${campusseguro.imagen.max-size-bytes:5242880}")
     private long tamanioMaximo;
