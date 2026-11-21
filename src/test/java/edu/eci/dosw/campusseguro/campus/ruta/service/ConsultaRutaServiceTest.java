@@ -3,8 +3,6 @@ package edu.eci.dosw.campusseguro.campus.ruta.service;
 import java.util.UUID;
 import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
 
-import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
-import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
@@ -13,7 +11,6 @@ import edu.eci.dosw.campusseguro.campus.ruta.port.EdificioGateway.EdificioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
-import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,11 +23,13 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+// Esta clase cubre la validación de edificio/espacio y el listado por edificio, usando el
+// constructor de compatibilidad sin salida/escalera (sin guía automática posible). El contenido de
+// la ruta recomendada (disponible, bloqueada, restringida, destino inactivo, etc.) se prueba con el
+// servicio completamente conectado en ConsultaRutaGuiaTest, que es la única fuente real de rutas
+// desde que se dejó de crear manualmente la ruta espacio -> zona (RF-MS02-05).
 @ExtendWith(MockitoExtension.class)
 class ConsultaRutaServiceTest {
 
@@ -47,7 +46,6 @@ class ConsultaRutaServiceTest {
 
     private final UUID edificioId = uuid(10);
     private final UUID espacioId = uuid(11);
-    private final UUID zonaId = uuid(12);
 
     @BeforeEach
     void setUp() {
@@ -64,101 +62,17 @@ class ConsultaRutaServiceTest {
                 .thenReturn(Optional.of(new EspacioInfo(espacioId, edificioId, "Salón 101", true)));
     }
 
-    private void zona(boolean activa) {
-        when(zonaGateway.buscarPorId(zonaId))
-                .thenReturn(Optional.of(new ZonaInfo(zonaId, "Plazoleta", "Frente al edificio A", activa)));
-    }
-
-    private void rutaDelEspacio(EstadoRuta estado) {
-        when(rutaRepository.findByEspacioOrigenId(espacioId))
-                .thenReturn(Optional.of(
-                        new RutaEvacuacion(espacioId, zonaId, "Salir por la puerta norte", estado)));
-    }
-
     @Test
-    void consultar_devuelveLaRutaDisponibleConSuDestino() {
+    void consultar_sinGuiaDisponibleInformaQueNoExisteRecomendacion() {
         edificio(true);
         espacio();
-        zona(true);
-        rutaDelEspacio(EstadoRuta.DISPONIBLE);
-
-        List<RutaConsultadaResponse> resultado = service.consultar(edificioId, espacioId);
-
-        assertThat(resultado).hasSize(1);
-        RutaConsultadaResponse r = resultado.get(0);
-        assertThat(r.tieneRuta()).isTrue();
-        assertThat(r.zonaSeguraNombre()).isEqualTo("Plazoleta");
-        assertThat(r.recorrido()).isEqualTo("Salir por la puerta norte");
-        assertThat(r.estado()).isEqualTo(EstadoRuta.DISPONIBLE);
-        assertThat(r.destinoActivo()).isTrue();
-        assertThat(r.mensaje()).isNull();
-    }
-
-    @Test
-    void consultar_sinRutaInformaQueNoExisteRecomendacion() {
-        edificio(true);
-        espacio();
-        when(rutaRepository.findByEspacioOrigenId(espacioId)).thenReturn(Optional.empty());
 
         RutaConsultadaResponse r = service.consultar(edificioId, espacioId).get(0);
 
         assertThat(r.tieneRuta()).isFalse();
         assertThat(r.zonaSeguraId()).isNull();
         assertThat(r.mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_RUTA);
-    }
-
-    @Test
-    void consultar_rutaBloqueadaMuestraElEstadoYUnAviso() {
-        edificio(true);
-        espacio();
-        zona(true);
-        rutaDelEspacio(EstadoRuta.BLOQUEADA);
-
-        RutaConsultadaResponse r = service.consultar(edificioId, espacioId).get(0);
-
-        assertThat(r.tieneRuta()).isTrue();
-        assertThat(r.estado()).isEqualTo(EstadoRuta.BLOQUEADA);
-        assertThat(r.mensaje()).isEqualTo(ConsultaRutaService.MSG_BLOQUEADA);
-    }
-
-    @Test
-    void consultar_rutaRestringidaMuestraElEstadoYUnAviso() {
-        edificio(true);
-        espacio();
-        zona(true);
-        rutaDelEspacio(EstadoRuta.RESTRINGIDA);
-
-        RutaConsultadaResponse r = service.consultar(edificioId, espacioId).get(0);
-
-        assertThat(r.estado()).isEqualTo(EstadoRuta.RESTRINGIDA);
-        assertThat(r.mensaje()).isEqualTo(ConsultaRutaService.MSG_RESTRINGIDA);
-    }
-
-    @Test
-    void consultar_destinoInactivoTienePrioridadSobreElEstado() {
-        edificio(true);
-        espacio();
-        zona(false);
-        rutaDelEspacio(EstadoRuta.DISPONIBLE);
-
-        RutaConsultadaResponse r = service.consultar(edificioId, espacioId).get(0);
-
-        assertThat(r.destinoActivo()).isFalse();
-        assertThat(r.mensaje()).isEqualTo(ConsultaRutaService.MSG_DESTINO_INACTIVO);
-    }
-
-    @Test
-    void consultar_destinoInexistenteSeTrataComoInactivo() {
-        edificio(true);
-        espacio();
-        when(zonaGateway.buscarPorId(zonaId)).thenReturn(Optional.empty());
-        rutaDelEspacio(EstadoRuta.DISPONIBLE);
-
-        RutaConsultadaResponse r = service.consultar(edificioId, espacioId).get(0);
-
-        assertThat(r.destinoActivo()).isFalse();
-        assertThat(r.zonaSeguraNombre()).isNull();
-        assertThat(r.mensaje()).isEqualTo(ConsultaRutaService.MSG_DESTINO_INACTIVO);
+        assertThat(r.guia()).isNull();
     }
 
     @Test
@@ -207,11 +121,10 @@ class ConsultaRutaServiceTest {
         assertThatThrownBy(() -> service.consultar(edificioId, espacioId))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("no está disponible");
-        verify(rutaRepository, never()).findByEspacioOrigenId(any());
     }
 
     @Test
-    void consultar_soloConEdificioDevuelveUnResultadoPorEspacioActivo() {
+    void consultar_soloConEdificioDevuelveUnResultadoPorCadaEspacioActivo() {
         UUID otroEspacio = uuid(14);
         UUID inactivo = uuid(15);
         edificio(true);
@@ -219,16 +132,13 @@ class ConsultaRutaServiceTest {
                 new EspacioInfo(espacioId, edificioId, "Salón 101", true),
                 new EspacioInfo(otroEspacio, edificioId, "Lab 2", true),
                 new EspacioInfo(inactivo, edificioId, "Bodega", false)));
-        when(rutaRepository.findByEspacioOrigenIdIn(List.of(espacioId, otroEspacio)))
-                .thenReturn(List.of(new RutaEvacuacion(espacioId, zonaId, "Por la puerta norte", EstadoRuta.DISPONIBLE)));
-        zona(true);
 
         List<RutaConsultadaResponse> resultado = service.consultar(edificioId, null);
 
         assertThat(resultado).hasSize(2);
-        assertThat(resultado.get(0).tieneRuta()).isTrue();
+        assertThat(resultado.get(0).tieneRuta()).isFalse();
         assertThat(resultado.get(1).tieneRuta()).isFalse();
-        assertThat(resultado.get(1).mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_RUTA);
+        assertThat(resultado.get(0).mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_RUTA);
     }
 
     @Test
@@ -243,14 +153,12 @@ class ConsultaRutaServiceTest {
     void consultarPorEspacio_buscaElEdificioDelEspacioYDevuelveUnSoloResultado() {
         edificio(true);
         espacio();
-        zona(true);
-        rutaDelEspacio(EstadoRuta.DISPONIBLE);
 
         RutaConsultadaResponse r = service.consultarPorEspacio(espacioId);
 
         assertThat(r.espacioId()).isEqualTo(espacioId);
-        assertThat(r.tieneRuta()).isTrue();
-        assertThat(r.zonaSeguraNombre()).isEqualTo("Plazoleta");
+        assertThat(r.tieneRuta()).isFalse();
+        assertThat(r.mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_RUTA);
     }
 
     @Test
@@ -266,7 +174,6 @@ class ConsultaRutaServiceTest {
         edificio(true);
         when(espacioGateway.listarPorEdificio(edificioId)).thenReturn(List.of(
                 new EspacioInfo(espacioId, edificioId, "Salón 101", true)));
-        when(rutaRepository.findByEspacioOrigenIdIn(List.of(espacioId))).thenReturn(List.of());
 
         List<RutaConsultadaResponse> resultado = service.consultarPorEdificio(edificioId);
 

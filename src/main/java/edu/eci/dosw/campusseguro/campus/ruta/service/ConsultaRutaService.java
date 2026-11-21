@@ -7,7 +7,6 @@ import java.util.UUID;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
@@ -118,15 +117,54 @@ public class ConsultaRutaService {
                             + "' no está disponible");
         }
 
-        RutaConsultadaResponse base = consultar(espacio.edificioId(), espacioId).get(0);
-        if (salidaGateway == null || escaleraGateway == null) {
-            return base;
+        edificioActivo(espacio.edificioId());
+
+        return resumenDesdeGuia(espacio, guiaSiPosible(espacio));
+    }
+
+    // La guía solo se puede calcular si el servicio tiene con qué (salidas y escaleras); si no,
+    // se mantiene el comportamiento previo de no traer guía.
+    private GuiaEvacuacionResponse guiaSiPosible(EspacioInfo espacio) {
+        return (salidaGateway == null || escaleraGateway == null) ? null : armarGuia(espacio);
+    }
+
+    private EdificioInfo edificioActivo(UUID edificioId) {
+        EdificioInfo edificio = edificioGateway.buscarPorId(edificioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "El edificio " + edificioId + " no existe"));
+
+        if (!edificio.activo()) {
+            throw new ReglaNegocioException(
+                    "El edificio '" + edificio.nombre() + "' está inactivo");
         }
+        return edificio;
+    }
+
+    // Arma la sección "evacuación" (RF-MS02-14) a partir de la guía automática: la zona segura de la
+    // ruta exterior elegida, su indicación, su estado y su motivo. Ya no depende de una ruta manual
+    // espacio -> zona, que se dejó de crear (RF-MS02-05).
+    private RutaConsultadaResponse resumenDesdeGuia(EspacioInfo espacio, GuiaEvacuacionResponse guia) {
+        List<RecomendacionPreventivaResponse> recomendaciones = recomendacionesDe(espacio);
+
+        if (guia == null || guia.salida() == null) {
+            String mensaje = (guia != null && guia.mensaje() != null) ? guia.mensaje() : MSG_SIN_RUTA;
+            return new RutaConsultadaResponse(
+                    espacio.id(), espacio.nombre(), false, null, null, null,
+                    null, null, null, false, mensaje, recomendaciones, guia);
+        }
+
+        RutaExteriorResponse exterior = guia.rutaExterior();
+        String ubicacionZona = zonaGateway.buscarPorId(exterior.zonaSeguraDestinoId())
+                .map(ZonaInfo::ubicacion).orElse(null);
+
+        // La guía solo elige rutas hacia zonas activas (ver armarGuia), así que si hay ruta, el destino
+        // siempre está activo; lo que puede pasar es que la ruta exterior esté bloqueada o restringida,
+        // y eso se avisa con el mismo mensaje que antes, para que quede claro al usuario final.
         return new RutaConsultadaResponse(
-                base.espacioId(), base.espacioNombre(), base.tieneRuta(), base.zonaSeguraId(),
-                base.zonaSeguraNombre(), base.zonaSeguraUbicacion(), base.recorrido(), base.estado(),
-                base.motivo(), base.destinoActivo(), base.mensaje(), base.recomendacionesPreventivas(),
-                armarGuia(espacio));
+                espacio.id(), espacio.nombre(), true,
+                exterior.zonaSeguraDestinoId(), guia.zonaSeguraNombre(), ubicacionZona,
+                guia.indicacion(), exterior.estado(), exterior.motivo(), true,
+                guia.mensaje(), recomendaciones, guia);
     }
 
     // Guía completa: escalera (solo las DISPONIBLES), salida y ruta exterior. Elige la salida alcanzable
@@ -139,10 +177,12 @@ public class ConsultaRutaService {
                 .filter(SalidaInfo::disponible)
                 .toList();
 
+        // No se descartan aquí las rutas BLOQUEADA/RESTRINGIDA: si es la única opción hacia una zona
+        // activa, se recomienda igual más abajo, pero avisando con su estado y su motivo, en vez de
+        // decir que no hay ruta cuando en realidad sí existe una, solo que no se puede usar ahora mismo.
         Map<UUID, List<RutaEvacuacion>> rutasPorSalida = salidas.isEmpty() ? Map.of()
                 : rutaRepository.findBySalidaOrigenIdIn(salidas.stream().map(SalidaInfo::id).toList())
                         .stream()
-                        .filter(r -> r.getEstado() == EstadoRuta.DISPONIBLE)
                         .filter(r -> zonaGateway.buscarPorId(r.getZonaSeguraDestinoId())
                                 .map(ZonaInfo::activa).orElse(false))
                         .collect(Collectors.groupingBy(RutaEvacuacion::getSalidaOrigenId));
@@ -166,9 +206,12 @@ public class ConsultaRutaService {
                     continue;
                 }
             }
+            // Entre las rutas de esta salida, siempre se prefiere una DISPONIBLE; solo si todas están
+            // bloqueadas o restringidas se usa la de recorrido más corto entre esas.
             RutaEvacuacion mejor = rutas.stream()
-                    .min(Comparator.comparing(r -> r.getDistanciaMetros() == null
-                            ? java.math.BigDecimal.valueOf(Long.MAX_VALUE) : r.getDistanciaMetros()))
+                    .min(Comparator.comparing((RutaEvacuacion r) -> r.getEstado() != EstadoRuta.DISPONIBLE)
+                            .thenComparing(r -> r.getDistanciaMetros() == null
+                                    ? java.math.BigDecimal.valueOf(Long.MAX_VALUE) : r.getDistanciaMetros()))
                     .orElseThrow();
             opciones.add(new Opcion(salida, mejor, tramos));
         }
@@ -179,10 +222,12 @@ public class ConsultaRutaService {
                     espacio.pisoNumero(), hayRutaSinEscalera, List.of(), null, null, null, null, mensaje);
         }
 
-        // Primero la salida con menos tramos de escalera (menos tiempo dentro del edificio); a igual
-        // numero de tramos, la de recorrido exterior mas corto.
+        // Primero cualquier opción con ruta DISPONIBLE (usable), aunque pida más tramos de escalera;
+        // solo si ninguna lo está se elige entre las bloqueadas o restringidas. A igual disponibilidad,
+        // gana la de menos tramos y, a igual número de tramos, la de recorrido exterior más corto.
         Opcion elegida = opciones.stream()
-                .min(Comparator.comparingInt((Opcion o) -> o.tramos().size())
+                .min(Comparator.comparing((Opcion o) -> o.ruta().getEstado() != EstadoRuta.DISPONIBLE)
+                        .thenComparingInt(o -> o.tramos().size())
                         .thenComparing(o -> o.ruta().getDistanciaMetros() == null
                                 ? java.math.BigDecimal.valueOf(Long.MAX_VALUE) : o.ruta().getDistanciaMetros()))
                 .orElseThrow();
@@ -190,6 +235,9 @@ public class ConsultaRutaService {
         RutaExteriorResponse exterior = RutaExteriorService.aResponse(elegida.ruta());
         String zonaNombre = zonaGateway.buscarPorId(elegida.ruta().getZonaSeguraDestinoId())
                 .map(ZonaInfo::nombre).orElse(null);
+        // Si la ruta elegida no está disponible, el aviso (bloqueada/restringida) se antepone a la
+        // indicación: el usuario ve igual el recorrido, pero sabe que no debe usarlo por su cuenta.
+        String avisoEstado = mensajeDe(elegida.ruta().getEstado(), true);
         List<EscaleraGuia> escaleras = new ArrayList<>();
         for (int i = 0; i < elegida.tramos().size(); i++) {
             List<EscaleraInfo> candidatas = elegida.tramos().get(i);
@@ -205,7 +253,7 @@ public class ConsultaRutaService {
                 !escaleras.isEmpty(), escaleras,
                 new SalidaGuia(salida.id(), salida.nombre(), salida.latitud(), salida.longitud()),
                 exterior, zonaNombre,
-                indicacion(escaleras, salida, exterior, zonaNombre), null);
+                indicacion(escaleras, salida, exterior, zonaNombre), avisoEstado);
     }
 
     private static String indicacion(List<EscaleraGuia> escaleras, SalidaInfo salida,
@@ -253,14 +301,7 @@ public class ConsultaRutaService {
     }
 
     public List<RutaConsultadaResponse> consultar(UUID edificioId, UUID espacioId) {
-        EdificioInfo edificio = edificioGateway.buscarPorId(edificioId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "El edificio " + edificioId + " no existe"));
-
-        if (!edificio.activo()) {
-            throw new ReglaNegocioException(
-                    "El edificio '" + edificio.nombre() + "' está inactivo");
-        }
+        edificioActivo(edificioId);
 
         if (espacioId != null) {
             EspacioInfo espacio = espacioGateway.buscarPorId(espacioId)
@@ -279,10 +320,7 @@ public class ConsultaRutaService {
                                 + "' no está disponible");
             }
 
-            Optional<RutaEvacuacion> ruta =
-                    rutaRepository.findByEspacioOrigenId(espacioId);
-
-            return List.of(armar(espacio, ruta.orElse(null)));
+            return List.of(resumenDesdeGuia(espacio, guiaSiPosible(espacio)));
         }
 
         List<EspacioInfo> espacios = espacioGateway
@@ -295,60 +333,9 @@ public class ConsultaRutaService {
             return List.of();
         }
 
-        Map<UUID, RutaEvacuacion> rutasPorEspacio = rutaRepository
-                .findByEspacioOrigenIdIn(
-                        espacios.stream()
-                                .map(EspacioInfo::id)
-                                .toList())
-                .stream()
-                .collect(Collectors.toMap(
-                        RutaEvacuacion::getEspacioOrigenId,
-                        Function.identity()));
-
         return espacios.stream()
-                .map(espacio -> armar(
-                        espacio, rutasPorEspacio.get(espacio.id())))
+                .map(espacio -> resumenDesdeGuia(espacio, guiaSiPosible(espacio)))
                 .toList();
-    }
-
-    private RutaConsultadaResponse armar(
-            EspacioInfo espacio, RutaEvacuacion ruta) {
-        if (ruta == null) {
-            return new RutaConsultadaResponse(
-                    espacio.id(),
-                    espacio.nombre(),
-                    false,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    false,
-                    MSG_SIN_RUTA,
-                    recomendacionesDe(espacio));
-        }
-
-        Optional<ZonaInfo> zona =
-                zonaGateway.buscarPorId(ruta.getZonaSeguraDestinoId());
-
-        boolean destinoActivo = zona
-                .map(ZonaInfo::activa)
-                .orElse(false);
-
-        return new RutaConsultadaResponse(
-                espacio.id(),
-                espacio.nombre(),
-                true,
-                ruta.getZonaSeguraDestinoId(),
-                zona.map(ZonaInfo::nombre).orElse(null),
-                zona.map(ZonaInfo::ubicacion).orElse(null),
-                ruta.getDescripcion(),
-                ruta.getEstado(),
-                ruta.getMotivo(),
-                destinoActivo,
-                mensajeDe(ruta.getEstado(), destinoActivo),
-                recomendacionesDe(espacio));
     }
 
     private List<RecomendacionPreventivaResponse> recomendacionesDe(EspacioInfo espacio) {
