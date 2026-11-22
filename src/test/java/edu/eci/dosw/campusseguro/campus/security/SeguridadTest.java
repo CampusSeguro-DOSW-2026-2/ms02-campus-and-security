@@ -112,10 +112,4 @@ class SeguridadTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    void coordinador_noPuedeCrearRutas() throws Exception {
-        mockMvc.perform(post("/api/v1/evacuation-routes").header(USER, "USR-1").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isForbidden());
-    }
 }

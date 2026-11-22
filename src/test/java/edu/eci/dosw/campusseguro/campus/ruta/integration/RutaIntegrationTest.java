@@ -37,7 +37,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -147,23 +146,6 @@ class RutaIntegrationTest {
                 : ",\"motivo\":\"Obra en la escalera\"";
     }
 
-    private String cuerpoRuta(UUID espacioId, UUID zonaId, String estado) {
-        return "{\"espacioOrigenId\":\"" + espacioId + "\",\"zonaSeguraDestinoId\":\"" + zonaId
-                + "\",\"descripcion\":\"Salir por la puerta norte\",\"estado\":\"" + estado + "\""
-                + motivoJson(estado) + "}";
-    }
-
-    private UUID crearRuta(EspacioInfo espacio, String estado) throws Exception {
-        MvcResult resultado = mockMvc.perform(post(RUTAS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(espacio.id(), plazoleta.id(), estado)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        return UUID.fromString(
-                JsonPath.read(resultado.getResponse().getContentAsString(), "$.id"));
-    }
-
     @Test
     void existeRutaExteriorLuegoConsultarDevuelveElDestinoYElRecorrido() throws Exception {
         guardarRutaExterior(280, EstadoRuta.DISPONIBLE);
@@ -174,24 +156,6 @@ class RutaIntegrationTest {
                 .andExpect(jsonPath("$.zonaSeguraNombre").value("Plazoleta"))
                 .andExpect(jsonPath("$.recorrido").exists())
                 .andExpect(jsonPath("$.estado").value("DISPONIBLE"));
-    }
-
-    @Test
-    void unEspacioNoPuedeTenerDosRutas() throws Exception {
-        crearRuta(salon, "DISPONIBLE");
-
-        mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(salon.id(), plazoleta.id(), "DISPONIBLE")))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void noSePuedeCrearRutaConUnaZonaInactiva() throws Exception {
-        ZonaInfo inactiva = campus.zona("Cancha", false);
-
-        mockMvc.perform(post(RUTAS).contentType(MediaType.APPLICATION_JSON)
-                        .content(cuerpoRuta(salon.id(), inactiva.id(), "DISPONIBLE")))
-                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
@@ -255,21 +219,22 @@ class RutaIntegrationTest {
 
     @Test
     void elVerificadorSoloDevuelveRutasDisponiblesORestringidas() throws Exception {
+        // RF-MS02-05: ya no hay rutas manuales que crear; la unica ruta "activa" posible es la
+        // exterior (salida -> zona) que llega al edificio, por eso aqui se guarda directamente en
+        // vez de pasar por el endpoint de creacion manual (que ya no existe).
         assertThat(verificador.rutasActivasDeEspacio(salon.id())).isEmpty();
         assertThat(verificador.rutasActivasDeEdificio(edificio.id())).isEmpty();
 
-        UUID rutaSalon = crearRuta(salon, "DISPONIBLE");
-        crearRuta(laboratorio, "BLOQUEADA");
+        UUID rutaSalida = guardarRutaExterior(280, EstadoRuta.DISPONIBLE).getId();
 
-        assertThat(verificador.rutasActivasDeEspacio(salon.id())).containsExactly(rutaSalon);
-        assertThat(verificador.rutasActivasDeEspacio(laboratorio.id())).isEmpty();
-        assertThat(verificador.rutasActivasDeZonaSegura(plazoleta.id())).containsExactly(rutaSalon);
-        assertThat(verificador.rutasActivasDeEdificio(edificio.id())).containsExactly(rutaSalon);
+        assertThat(verificador.rutasActivasDeEspacio(salon.id())).containsExactly(rutaSalida);
+        assertThat(verificador.rutasActivasDeZonaSegura(plazoleta.id())).containsExactly(rutaSalida);
+        assertThat(verificador.rutasActivasDeEdificio(edificio.id())).containsExactly(rutaSalida);
 
-        cambiarEstado(rutaSalon, "RESTRINGIDA");
-        assertThat(verificador.rutasActivasDeEspacio(salon.id())).containsExactly(rutaSalon);
+        cambiarEstado(rutaSalida, "RESTRINGIDA");
+        assertThat(verificador.rutasActivasDeEspacio(salon.id())).containsExactly(rutaSalida);
 
-        cambiarEstado(rutaSalon, "BLOQUEADA");
+        cambiarEstado(rutaSalida, "BLOQUEADA");
         assertThat(verificador.rutasActivasDeEspacio(salon.id())).isEmpty();
         assertThat(verificador.rutasActivasDeZonaSegura(plazoleta.id())).isEmpty();
         assertThat(verificador.rutasActivasDeEdificio(edificio.id())).isEmpty();

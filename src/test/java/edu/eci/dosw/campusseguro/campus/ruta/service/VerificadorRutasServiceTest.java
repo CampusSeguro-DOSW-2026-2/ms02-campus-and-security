@@ -10,6 +10,8 @@ import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway.SalidaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -37,18 +39,23 @@ class VerificadorRutasServiceTest {
     @Mock
     private EspacioGateway espacioGateway;
 
+    @Mock
+    private SalidaGateway salidaGateway;
+
     private VerificadorRutasService verificador;
 
     private final UUID edificioId = uuid(10);
     private final UUID espacioId = uuid(11);
     private final UUID zonaId = uuid(12);
     private final UUID rutaId = uuid(20);
+    private final UUID salidaId = uuid(30);
 
     @BeforeEach
     void setUp() {
         verificador = new VerificadorRutasService(
                 rutaRepository,
-                espacioGateway);
+                espacioGateway,
+                salidaGateway);
     }
 
     private RutaEvacuacion ruta() {
@@ -60,6 +67,12 @@ class VerificadorRutasServiceTest {
 
         ReflectionTestUtils.setField(ruta, "id", rutaId);
 
+        return ruta;
+    }
+
+    private RutaEvacuacion rutaExterior() {
+        RutaEvacuacion ruta = RutaEvacuacion.exterior(salidaId, zonaId, "Ruta exterior");
+        ReflectionTestUtils.setField(ruta, "id", rutaId);
         return ruta;
     }
 
@@ -90,6 +103,32 @@ class VerificadorRutasServiceTest {
                 .containsExactlyInAnyOrder(
                         EstadoRuta.DISPONIBLE,
                         EstadoRuta.RESTRINGIDA);
+    }
+
+    @Test
+    void rutasActivasDeEspacio_sinRutaDeLegado_miraLasRutasExterioresDelEdificio() {
+        when(rutaRepository.findByEspacioOrigenIdAndEstadoIn(eq(espacioId), anyCollection()))
+                .thenReturn(List.of());
+        when(espacioGateway.buscarPorId(espacioId))
+                .thenReturn(java.util.Optional.of(new EspacioInfo(espacioId, edificioId, "Salón 101", true)));
+        when(salidaGateway.listarPorEdificio(edificioId))
+                .thenReturn(List.of(new SalidaInfo(salidaId, edificioId, uuid(21), "Salida norte",
+                        new java.math.BigDecimal("4.78"), new java.math.BigDecimal("-74.04"), true)));
+        when(rutaRepository.findBySalidaOrigenIdInAndEstadoIn(eq(List.of(salidaId)), anyCollection()))
+                .thenReturn(List.of(rutaExterior()));
+
+        assertThat(verificador.rutasActivasDeEspacio(espacioId)).containsExactly(rutaId);
+    }
+
+    @Test
+    void rutasActivasDeEspacio_sinRutaDeLegadoNiExterior_estaVacio() {
+        when(rutaRepository.findByEspacioOrigenIdAndEstadoIn(eq(espacioId), anyCollection()))
+                .thenReturn(List.of());
+        when(espacioGateway.buscarPorId(espacioId))
+                .thenReturn(java.util.Optional.of(new EspacioInfo(espacioId, edificioId, "Salón 101", true)));
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of());
+
+        assertThat(verificador.rutasActivasDeEspacio(espacioId)).isEmpty();
     }
 
     @Test
@@ -152,5 +191,20 @@ class VerificadorRutasServiceTest {
         verify(rutaRepository)
                 .findByEspacioOrigenIdInAndEstadoIn(
                         eq(List.of(espacioId)), anyCollection());
+    }
+
+    @Test
+    void rutasActivasDeEdificio_sinRutasDeLegado_miraLasRutasExterioresDeSusSalidas() {
+        when(espacioGateway.listarPorEdificio(edificioId))
+                .thenReturn(List.of(new EspacioInfo(espacioId, edificioId, "Salón 101", true)));
+        when(rutaRepository.findByEspacioOrigenIdInAndEstadoIn(eq(List.of(espacioId)), anyCollection()))
+                .thenReturn(List.of());
+        when(salidaGateway.listarPorEdificio(edificioId))
+                .thenReturn(List.of(new SalidaInfo(salidaId, edificioId, uuid(21), "Salida norte",
+                        new java.math.BigDecimal("4.78"), new java.math.BigDecimal("-74.04"), true)));
+        when(rutaRepository.findBySalidaOrigenIdInAndEstadoIn(eq(List.of(salidaId)), anyCollection()))
+                .thenReturn(List.of(rutaExterior()));
+
+        assertThat(verificador.rutasActivasDeEdificio(edificioId)).containsExactly(rutaId);
     }
 }
