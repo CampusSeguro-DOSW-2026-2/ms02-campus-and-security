@@ -120,17 +120,6 @@ class QrConsultaPublicaIntegrationTest {
         rutaExterior.registrarCalculo(100, 100 / 1.4,
                 "4.78305,-74.04315;4.7831,-74.0431", "100|71.43|Siga recto", Instant.now());
         rutaRepository.save(rutaExterior);
-
-        // TODO(correccion-5-PR2): esta ruta manual espacio -> zona se deja viva solo para que
-        // VerificadorRutasService (que todavia solo mira espacio_origen_id) siga bloqueando la
-        // desactivacion del espacio en espacioConRutaActiva_noSePuedeInactivarYSigueDisponibleEnLaConsultaPublica.
-        // Cuando el PR 2 quite POST /evacuation-routes, ese guardia se queda viendo siempre cero rutas
-        // activas (un espacio/edificio con ruta exterior activa se podria desactivar sin aviso); hay que
-        // decidir con el dueno de la desactivacion de espacios/edificios si VerificadorRutasService debe
-        // mirar tambien las rutas exteriores alcanzables desde el espacio.
-        crear("/api/v1/evacuation-routes", "{\"espacioOrigenId\":\"" + espacio + "\",\"zonaSeguraDestinoId\":\"" + zona
-                + "\",\"descripcion\":\"Baje por la escalera norte y salga por la puerta principal.\","
-                + "\"estado\":\"DISPONIBLE\"}");
     }
 
     @Test

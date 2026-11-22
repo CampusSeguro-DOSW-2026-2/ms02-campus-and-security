@@ -3,7 +3,6 @@ package edu.eci.dosw.campusseguro.campus.exception;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.NavegacionNoDisponibleException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
-import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.config.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,11 +50,6 @@ public class ManejadorGlobalErrores {
         List<ErrorResponse.CampoError> errores =
                 List.of(new ErrorResponse.CampoError("numero", "Ya existe un piso con ese número en el edificio."));
         return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
-    }
-
-    @ExceptionHandler(RutaDuplicadaException.class)
-    public ResponseEntity<ErrorResponse> rutaDuplicada(RutaDuplicadaException e, HttpServletRequest request) {
-        return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), List.of(), request);
     }
 
     @ExceptionHandler(RutaNoEncontradaException.class)
