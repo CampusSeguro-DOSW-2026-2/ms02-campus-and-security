@@ -6,7 +6,8 @@ y el mismo esquema de MS01:
 
 * El firewall solo acepta la IP del GW.
 * Un Caddy de borde exige el certificado de cliente del GW (mTLS).
-* Prueba y producción comparten la VM, cada una con su stack (MS02 + PostgreSQL), sus secretos y sus certificados:
+* Prueba y producción comparten la VM, cada una con su stack (solo MS02; la base de datos no vive en la VM, ver
+  abajo), sus secretos y sus certificados:
 
 | Puerto de la VM | Uso |
 |---|---|
@@ -14,12 +15,19 @@ y el mismo esquema de MS01:
 | `8443` | Prueba (`ms02-test`) |
 | `22` | SSH, solo desde la IP de quien administra |
 
-**Empieza vacío.** El stack nuevo crea su propia base de datos: Flyway aplica el esquema y deja un campus por defecto
-("Campus principal"). Nada de lo registrado en un entorno local (edificios, salidas, zonas, rutas, fotografías) viaja a la
-nube; se carga allí después, con el sistema ya desplegado.
+**La base de datos es administrada, no parte del stack.** MS02 se conecta a una instancia de Azure Database for
+PostgreSQL (aprovisionada aparte, fuera de este repositorio) en vez de a un contenedor de Postgres en la VM. Prueba y
+producción pueden compartir la misma instancia porque usan bases distintas (`DB_NAME`, por defecto `campus_test` y
+`campus_prod`). Esto solo cambia de dónde sale la conexión; el resto del despliegue (Flyway, el esquema, el campus por
+defecto) sigue igual.
 
-**Los datos se conservan.** La base vive en el volumen `datos` y las fotografías en el volumen `imagenes` de cada stack.
-Redesplegar, cambiar de versión o volver a una anterior (rollback) no los toca. Lo único que los borraría es
+**Empieza vacío.** La primera vez que un entorno se despliega, Flyway aplica el esquema y deja un campus por defecto
+("Campus principal") en su base. Nada de lo registrado en un entorno local (edificios, salidas, zonas, rutas,
+fotografías) viaja a la nube; se carga allí después, con el sistema ya desplegado.
+
+**Los datos se conservan.** La base de datos la conserva el servicio administrado (no un volumen de este stack); las
+fotografías viven en el volumen `imagenes` de cada stack, si `IMAGEN_STORAGE_TYPE=local`. Redesplegar, cambiar de
+versión o volver a una anterior (rollback) no toca ninguno de los dos. Lo único que borraría las fotografías es
 `docker compose down -v` o `docker volume rm`: no se ejecutan nunca en la VM.
 
 Los pasos 1 a 6 se hacen una sola vez. Los comandos marcados *(VM)* van en la VM por SSH; los demás, en tu PC.
@@ -101,7 +109,11 @@ Crea `ms02-test` y `ms02-prod` en **Settings › Environments**:
 | `NAVIGATION_BASE_URL`, `NAVIGATION_PROFILE` | Variable (opcional) | Servidor OSRM peatonal. Por defecto `https://routing.openstreetmap.de/routed-foot` y `foot`. |
 | `MS02_EXTRA_ENV` | Variable (opcional) | Líneas `CLAVE=valor` extra, p. ej. `RUTAS_AUTO_MAX_ZONAS=3`. |
 | `DEPLOY_DIR` | Variable (opcional) | `~/campusseguro/ms02` por defecto. |
-| `DB_PASSWORD` | Secreto | `openssl rand -base64 24`, distinta en cada entorno. Solo se aplica cuando se crea la BD (primer despliegue). |
+| `DB_HOST` | Secreto | Host de la instancia de Azure Database for PostgreSQL (la aprovisiona quien administra la BD, fuera de este repositorio). |
+| `DB_USER` | Secreto | Usuario de esa instancia con permisos sobre la base de este entorno. |
+| `DB_PASSWORD` | Secreto | La contraseña de `DB_USER` para esa instancia. |
+| `DB_PORT` | Variable (opcional) | `5432` por defecto. |
+| `DB_NAME` | Variable (opcional) | `campus_test` o `campus_prod` por defecto (según el entorno), para no mezclar los datos de prueba y producción en la misma instancia. |
 
 Ningún valor puede contener comillas simples (`'`). Nunca subas `certs/`, `*.key`, `*.pem` ni `.env`.
 
