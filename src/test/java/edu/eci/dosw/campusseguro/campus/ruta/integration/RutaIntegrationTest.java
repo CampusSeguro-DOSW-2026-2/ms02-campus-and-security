@@ -132,8 +132,9 @@ class RutaIntegrationTest {
     // proveedor de navegación real.
     private RutaEvacuacion guardarRutaExterior(double metros, EstadoRuta estado) {
         RutaEvacuacion ruta = RutaEvacuacion.exterior(salidaId, plazoleta.id(), "Ruta exterior");
+        // Pasos en el formato de CodificadorRutaExterior: "distancia|duración|instrucción" por línea.
         ruta.registrarCalculo(metros, metros / 1.4,
-                "4.78271,-74.04263;4.7831,-74.0431", "Inicia el recorrido|Ha llegado", Instant.now());
+                "4.78271,-74.04263;4.7831,-74.0431", metros + "|" + (metros / 1.4) + "|Siga recto", Instant.now());
         if (estado != EstadoRuta.DISPONIBLE) {
             ruta.cambiarEstado(estado, "Obra en la escalera");
         }
@@ -206,6 +207,7 @@ class RutaIntegrationTest {
         // Bloqueada o no, la ruta se sigue recomendando (el usuario necesita saber por dónde sería)
         // pero con el aviso correspondiente, en vez de mostrar que no hay ruta.
         mockMvc.perform(get("/api/v1/spaces/{spaceId}/evacuation-route", salon.id()))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tieneRuta").value(true))
                 .andExpect(jsonPath("$.estado").value("BLOQUEADA"))
                 .andExpect(jsonPath("$.motivo").value("Obra en la escalera"))

@@ -110,8 +110,9 @@ class QrConsultaPublicaIntegrationTest {
                 + "\"nombre\":\"Salida G2\",\"latitud\":4.78305,\"longitud\":-74.04315}");
         RutaEvacuacion rutaExterior = RutaEvacuacion.exterior(
                 UUID.fromString(salidaDelEspacio), UUID.fromString(zona), "Ruta exterior");
+        // Pasos en el formato de CodificadorRutaExterior: "distancia|duración|instrucción" por línea.
         rutaExterior.registrarCalculo(100, 100 / 1.4,
-                "4.78305,-74.04315;4.7831,-74.0431", "Inicia el recorrido|Ha llegado", Instant.now());
+                "4.78305,-74.04315;4.7831,-74.0431", "100|71.43|Siga recto", Instant.now());
         rutaRepository.save(rutaExterior);
 
         // TODO(correccion-5-PR2): esta ruta manual espacio -> zona se deja viva solo para que
