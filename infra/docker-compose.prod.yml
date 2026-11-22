@@ -1,41 +1,23 @@
-# Stack de MS02 en la nube: uno por entorno en la misma VM (ms02-prod y ms02-test), cada uno con su BD y sus fotos.
-# No publica puertos: solo el Caddy de borde de la VM (red campus-edge) llega a MS02, con el alias ms02-<entorno>,
-# y la BD solo es visible dentro del stack. Lo usa infra/deploy.sh con el .env que escribe en DEPLOY_DIR/<entorno>;
-# no se ejecuta a mano.
-# La BD arranca vacía: Flyway crea el esquema y el campus por defecto. Lo que se registre después vive en los
-# volúmenes "datos" (PostgreSQL) e "imagenes" (fotografías) y sobrevive a los despliegues; nunca usar "down -v".
+# Stack de MS02 en la nube: uno por entorno en la misma VM (ms02-prod y ms02-test), cada uno con sus fotos.
+# RF-MS02-06: la base de datos ya no vive en este stack; es una instancia administrada (Azure Database for
+# PostgreSQL) fuera de la VM, compartida por los entornos pero con un esquema/base distinto por entorno
+# (DB_NAME, por defecto campus_<entorno>) para que prueba y producción no se mezclen.
+# No publica puertos: solo el Caddy de borde de la VM (red campus-edge) llega a MS02, con el alias ms02-<entorno>.
+# Lo usa infra/deploy.sh con el .env que escribe en DEPLOY_DIR/<entorno>; no se ejecuta a mano.
+# La BD arranca vacía: Flyway crea el esquema y el campus por defecto. Lo que se registre después vive en la base
+# administrada y en el volumen "imagenes" (fotografías), y sobrevive a los despliegues; nunca usar "down -v".
 name: ms02-${ENTORNO:?ENTORNO es obligatoria (test o prod)}
 
 services:
-  db:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: campus
-      POSTGRES_USER: campus_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatoria}
-    volumes:
-      - datos:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U campus_user -d campus"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-    networks:
-      - interna
-
   ms02:
     image: ${IMAGE:?IMAGE es obligatoria}:${TAG:?TAG es obligatoria (sha-xxxxxxx)}
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       SERVER_PORT: 8082
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: campus
-      DB_USER: campus_user
+      DB_HOST: ${DB_HOST:?DB_HOST es obligatoria (base de datos administrada)}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-campus_${ENTORNO}}
+      DB_USER: ${DB_USER:?DB_USER es obligatoria}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatoria}
       # Dirección pública del frontend que va dentro de los códigos QR
       QR_BASE_URL: ${QR_BASE_URL:?QR_BASE_URL es obligatoria}
@@ -53,17 +35,14 @@ services:
     volumes:
       - imagenes:/app/data
     networks:
-      interna:
       edge:
         aliases:
           - ms02-${ENTORNO}
 
 volumes:
-  datos:
   imagenes:
 
 networks:
-  interna:
   edge:
     name: campus-edge
     external: true
