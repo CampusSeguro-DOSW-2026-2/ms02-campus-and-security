@@ -32,8 +32,23 @@ class EnMemoriaCampus {
         return e;
     }
 
+    // Con un id fijo, para que coincida con un edificio persistido de verdad (lo necesitan los
+    // gateways de salida/escalera, que sí consultan la base real).
+    EdificioInfo edificioConId(UUID id, String nombre, boolean activo) {
+        EdificioInfo e = new EdificioInfo(id, nombre, activo);
+        edificios.put(e.id(), e);
+        return e;
+    }
+
     EspacioInfo espacio(UUID edificioId, String nombre, boolean activo) {
         EspacioInfo e = new EspacioInfo(UUID.randomUUID(), edificioId, nombre, activo);
+        espacios.put(e.id(), e);
+        return e;
+    }
+
+    // Con piso, para que la guía automática no exija escalera (espacio y salida en el mismo piso).
+    EspacioInfo espacioEnPiso(UUID edificioId, String nombre, boolean activo, UUID pisoId, int pisoNumero) {
+        EspacioInfo e = new EspacioInfo(UUID.randomUUID(), edificioId, nombre, activo, null, pisoId, pisoNumero);
         espacios.put(e.id(), e);
         return e;
     }
