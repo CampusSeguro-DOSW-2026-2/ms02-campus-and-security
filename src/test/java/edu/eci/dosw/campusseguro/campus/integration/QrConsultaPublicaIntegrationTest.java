@@ -3,7 +3,9 @@ package edu.eci.dosw.campusseguro.campus.integration;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
@@ -13,6 +15,9 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 import com.jayway.jsonpath.JsonPath;
+import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
+import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +47,8 @@ class QrConsultaPublicaIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private RutaRepository rutaRepository;
 
     private String edificio;
     private String piso1;
@@ -93,6 +100,27 @@ class QrConsultaPublicaIntegrationTest {
         zona = crear("/api/v1/safe-zones", "{\"codigo\":\"QR-MP-01\",\"nombre\":\"Plazoleta H\","
                 + "\"ubicacion\":\"Frente al bloque H\",\"descripcion\":\"Punto de encuentro\",\"capacidad\":300,"
                 + "\"latitud\":4.7831,\"longitud\":-74.0431}");
+
+        // El resumen de evacuacion del espacio ya no sale de la ruta manual espacio -> zona (se va a
+        // dejar de crear, correccion 5): ahora sale de la guia automatica (salida -> ruta exterior). Se
+        // crea una salida en el piso del espacio (para no necesitar escalera) y se guarda directamente el
+        // ultimo calculo de la ruta exterior, en vez de pasar por el proveedor de navegacion real (que
+        // haria una llamada de red).
+        String salidaDelEspacio = crear("/api/v1/buildings/" + edificio + "/exits", "{\"pisoId\":\"" + piso2 + "\","
+                + "\"nombre\":\"Salida G2\",\"latitud\":4.78305,\"longitud\":-74.04315}");
+        RutaEvacuacion rutaExterior = RutaEvacuacion.exterior(
+                UUID.fromString(salidaDelEspacio), UUID.fromString(zona), "Ruta exterior");
+        rutaExterior.registrarCalculo(100, 100 / 1.4,
+                "4.78305,-74.04315;4.7831,-74.0431", "Inicia el recorrido|Ha llegado", Instant.now());
+        rutaRepository.save(rutaExterior);
+
+        // TODO(correccion-5-PR2): esta ruta manual espacio -> zona se deja viva solo para que
+        // VerificadorRutasService (que todavia solo mira espacio_origen_id) siga bloqueando la
+        // desactivacion del espacio en espacioConRutaActiva_noSePuedeInactivarYSigueDisponibleEnLaConsultaPublica.
+        // Cuando el PR 2 quite POST /evacuation-routes, ese guardia se queda viendo siempre cero rutas
+        // activas (un espacio/edificio con ruta exterior activa se podria desactivar sin aviso); hay que
+        // decidir con el dueno de la desactivacion de espacios/edificios si VerificadorRutasService debe
+        // mirar tambien las rutas exteriores alcanzables desde el espacio.
         crear("/api/v1/evacuation-routes", "{\"espacioOrigenId\":\"" + espacio + "\",\"zonaSeguraDestinoId\":\"" + zona
                 + "\",\"descripcion\":\"Baje por la escalera norte y salga por la puerta principal.\","
                 + "\"estado\":\"DISPONIBLE\"}");
@@ -110,7 +138,7 @@ class QrConsultaPublicaIntegrationTest {
                 .andExpect(jsonPath("$.piso").value(2))
                 .andExpect(jsonPath("$.disponible").value(true))
                 .andExpect(jsonPath("$.evacuacion.zonaSegura").value("Plazoleta H"))
-                .andExpect(jsonPath("$.evacuacion.recorrido").value("Baje por la escalera norte y salga por la puerta principal."))
+                .andExpect(jsonPath("$.evacuacion.recorrido", Matchers.containsString("Plazoleta H")))
                 .andExpect(jsonPath("$.evacuacion.estado").value("DISPONIBLE"))
                 .andExpect(jsonPath("$.edificioId").doesNotExist());
     }
