@@ -19,7 +19,19 @@ public record RutaConsultadaResponse(
         String motivo,
         boolean destinoActivo,
         String mensaje,
-        List<RecomendacionPreventivaResponse> recomendacionesPreventivas) {
+        List<RecomendacionPreventivaResponse> recomendacionesPreventivas,
+        GuiaEvacuacionResponse guia) {
+
+    // Constructor previo a la guía: los consumidores existentes no cambian.
+    public RutaConsultadaResponse(
+            UUID espacioId, String espacioNombre, boolean tieneRuta,
+            UUID zonaSeguraId, String zonaSeguraNombre, String zonaSeguraUbicacion,
+            String recorrido, EstadoRuta estado, String motivo,
+            boolean destinoActivo, String mensaje,
+            List<RecomendacionPreventivaResponse> recomendacionesPreventivas) {
+        this(espacioId, espacioNombre, tieneRuta, zonaSeguraId, zonaSeguraNombre, zonaSeguraUbicacion,
+                recorrido, estado, motivo, destinoActivo, mensaje, recomendacionesPreventivas, null);
+    }
 
     public RutaConsultadaResponse(
             UUID espacioId, String espacioNombre, boolean tieneRuta,
@@ -28,6 +40,6 @@ public record RutaConsultadaResponse(
             boolean destinoActivo, String mensaje) {
         this(espacioId, espacioNombre, tieneRuta, zonaSeguraId, zonaSeguraNombre,
                 zonaSeguraUbicacion, recorrido, estado, motivo, destinoActivo,
-                mensaje, List.of());
+                mensaje, List.of(), null);
     }
 }

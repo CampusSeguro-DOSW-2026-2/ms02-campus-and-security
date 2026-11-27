@@ -14,7 +14,13 @@ public record RutaResponse(
         String descripcion,
         EstadoRuta estado,
         String motivo,
-        Instant actualizadaEn) {
+        Instant actualizadaEn,
+        UUID salidaOrigenId) {
+
+    public RutaResponse(UUID id, UUID espacioOrigenId, UUID zonaSeguraDestinoId, String descripcion,
+                        EstadoRuta estado, String motivo, Instant actualizadaEn) {
+        this(id, espacioOrigenId, zonaSeguraDestinoId, descripcion, estado, motivo, actualizadaEn, null);
+    }
 
     public static RutaResponse desde(RutaEvacuacion ruta) {
         return new RutaResponse(
@@ -24,6 +30,7 @@ public record RutaResponse(
                 ruta.getDescripcion(),
                 ruta.getEstado(),
                 ruta.getMotivo(),
-                ruta.getUpdatedAt());
+                ruta.getUpdatedAt(),
+                ruta.getSalidaOrigenId());
     }
 }

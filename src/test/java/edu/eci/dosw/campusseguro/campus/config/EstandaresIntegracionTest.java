@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.config;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import edu.eci.dosw.campusseguro.campus.service.PisoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +84,7 @@ class EstandaresIntegracionTest {
 
     @Test
     void rutaInexistente_devuelve404ConFormatoEstandar() throws Exception {
-        mockMvc.perform(get("/api/v1/no-existe").header(USER, "USR-1").header(ROLE, "ADMIN"))
+        mockMvc.perform(get("/api/v1/no-existe").header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.codigo").value("NO_ENCONTRADO"))
                 .andExpect(jsonPath("$.errores").isArray())
@@ -91,7 +93,7 @@ class EstandaresIntegracionTest {
 
     @Test
     void metodoNoPermitido_devuelve405() throws Exception {
-        mockMvc.perform(delete("/api/v1/floors/{id}", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN"))
+        mockMvc.perform(delete("/api/v1/floors/{id}", uuid(1)).header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.status").value(405))
                 .andExpect(jsonPath("$.codigo").value("METODO_NO_PERMITIDO"))
@@ -101,7 +103,7 @@ class EstandaresIntegracionTest {
     @Test
     void tipoDeContenidoNoSoportado_devuelve400() throws Exception {
         mockMvc.perform(post("/api/v1/buildings/{id}/floors", uuid(1))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN")
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.TEXT_PLAIN).content("piso"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("VALIDACION"))
@@ -112,7 +114,7 @@ class EstandaresIntegracionTest {
     void errorInesperado_devuelve500SinDetallesInternos() throws Exception {
         when(pisoService.obtener(uuid(1))).thenThrow(new IllegalStateException("conexión rota a la base"));
 
-        mockMvc.perform(get("/api/v1/floors/{id}", uuid(1)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/floors/{id}", uuid(1)).header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.codigo").value("ERROR_INTERNO"))
                 .andExpect(jsonPath("$.mensaje").value(matchesPattern("^(?!.*conexión).*$")))

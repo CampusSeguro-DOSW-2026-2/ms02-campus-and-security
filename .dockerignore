@@ -1,0 +1,11 @@
+target
+.git
+.github
+.idea
+.vscode
+*.iml
+.env
+*.pem
+*.log
+# Fotos subidas y datos locales: nunca entran a la imagen
+data

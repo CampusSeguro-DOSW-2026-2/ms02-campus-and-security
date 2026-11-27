@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import edu.eci.dosw.campusseguro.campus.controller.EspacioController;
 import edu.eci.dosw.campusseguro.campus.service.EspacioService;
 import org.junit.jupiter.api.Test;
@@ -24,7 +26,7 @@ class EspacioSeguridadTest {
 
     private static final String USER = "X-User-Id";
     private static final String ROLE = "X-User-Role";
-    private static final String ESPACIO_JSON = "{\"codigo\":\"G-101\",\"nombre\":\"Salón 101\",\"tipo\":\"SALON\"}";
+    private static final String ESPACIO_JSON = "{\"nombre\":\"Salón 101\",\"tipo\":\"SALON\"}";
     private static final String MODIFICAR_JSON = "{\"nombre\":\"Salón 101\",\"tipo\":\"LABORATORIO\"}";
 
     @Autowired
@@ -43,28 +45,28 @@ class EspacioSeguridadTest {
     @Test
     void estudiante_puedeListarLosEspaciosDeUnPiso() throws Exception {
         mockMvc.perform(get("/api/v1/floors/{id}/spaces", uuid(2))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_puedeListarLosEspaciosDeUnEdificio() throws Exception {
         mockMvc.perform(get("/api/v1/buildings/{id}/spaces", uuid(1))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_puedeConsultarUnEspacio() throws Exception {
         mockMvc.perform(get("/api/v1/spaces/{id}", uuid(3))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeCrearEspacios_devuelve403() throws Exception {
         mockMvc.perform(post("/api/v1/floors/{id}/spaces", uuid(2))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE")
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(ESPACIO_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.codigo").value("PROHIBIDO"));
@@ -73,7 +75,7 @@ class EspacioSeguridadTest {
     @Test
     void coordinador_noPuedeModificarEspacios() throws Exception {
         mockMvc.perform(put("/api/v1/spaces/{id}", uuid(3))
-                        .header(USER, "USR-1").header(ROLE, "COORDINADOR")
+                        .header(USER, "USR-1").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content(MODIFICAR_JSON))
                 .andExpect(status().isForbidden());
     }
@@ -81,7 +83,7 @@ class EspacioSeguridadTest {
     @Test
     void admin_puedeCrearEspacios() throws Exception {
         mockMvc.perform(post("/api/v1/floors/{id}/spaces", uuid(2))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN")
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(ESPACIO_JSON))
                 .andExpect(status().isCreated());
     }
@@ -89,7 +91,7 @@ class EspacioSeguridadTest {
     @Test
     void admin_puedeModificarEspacios() throws Exception {
         mockMvc.perform(put("/api/v1/spaces/{id}", uuid(3))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN")
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(MODIFICAR_JSON))
                 .andExpect(status().isOk());
     }
@@ -97,28 +99,28 @@ class EspacioSeguridadTest {
     @Test
     void estudiante_noPuedeInactivarEspacios() throws Exception {
         mockMvc.perform(patch("/api/v1/spaces/{id}/deactivate", uuid(3))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void admin_puedeInactivarEspacios() throws Exception {
         mockMvc.perform(patch("/api/v1/spaces/{id}/deactivate", uuid(3))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeReactivarEspacios() throws Exception {
         mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", uuid(3))
-                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+                        .header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void admin_puedeReactivarEspacios() throws Exception {
         mockMvc.perform(patch("/api/v1/spaces/{id}/reactivate", uuid(3))
-                        .header(USER, "USR-1").header(ROLE, "ADMIN"))
+                        .header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN")))
                 .andExpect(status().isOk());
     }
 }

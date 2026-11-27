@@ -1,5 +1,6 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.dto.EspacioRequest;
@@ -11,7 +12,6 @@ import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.entity.TipoEspacio;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.exception.EspacioDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
@@ -52,6 +52,8 @@ class EspacioServiceTest {
     @Mock
     private VerificadorRutas verificadorRutas;
 
+    @Mock private ImagenRepository imagenRepository;
+
     @InjectMocks
     private EspacioService espacioService;
 
@@ -60,7 +62,6 @@ class EspacioServiceTest {
         e.setId(ESPACIO);
         e.setEdificioId(EDIFICIO);
         e.setPisoId(PISO);
-        e.setCodigo("G-101");
         e.setNombre("Salón 101");
         e.setTipo(TipoEspacio.SALON);
         return e;
@@ -78,6 +79,7 @@ class EspacioServiceTest {
     private void edificio(Estado estado) {
         Edificio e = new Edificio();
         e.setId(EDIFICIO);
+        e.setNombre("Bloque G");
         e.setEstado(estado);
         when(edificioRepository.findById(EDIFICIO)).thenReturn(Optional.of(e));
     }
@@ -86,8 +88,8 @@ class EspacioServiceTest {
         when(espacioRepository.save(any(Espacio.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
-    private static EspacioRequest request(String codigo) {
-        return new EspacioRequest(codigo, "  Salón 101  ", TipoEspacio.SALON);
+    private static EspacioRequest request() {
+        return new EspacioRequest("  Salón 101  ", TipoEspacio.SALON);
     }
 
     @Test
@@ -96,11 +98,10 @@ class EspacioServiceTest {
         edificio(Estado.ACTIVO);
         guardarDevuelveLoMismo();
 
-        EspacioResponse respuesta = espacioService.crear(PISO, request("  G-101  "));
+        EspacioResponse respuesta = espacioService.crear(PISO, request());
 
         assertThat(respuesta.pisoId()).isEqualTo(PISO);
         assertThat(respuesta.edificioId()).isEqualTo(EDIFICIO);
-        assertThat(respuesta.codigo()).isEqualTo("G-101");
         assertThat(respuesta.nombre()).isEqualTo("Salón 101");
         assertThat(respuesta.estado()).isEqualTo(Estado.ACTIVO);
     }
@@ -112,7 +113,7 @@ class EspacioServiceTest {
         guardarDevuelveLoMismo();
 
         EspacioResponse respuesta = espacioService.crear(PISO,
-                new EspacioRequest("G-CAF", "Cafetería", TipoEspacio.ESPACIO_COMUN));
+                new EspacioRequest("Cafetería", TipoEspacio.ESPACIO_COMUN));
 
         assertThat(respuesta.tipo()).isEqualTo(TipoEspacio.ESPACIO_COMUN);
     }
@@ -121,7 +122,7 @@ class EspacioServiceTest {
     void crear_enPisoInexistente_falla() {
         when(pisoRepository.findById(PISO)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> espacioService.crear(PISO, request("G-101")))
+        assertThatThrownBy(() -> espacioService.crear(PISO, request()))
                 .isInstanceOf(PisoNoEncontradoException.class);
     }
 
@@ -130,7 +131,7 @@ class EspacioServiceTest {
         piso(Estado.ACTIVO);
         edificio(Estado.INACTIVO);
 
-        assertThatThrownBy(() -> espacioService.crear(PISO, request("G-101")))
+        assertThatThrownBy(() -> espacioService.crear(PISO, request()))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("edificio inactivo");
         verify(espacioRepository, never()).save(any());
@@ -141,25 +142,14 @@ class EspacioServiceTest {
         piso(Estado.INACTIVO);
         edificio(Estado.ACTIVO);
 
-        assertThatThrownBy(() -> espacioService.crear(PISO, request("G-101")))
+        assertThatThrownBy(() -> espacioService.crear(PISO, request()))
                 .isInstanceOf(ReglaNegocioException.class)
                 .hasMessageContaining("piso inactivo");
         verify(espacioRepository, never()).save(any());
     }
 
     @Test
-    void crear_conCodigoRepetidoEnElEdificio_seRechaza() {
-        piso(Estado.ACTIVO);
-        edificio(Estado.ACTIVO);
-        when(espacioRepository.existsByEdificioIdAndCodigo(EDIFICIO, "G-101")).thenReturn(true);
-
-        assertThatThrownBy(() -> espacioService.crear(PISO, request("G-101")))
-                .isInstanceOf(EspacioDuplicadoException.class);
-        verify(espacioRepository, never()).save(any());
-    }
-
-    @Test
-    void modificar_cambiaNombreYTipoSinTocarElCodigo() {
+    void modificar_cambiaNombreYTipo() {
         when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
         guardarDevuelveLoMismo();
 
@@ -168,7 +158,6 @@ class EspacioServiceTest {
 
         assertThat(respuesta.nombre()).isEqualTo("Laboratorio 101");
         assertThat(respuesta.tipo()).isEqualTo(TipoEspacio.LABORATORIO);
-        assertThat(respuesta.codigo()).isEqualTo("G-101");
     }
 
     @Test
@@ -203,8 +192,8 @@ class EspacioServiceTest {
         pisosDelEdificio(Estado.ACTIVO);
         when(espacioRepository.findByEdificioId(EDIFICIO)).thenReturn(List.of(espacioActivo()));
 
-        assertThat(espacioService.listarPorEdificio(EDIFICIO, false)).extracting(EspacioResponse::codigo)
-                .containsExactly("G-101");
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, false)).extracting(EspacioResponse::nombre)
+                .containsExactly("Salón 101");
     }
 
     @Test
@@ -335,5 +324,100 @@ class EspacioServiceTest {
         edificio(Estado.INACTIVO);
 
         assertThat(espacioService.obtener(ESPACIO).disponible()).isFalse();
+    }
+
+    @Test
+    void crear_devuelveElNombreDelEdificioYElNumeroDelPiso() {
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        EspacioResponse respuesta = espacioService.crear(PISO, request());
+
+        assertThat(respuesta.edificioNombre()).isEqualTo("Bloque G");
+        assertThat(respuesta.pisoNumero()).isEqualTo(1);
+        assertThat(respuesta.disponible()).isTrue();
+    }
+
+    @Test
+    void obtener_devuelveElNombreDelEdificioYElNumeroDelPiso() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+
+        EspacioResponse respuesta = espacioService.obtener(ESPACIO);
+
+        assertThat(respuesta.edificioNombre()).isEqualTo("Bloque G");
+        assertThat(respuesta.pisoNumero()).isEqualTo(1);
+    }
+
+    @Test
+    void obtener_espacioInexistente_falla() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.obtener(ESPACIO))
+                .isInstanceOf(EspacioNoEncontradoException.class);
+    }
+
+    @Test
+    void inactivar_espacioInexistente_falla() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.inactivar(ESPACIO))
+                .isInstanceOf(EspacioNoEncontradoException.class);
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
+    void inactivar_conRutaDeLegadoActiva_avisaCualesSon() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        when(verificadorRutas.rutasActivasDeEspacio(ESPACIO)).thenReturn(List.of(uuid(50)));
+
+        assertThatThrownBy(() -> espacioService.inactivar(ESPACIO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("rutas de legado activas")
+                .hasMessageContaining(uuid(50).toString());
+    }
+
+    @Test
+    void reactivar_espacioInexistente_falla() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.reactivar(ESPACIO))
+                .isInstanceOf(EspacioNoEncontradoException.class);
+    }
+
+    @Test
+    void listarPorPiso_pisoInexistente_falla() {
+        when(pisoRepository.findById(PISO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> espacioService.listarPorPiso(PISO, false))
+                .isInstanceOf(PisoNoEncontradoException.class);
+    }
+
+    @Test
+    void listarPorEdificio_conEdificioInactivo_soloLosMuestraIncluyendoInactivos() {
+        edificio(Estado.INACTIVO);
+        pisosDelEdificio(Estado.ACTIVO);
+        when(espacioRepository.findByEdificioId(EDIFICIO)).thenReturn(List.of(espacioActivo()));
+
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, false)).isEmpty();
+        assertThat(espacioService.listarPorEdificio(EDIFICIO, true))
+                .extracting(EspacioResponse::disponible, EspacioResponse::edificioNombre, EspacioResponse::pisoNumero)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(false, "Bloque G", 1));
+    }
+
+    @Test
+    void modificar_noCambiaElPisoNiElEdificio() {
+        when(espacioRepository.findById(ESPACIO)).thenReturn(Optional.of(espacioActivo()));
+        piso(Estado.ACTIVO);
+        edificio(Estado.ACTIVO);
+        guardarDevuelveLoMismo();
+
+        EspacioResponse respuesta = espacioService.modificar(ESPACIO,
+                new ModificarEspacioRequest("Laboratorio", TipoEspacio.LABORATORIO));
+
+        assertThat(respuesta.pisoId()).isEqualTo(PISO);
+        assertThat(respuesta.edificioId()).isEqualTo(EDIFICIO);
     }
 }

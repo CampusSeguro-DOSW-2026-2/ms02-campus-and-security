@@ -4,20 +4,19 @@ import java.util.UUID;
 
 import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
 import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
-import edu.eci.dosw.campusseguro.campus.ruta.dto.CrearRutaRequest;
 import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaResponse;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
-import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaDuplicadaException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway.SalidaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
 import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
 import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
-import edu.eci.dosw.campusseguro.campus.ruta.dto.ActualizarRutaRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,77 +30,24 @@ public class RutaService {
     private final RutaRepository rutaRepository;
     private final EspacioGateway espacioGateway;
     private final ZonaSeguraGateway zonaGateway;
+    private final SalidaGateway salidaGateway;
 
+    @Autowired
     public RutaService(RutaRepository rutaRepository,
                        EspacioGateway espacioGateway,
-                       ZonaSeguraGateway zonaGateway) {
+                       ZonaSeguraGateway zonaGateway,
+                       SalidaGateway salidaGateway) {
         this.rutaRepository = rutaRepository;
         this.espacioGateway = espacioGateway;
         this.zonaGateway = zonaGateway;
+        this.salidaGateway = salidaGateway;
     }
 
-    @Transactional
-    public RutaResponse crear(CrearRutaRequest request) {
-        EspacioInfo espacio = espacioGateway.buscarPorId(request.espacioOrigenId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "El espacio " + request.espacioOrigenId() + " no existe"));
-        if (!espacio.disponible()) {
-            throw new ReglaNegocioException("El espacio '" + espacio.nombre() + "' no está disponible");
-        }
-
-        ZonaInfo zona = zonaGateway.buscarPorId(request.zonaSeguraDestinoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "La zona segura " + request.zonaSeguraDestinoId() + " no existe"));
-        if (!zona.activa()) {
-            throw new ReglaNegocioException("La zona segura '" + zona.nombre() + "' está inactiva");
-        }
-
-        if (rutaRepository.existsByEspacioOrigenId(request.espacioOrigenId())) {
-            throw new RutaDuplicadaException(request.espacioOrigenId());
-        }
-
-        String motivo = motivoPara(request.estado(), request.motivo());
-
-        RutaEvacuacion ruta = new RutaEvacuacion(
-                request.espacioOrigenId(),
-                request.zonaSeguraDestinoId(),
-                request.descripcion().trim(),
-                request.estado());
-
-        ruta.cambiarEstado(request.estado(), motivo);
-
-        try {
-            ruta = rutaRepository.saveAndFlush(ruta);
-        } catch (DataIntegrityViolationException e) {
-            // otra solicitud creo la ruta al mismo tiempo
-            throw new RutaDuplicadaException(request.espacioOrigenId());
-        }
-        log.info("Ruta {} creada para el espacio {} con estado {}",
-                ruta.getId(), ruta.getEspacioOrigenId(), ruta.getEstado());
-        return RutaResponse.desde(ruta);
-    }
-
-    @Transactional
-    public RutaResponse actualizar(UUID id, ActualizarRutaRequest request) {
-        RutaEvacuacion ruta = buscar(id);
-
-        ZonaInfo zona = zonaGateway.buscarPorId(request.zonaSeguraDestinoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                       "La zona segura " + request.zonaSeguraDestinoId() + " no existe"));
-
-        if (!zona.activa()) {
-            throw new ReglaNegocioException(
-                "La zona segura '" + zona.nombre() + "' está inactiva");
-        }
-
-        ruta.setZonaSeguraDestinoId(request.zonaSeguraDestinoId());
-        ruta.setDescripcion(request.descripcion().trim());
-
-        RutaEvacuacion actualizada = rutaRepository.save(ruta);
-
-        log.info("Ruta {} actualizada con destino {}", id, zona.id());
-
-        return RutaResponse.desde(actualizada);
+    // Mantiene compatibilidad con las pruebas existentes (sin rutas exteriores).
+    public RutaService(RutaRepository rutaRepository,
+                       EspacioGateway espacioGateway,
+                       ZonaSeguraGateway zonaGateway) {
+        this(rutaRepository, espacioGateway, zonaGateway, null);
     }
 
     @Transactional
@@ -129,11 +75,20 @@ public class RutaService {
     }
 
     private void validarOrigenYDestinoUtilizables(RutaEvacuacion ruta) {
-        boolean espacioDisponible = espacioGateway.buscarPorId(ruta.getEspacioOrigenId())
-                .map(EspacioInfo::disponible)
-                .orElse(false);
-        if (!espacioDisponible) {
-            throw new ReglaNegocioException("El espacio de origen no está disponible; la ruta solo puede quedar bloqueada");
+        if (ruta.esExterior()) {
+            boolean salidaDisponible = salidaGateway == null || salidaGateway.buscarPorId(ruta.getSalidaOrigenId())
+                    .map(SalidaInfo::disponible)
+                    .orElse(false);
+            if (!salidaDisponible) {
+                throw new ReglaNegocioException("La salida de origen no está disponible; la ruta solo puede quedar bloqueada");
+            }
+        } else {
+            boolean espacioDisponible = espacioGateway.buscarPorId(ruta.getEspacioOrigenId())
+                    .map(EspacioInfo::disponible)
+                    .orElse(false);
+            if (!espacioDisponible) {
+                throw new ReglaNegocioException("El espacio de origen no está disponible; la ruta solo puede quedar bloqueada");
+            }
         }
         boolean zonaActiva = zonaGateway.buscarPorId(ruta.getZonaSeguraDestinoId())
                 .map(ZonaInfo::activa)

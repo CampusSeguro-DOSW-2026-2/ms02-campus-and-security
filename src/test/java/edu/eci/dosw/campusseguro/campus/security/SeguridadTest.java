@@ -1,5 +1,7 @@
 package edu.eci.dosw.campusseguro.campus.security;
 
+import edu.eci.dosw.campusseguro.campus.Cabeceras;
+
 import edu.eci.dosw.campusseguro.campus.controller.EdificioController;
 import edu.eci.dosw.campusseguro.campus.ruta.controller.RutaController;
 import edu.eci.dosw.campusseguro.campus.ruta.service.RutaService;
@@ -26,7 +28,7 @@ class SeguridadTest {
 
     private static final String USER = "X-User-Id";
     private static final String ROLE = "X-User-Role";
-    private static final String EDIFICIO_JSON = "{\"codigo\":\"A\",\"nombre\":\"Edificio A\"}";
+    private static final String EDIFICIO_JSON = "{\"nombre\":\"Edificio A\",\"campusId\":\"" + uuid(10) + "\"}";
     private static final String ESTADO_JSON = "{\"estado\":\"BLOQUEADA\"}";
 
     @Autowired
@@ -54,13 +56,13 @@ class SeguridadTest {
 
     @Test
     void estudiante_puedeConsultarEdificios() throws Exception {
-        mockMvc.perform(get("/api/v1/buildings").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE"))
+        mockMvc.perform(get("/api/v1/buildings").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void estudiante_noPuedeCrearEdificios_devuelve403() throws Exception {
-        mockMvc.perform(post("/api/v1/buildings").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE")
+        mockMvc.perform(post("/api/v1/buildings").header(USER, "USR-1034").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(EDIFICIO_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
@@ -69,34 +71,35 @@ class SeguridadTest {
 
     @Test
     void admin_puedeCrearEdificiosSinTokenCsrf() throws Exception {
-        mockMvc.perform(post("/api/v1/buildings").header(USER, "USR-1").header(ROLE, "ADMIN")
+        mockMvc.perform(post("/api/v1/buildings").header(USER, "USR-1").header(ROLE, "ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(EDIFICIO_JSON))
                 .andExpect(status().isCreated());
     }
 
     @Test
     void conVariosRoles_seUnenSusPermisos() throws Exception {
-        mockMvc.perform(post("/api/v1/buildings").header(USER, "USR-1").header(ROLE, "ESTUDIANTE, ADMIN")
+        mockMvc.perform(post("/api/v1/buildings").header(USER, "USR-1").header(ROLE, "ESTUDIANTE, ADMIN").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE, ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(EDIFICIO_JSON))
                 .andExpect(status().isCreated());
     }
 
     @Test
-    void rolDesconocido_devuelve403() throws Exception {
-        mockMvc.perform(get("/api/v1/buildings").header(USER, "USR-1").header(ROLE, "INVENTADO"))
+    void sinElPermisoDeLaOperacion_devuelve403() throws Exception {
+        mockMvc.perform(get("/api/v1/buildings").header(USER, "USR-1").header(ROLE, "ADMIN")
+                        .header(Cabeceras.PERM, "ms02:qr:manage"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void auditor_puedeConsultarRutas() throws Exception {
-        mockMvc.perform(get("/api/v1/evacuation-routes").header(USER, "USR-1").header(ROLE, "AUDITOR"))
+        mockMvc.perform(get("/api/v1/evacuation-routes").header(USER, "USR-1").header(ROLE, "AUDITOR").header(Cabeceras.PERM, Cabeceras.permisosDe("AUDITOR")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void coordinador_puedeCambiarElEstadoDeUnaRuta() throws Exception {
         mockMvc.perform(patch("/api/v1/evacuation-routes/{id}/status", uuid(7))
-                        .header(USER, "USR-1").header(ROLE, "COORDINADOR")
+                        .header(USER, "USR-1").header(ROLE, "COORDINADOR").header(Cabeceras.PERM, Cabeceras.permisosDe("COORDINADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content(ESTADO_JSON))
                 .andExpect(status().isOk());
     }
@@ -104,15 +107,9 @@ class SeguridadTest {
     @Test
     void estudiante_noPuedeCambiarElEstadoDeUnaRuta() throws Exception {
         mockMvc.perform(patch("/api/v1/evacuation-routes/{id}/status", uuid(7))
-                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE")
+                        .header(USER, "USR-1").header(ROLE, "ESTUDIANTE").header(Cabeceras.PERM, Cabeceras.permisosDe("ESTUDIANTE"))
                         .contentType(MediaType.APPLICATION_JSON).content(ESTADO_JSON))
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    void coordinador_noPuedeCrearRutas() throws Exception {
-        mockMvc.perform(post("/api/v1/evacuation-routes").header(USER, "USR-1").header(ROLE, "COORDINADOR")
-                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isForbidden());
-    }
 }

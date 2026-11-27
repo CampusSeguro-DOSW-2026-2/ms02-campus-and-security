@@ -9,6 +9,6 @@ public interface EdificioGateway {
 
     Optional<EdificioInfo> buscarPorId(UUID id);
 
-    record EdificioInfo(UUID id, String codigo, String nombre, boolean activo) {
+    record EdificioInfo(UUID id, String nombre, boolean activo) {
     }
 }

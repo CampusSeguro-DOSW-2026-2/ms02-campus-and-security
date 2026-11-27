@@ -1,3 +1,4 @@
+
 package edu.eci.dosw.campusseguro.campus.service;
 
 import java.util.List;
@@ -8,15 +9,22 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Escalera;
+import edu.eci.dosw.campusseguro.campus.entity.Salida;
+import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
+import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
+import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +37,8 @@ public class PisoService {
     private final PisoRepository pisoRepository;
     private final EdificioRepository edificioRepository;
     private final EspacioRepository espacioRepository;
+    private final EscaleraRepository escaleraRepository;
+    private final SalidaRepository salidaRepository;
 
     @Transactional
     public PisoResponse crear(UUID edificioId, PisoRequest request) {
@@ -74,13 +84,43 @@ public class PisoService {
     public PisoResponse inactivar(UUID id) {
         Piso piso = buscar(id);
 
-        if (espacioRepository.existsByPisoIdAndEstado(id, Estado.ACTIVO)) {
-            log.warn("No se inactivó el piso {}: tiene espacios activos", id);
-            throw new ReglaNegocioException("El piso tiene espacios activos; deben inactivarse antes");
+        List<String> espaciosActivos = espacioRepository.findByPisoId(id).stream()
+                .filter(espacio -> espacio.getEstado() == Estado.ACTIVO)
+                .map(Espacio::getNombre)
+                .toList();
+
+        if (!espaciosActivos.isEmpty()) {
+            log.warn("No se inactivó el piso {}: tiene espacios activos {}", id, espaciosActivos);
+            throw new ReglaNegocioException(
+                    "El piso tiene espacios activos " + espaciosActivos
+                            + "; deben inactivarse antes");
+        }
+
+        List<String> escalerasActivas =
+                escaleraRepository.findByPisos_IdAndEstado(id, Estado.ACTIVO).stream()
+                        .map(Escalera::getCodigo)
+                        .toList();
+
+        if (!escalerasActivas.isEmpty()) {
+            log.warn("No se inactivó el piso {}: tiene escaleras activas {}", id, escalerasActivas);
+            throw new ReglaNegocioException(
+                    "El piso tiene escaleras activas " + escalerasActivas
+                            + "; deben inactivarse antes");
+        }
+
+        List<String> salidasActivas = salidaRepository.findByPisoId(id).stream()
+                .filter(salida -> salida.getEstado() == Estado.ACTIVO)
+                .map(Salida::getNombre)
+                .toList();
+
+        if (!salidasActivas.isEmpty()) {
+            log.warn("No se inactivó el piso {}: tiene salidas activas {}", id, salidasActivas);
+            throw new ReglaNegocioException(
+                    "El piso tiene salidas activas " + salidasActivas
+                            + "; deben inactivarse antes");
         }
 
         piso.setEstado(Estado.INACTIVO);
-
         Piso guardado = pisoRepository.save(piso);
         log.info("Piso {} inactivado", id);
         return aRespuesta(guardado);
@@ -140,7 +180,8 @@ public class PisoService {
                 p.getEdificioId(),
                 p.getNumero(),
                 p.getNombre(),
-                p.getEstado()
+                p.getEstado(),
+                salidaRepository.existsByPisoIdAndEstado(p.getId(), Estado.ACTIVO)
         );
     }
 }

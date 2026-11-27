@@ -1,5 +1,8 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,14 +10,19 @@ import edu.eci.dosw.campusseguro.campus.dto.ModificarZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraRequest;
 import edu.eci.dosw.campusseguro.campus.dto.ZonaSeguraResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
+import edu.eci.dosw.campusseguro.campus.entity.ZonaAbierta;
 import edu.eci.dosw.campusseguro.campus.entity.ZonaSegura;
+import edu.eci.dosw.campusseguro.campus.exception.ZonaAbiertaNoEncontradaException;
+import edu.eci.dosw.campusseguro.campus.ruta.event.ZonaSeguraUbicacionCambiadaEvent;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaCodigoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.ZonaSeguraNoEncontradaException;
+import edu.eci.dosw.campusseguro.campus.repository.ZonaAbiertaRepository;
 import edu.eci.dosw.campusseguro.campus.repository.ZonaSeguraRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.ruta.port.VerificadorRutas;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +31,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ZonaSeguraService {
 
+    private final ImagenRepository imagenRepository;
+
     private final ZonaSeguraRepository zonaSeguraRepository;
     private final VerificadorRutas verificadorRutas;
+    private final ZonaAbiertaRepository zonaAbiertaRepository;
+    private final ApplicationEventPublisher eventos;
 
     @Transactional
     public ZonaSeguraResponse crear(ZonaSeguraRequest request) {
@@ -34,24 +46,47 @@ public class ZonaSeguraService {
             throw new ZonaCodigoDuplicadoException(codigo);
         }
 
+        validarCoordenadas(request.latitud(), request.longitud());
+        validarZonaAbierta(request.zonaAbiertaId());
+
         ZonaSegura zona = new ZonaSegura();
         copiarDatos(zona, request);
 
         ZonaSegura guardada = zonaSeguraRepository.save(zona);
         log.info("Zona segura {} creada con código {}", guardada.getId(), guardada.getCodigo());
+        publicarSiTieneCoordenadas(guardada);
         return aRespuesta(guardada);
     }
 
     @Transactional
     public ZonaSeguraResponse modificar(UUID id, ModificarZonaSeguraRequest request) {
         ZonaSegura zona = buscar(id);
+        BigDecimal latitudAnterior = zona.getLatitud();
+        BigDecimal longitudAnterior = zona.getLongitud();
         zona.setNombre(request.nombre().trim());
         zona.setUbicacion(request.ubicacion().trim());
         zona.setDescripcion(request.descripcion().trim());
         zona.setCapacidad(request.capacidad());
 
+        // Lo que no se envía no cambia: así los clientes anteriores no borran coordenadas por accidente.
+        if (request.latitud() != null || request.longitud() != null) {
+            validarCoordenadas(request.latitud(), request.longitud());
+            zona.setLatitud(request.latitud());
+            zona.setLongitud(request.longitud());
+        }
+        if (request.zonaAbiertaId() != null && !request.zonaAbiertaId().equals(zona.getZonaAbiertaId())) {
+            validarZonaAbierta(request.zonaAbiertaId());
+            zona.setZonaAbiertaId(request.zonaAbiertaId());
+        }
+        if (request.puntoEncuentro() != null) {
+            zona.setPuntoEncuentro(request.puntoEncuentro());
+        }
+
         ZonaSegura guardada = zonaSeguraRepository.save(zona);
         log.info("Zona segura {} modificada", guardada.getId());
+        if (distintos(latitudAnterior, guardada.getLatitud()) || distintos(longitudAnterior, guardada.getLongitud())) {
+            publicarSiTieneCoordenadas(guardada);
+        }
         return aRespuesta(guardada);
     }
 
@@ -85,17 +120,31 @@ public class ZonaSeguraService {
                     "La zona segura ya está activa");
         }
 
+        if (zona.getZonaAbiertaId() != null && zonaAbiertaRepository.findById(zona.getZonaAbiertaId())
+                .map(a -> a.getEstado() == Estado.INACTIVO).orElse(false)) {
+            throw new ReglaNegocioException("La zona abierta de la zona segura está inactiva; reactívela antes");
+        }
+
         zona.setEstado(Estado.ACTIVO);
 
         ZonaSegura guardada = zonaSeguraRepository.save(zona);
         log.info("Zona segura {} reactivada", id);
+        publicarSiTieneCoordenadas(guardada);
         return aRespuesta(guardada);
     }
 
     @Transactional(readOnly = true)
     public List<ZonaSeguraResponse> listar(boolean incluirInactivos) {
+        return listar(incluirInactivos, null, false);
+    }
+
+    // puntoEncuentro null = sin filtro. sinCoordenadas=true lista las zonas que aún no tienen coordenadas.
+    @Transactional(readOnly = true)
+    public List<ZonaSeguraResponse> listar(boolean incluirInactivos, Boolean puntoEncuentro, boolean sinCoordenadas) {
         return zonaSeguraRepository.findAll().stream()
                 .filter(z -> incluirInactivos || z.getEstado() == Estado.ACTIVO)
+                .filter(z -> puntoEncuentro == null || z.isPuntoEncuentro() == puntoEncuentro)
+                .filter(z -> !sinCoordenadas || z.getLatitud() == null || z.getLongitud() == null)
                 .map(this::aRespuesta)
                 .toList();
     }
@@ -116,6 +165,37 @@ public class ZonaSeguraService {
         zona.setUbicacion(request.ubicacion().trim());
         zona.setDescripcion(request.descripcion().trim());
         zona.setCapacidad(request.capacidad());
+        zona.setLatitud(request.latitud());
+        zona.setLongitud(request.longitud());
+        zona.setZonaAbiertaId(request.zonaAbiertaId());
+        zona.setPuntoEncuentro(request.puntoEncuentro() == null || request.puntoEncuentro());
+    }
+
+    private void publicarSiTieneCoordenadas(ZonaSegura zona) {
+        if (zona.getLatitud() != null && zona.getLongitud() != null) {
+            eventos.publishEvent(new ZonaSeguraUbicacionCambiadaEvent(zona.getId()));
+        }
+    }
+
+    private static boolean distintos(BigDecimal a, BigDecimal b) {
+        return a == null || b == null ? a != b : a.compareTo(b) != 0;
+    }
+
+    private void validarCoordenadas(BigDecimal latitud, BigDecimal longitud) {
+        if ((latitud == null) != (longitud == null)) {
+            throw new ReglaNegocioException("La latitud y la longitud deben enviarse juntas");
+        }
+    }
+
+    private void validarZonaAbierta(UUID zonaAbiertaId) {
+        if (zonaAbiertaId == null) {
+            return;
+        }
+        ZonaAbierta abierta = zonaAbiertaRepository.findById(zonaAbiertaId)
+                .orElseThrow(() -> new ZonaAbiertaNoEncontradaException(zonaAbiertaId));
+        if (abierta.getEstado() == Estado.INACTIVO) {
+            throw new ReglaNegocioException("No se pueden ubicar zonas seguras en una zona abierta inactiva");
+        }
     }
 
     private ZonaSeguraResponse aRespuesta(ZonaSegura z) {
@@ -126,6 +206,11 @@ public class ZonaSeguraService {
                 z.getUbicacion(),
                 z.getDescripcion(),
                 z.getCapacidad(),
-                z.getEstado());
+                z.getEstado(),
+                z.getLatitud(),
+                z.getLongitud(),
+                z.getZonaAbiertaId(),
+                z.isPuntoEncuentro(),
+                imagenRepository.existsByTipoElementoAndElementoId(TipoElementoImagen.ZONA_SEGURA, z.getId()));
     }
 }

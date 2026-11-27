@@ -20,14 +20,14 @@ public class Edificio {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 50)
-    private String codigo;
-
     @Column(nullable = false, length = 100)
     private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
+
+    @Column(name = "campus_id", nullable = false)
+    private UUID campusId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

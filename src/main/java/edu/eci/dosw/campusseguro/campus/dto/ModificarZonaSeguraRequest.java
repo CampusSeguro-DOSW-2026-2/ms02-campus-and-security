@@ -1,5 +1,10 @@
 package edu.eci.dosw.campusseguro.campus.dto;
 
+import java.math.BigDecimal;
+import java.util.UUID;
+
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +24,20 @@ public record ModificarZonaSeguraRequest(
 
         @NotNull(message = "La capacidad es obligatoria")
         @Min(value = 1, message = "La capacidad debe ser mayor que 0")
-        Integer capacidad
+        Integer capacidad,
+
+        @DecimalMin(value = "-90.0", message = "La latitud debe estar entre -90 y 90")
+        @DecimalMax(value = "90.0", message = "La latitud debe estar entre -90 y 90")
+        BigDecimal latitud,
+
+        @DecimalMin(value = "-180.0", message = "La longitud debe estar entre -180 y 180")
+        @DecimalMax(value = "180.0", message = "La longitud debe estar entre -180 y 180")
+        BigDecimal longitud,
+
+        // Opcional: zona abierta donde está ubicada la zona segura.
+        UUID zonaAbiertaId,
+
+        // Opcional: si no se envía, al crear queda como punto de encuentro y al modificar no cambia.
+        Boolean puntoEncuentro
 ) {
 }

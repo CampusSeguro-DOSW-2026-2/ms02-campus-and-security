@@ -1,0 +1,48 @@
+# Stack de MS02 en la nube: uno por entorno en la misma VM (ms02-prod y ms02-test), cada uno con sus fotos.
+# RF-MS02-06: la base de datos ya no vive en este stack; es una instancia administrada (Azure Database for
+# PostgreSQL) fuera de la VM, compartida por los entornos pero con un esquema/base distinto por entorno
+# (DB_NAME, por defecto campus_<entorno>) para que prueba y producción no se mezclen.
+# No publica puertos: solo el Caddy de borde de la VM (red campus-edge) llega a MS02, con el alias ms02-<entorno>.
+# Lo usa infra/deploy.sh con el .env que escribe en DEPLOY_DIR/<entorno>; no se ejecuta a mano.
+# La BD arranca vacía: Flyway crea el esquema y el campus por defecto. Lo que se registre después vive en la base
+# administrada y en el volumen "imagenes" (fotografías), y sobrevive a los despliegues; nunca usar "down -v".
+name: ms02-${ENTORNO:?ENTORNO es obligatoria (test o prod)}
+
+services:
+  ms02:
+    image: ${IMAGE:?IMAGE es obligatoria}:${TAG:?TAG es obligatoria (sha-xxxxxxx)}
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8082
+      DB_HOST: ${DB_HOST:?DB_HOST es obligatoria (base de datos administrada)}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-campus_${ENTORNO}}
+      DB_USER: ${DB_USER:?DB_USER es obligatoria}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatoria}
+      # Dirección pública del frontend que va dentro de los códigos QR
+      QR_BASE_URL: ${QR_BASE_URL:?QR_BASE_URL es obligatoria}
+      NAVIGATION_BASE_URL: ${NAVIGATION_BASE_URL:-https://routing.openstreetmap.de/routed-foot}
+      NAVIGATION_PROFILE: ${NAVIGATION_PROFILE:-foot}
+      IMAGEN_STORAGE_DIR: /app/data
+      # Fotografías: local (volumen "imagenes") o azure (Azure Blob Storage, un contenedor por entorno)
+      IMAGEN_STORAGE_TYPE: ${IMAGEN_STORAGE_TYPE:-local}
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-}
+      AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-imagenes}
+    # Variables opcionales del entorno (p. ej. RUTAS_AUTO_MAX_ZONAS), si las hay.
+    env_file:
+      - path: extra.env
+        required: false
+    volumes:
+      - imagenes:/app/data
+    networks:
+      edge:
+        aliases:
+          - ms02-${ENTORNO}
+
+volumes:
+  imagenes:
+
+networks:
+  edge:
+    name: campus-edge
+    external: true

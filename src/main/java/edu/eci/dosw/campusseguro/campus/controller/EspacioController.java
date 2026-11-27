@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Espacios", description = "RF-03. Salones, laboratorios, auditorios, oficinas y espacios comunes de un piso.")
+@Tag(name = "Espacios", description = "RF-MS02-03. Salones, laboratorios, auditorios, oficinas y espacios comunes de un piso.")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -26,8 +26,8 @@ public class EspacioController {
 
     private final EspacioService espacioService;
 
-    @Operation(summary = "Registrar espacio", description = "Solo ADMIN. El piso y su edificio deben estar activos y el código no se puede repetir en el edificio.")
-    @Permiso(Permisos.BUILDING_WRITE)
+    @Operation(summary = "Registrar espacio", description = "Solo ADMIN. El piso y su edificio deben estar activos.")
+    @Permiso(Permisos.SPACE_WRITE)
     @PostMapping("/floors/{pisoId}/spaces")
     public ResponseEntity<EspacioResponse> crear(@PathVariable UUID pisoId,
                                                  @Valid @RequestBody EspacioRequest request) {
@@ -57,8 +57,8 @@ public class EspacioController {
         return espacioService.obtener(id);
     }
 
-    @Operation(summary = "Modificar espacio", description = "Solo ADMIN. Cambia nombre y tipo; el código no se modifica.")
-    @Permiso(Permisos.BUILDING_WRITE)
+    @Operation(summary = "Modificar espacio", description = "Solo ADMIN. Cambia nombre y tipo.")
+    @Permiso(Permisos.SPACE_WRITE)
     @PutMapping("/spaces/{id}")
     public EspacioResponse modificar(@PathVariable UUID id,
                                      @Valid @RequestBody ModificarEspacioRequest request) {
@@ -67,14 +67,14 @@ public class EspacioController {
 
     @Operation(summary = "Inactivar espacio",
             description = "Solo ADMIN. Se rechaza con 422 si el espacio es origen de una ruta Disponible o Restringida.")
-    @Permiso(Permisos.BUILDING_WRITE)
+    @Permiso(Permisos.SPACE_WRITE)
     @PatchMapping("/spaces/{id}/deactivate")
     public EspacioResponse inactivar(@PathVariable UUID id) {
         return espacioService.inactivar(id);
     }
 
     @Operation(summary = "Reactivar espacio", description = "Solo ADMIN. Su piso y su edificio deben estar activos.")
-    @Permiso(Permisos.BUILDING_WRITE)
+    @Permiso(Permisos.SPACE_WRITE)
     @PatchMapping("/spaces/{id}/reactivate")
     public EspacioResponse reactivar(@PathVariable UUID id) {
         return espacioService.reactivar(id);

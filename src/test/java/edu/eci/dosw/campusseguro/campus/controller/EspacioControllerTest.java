@@ -9,7 +9,6 @@ import edu.eci.dosw.campusseguro.campus.dto.EspacioResponse;
 import edu.eci.dosw.campusseguro.campus.dto.ModificarEspacioRequest;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.TipoEspacio;
-import edu.eci.dosw.campusseguro.campus.exception.EspacioDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import edu.eci.dosw.campusseguro.campus.service.EspacioService;
@@ -40,7 +39,7 @@ class EspacioControllerTest {
     private static final UUID EDIFICIO = uuid(1);
     private static final UUID PISO = uuid(2);
     private static final UUID ESPACIO = uuid(10);
-    private static final String ESPACIO_JSON = "{\"codigo\":\"G-101\",\"nombre\":\"Salón 101\",\"tipo\":\"SALON\"}";
+    private static final String ESPACIO_JSON = "{\"nombre\":\"Salón 101\",\"tipo\":\"SALON\"}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,8 +48,8 @@ class EspacioControllerTest {
     private EspacioService espacioService;
 
     private EspacioResponse respuesta(Estado estado) {
-        return new EspacioResponse(ESPACIO, EDIFICIO, PISO, "G-101", "Salón 101", TipoEspacio.SALON, estado,
-                estado == Estado.ACTIVO);
+        return new EspacioResponse(ESPACIO, EDIFICIO, "Bloque G", PISO, 1, "Salón 101", TipoEspacio.SALON,
+                estado, estado == Estado.ACTIVO, false);
     }
 
     @Test
@@ -60,17 +59,16 @@ class EspacioControllerTest {
         mockMvc.perform(post("/api/v1/floors/{id}/spaces", PISO).contentType(MediaType.APPLICATION_JSON)
                         .content(ESPACIO_JSON))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigo").value("G-101"))
+                .andExpect(jsonPath("$.nombre").value("Salón 101"))
                 .andExpect(jsonPath("$.pisoId").value(PISO.toString()))
                 .andExpect(jsonPath("$.estado").value("ACTIVO"));
     }
 
     @Test
-    void crear_sinCodigoNiNombreNiTipo_devuelve400ConLosCampos() throws Exception {
+    void crear_sinNombreNiTipo_devuelve400ConLosCampos() throws Exception {
         mockMvc.perform(post("/api/v1/floors/{id}/spaces", PISO).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"codigo\":\"\",\"nombre\":\"\"}"))
+                        .content("{\"nombre\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errores[?(@.campo == 'codigo')]").exists())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'nombre')]").exists())
                 .andExpect(jsonPath("$.errores[?(@.campo == 'tipo')]").exists());
     }
@@ -78,20 +76,9 @@ class EspacioControllerTest {
     @Test
     void crear_conTipoInexistente_devuelve400() throws Exception {
         mockMvc.perform(post("/api/v1/floors/{id}/spaces", PISO).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"codigo\":\"G-101\",\"nombre\":\"Bodega\",\"tipo\":\"BODEGA\"}"))
+                        .content("{\"nombre\":\"Bodega\",\"tipo\":\"BODEGA\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("VALIDACION"));
-    }
-
-    @Test
-    void crear_conCodigoRepetido_devuelve409ConElCampo() throws Exception {
-        when(espacioService.crear(eq(PISO), any(EspacioRequest.class)))
-                .thenThrow(new EspacioDuplicadoException("G-101"));
-
-        mockMvc.perform(post("/api/v1/floors/{id}/spaces", PISO).contentType(MediaType.APPLICATION_JSON)
-                        .content(ESPACIO_JSON))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.errores[0].campo").value("codigo"));
     }
 
     @Test
@@ -111,7 +98,7 @@ class EspacioControllerTest {
 
         mockMvc.perform(get("/api/v1/floors/{id}/spaces", PISO))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].codigo").value("G-101"));
+                .andExpect(jsonPath("$[0].nombre").value("Salón 101"));
     }
 
     @Test
@@ -188,5 +175,27 @@ class EspacioControllerTest {
         mockMvc.perform(get("/api/v1/buildings/{id}/spaces", EDIFICIO).param("incluirInactivos", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].disponible").value(false));
+    }
+
+    @Test
+    void obtener_incluyeElNombreDelEdificioYElNumeroDelPiso() throws Exception {
+        when(espacioService.obtener(ESPACIO)).thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(get("/api/v1/spaces/{id}", ESPACIO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.edificioNombre").value("Bloque G"))
+                .andExpect(jsonPath("$.pisoNumero").value(1));
+    }
+
+    @Test
+    void crear_conCoordenadas_lasIgnoraPorqueElEspacioNoLasLleva() throws Exception {
+        when(espacioService.crear(eq(PISO), any(EspacioRequest.class))).thenReturn(respuesta(Estado.ACTIVO));
+
+        mockMvc.perform(post("/api/v1/floors/{id}/spaces", PISO).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Salón 101\",\"tipo\":\"SALON\","
+                                + "\"latitud\":4.78,\"longitud\":-74.04}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.latitud").doesNotExist())
+                .andExpect(jsonPath("$.longitud").doesNotExist());
     }
 }

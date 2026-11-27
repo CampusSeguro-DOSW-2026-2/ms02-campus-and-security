@@ -1,8 +1,11 @@
 package edu.eci.dosw.campusseguro.campus.service;
 
+import edu.eci.dosw.campusseguro.campus.entity.TipoElementoImagen;
+import edu.eci.dosw.campusseguro.campus.repository.ImagenRepository;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,7 +17,6 @@ import edu.eci.dosw.campusseguro.campus.entity.Espacio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
-import edu.eci.dosw.campusseguro.campus.exception.EspacioDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.EspacioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
@@ -31,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class EspacioService {
+
+    private final ImagenRepository imagenRepository;
 
     private final EspacioRepository espacioRepository;
     private final PisoRepository pisoRepository;
@@ -50,23 +54,15 @@ public class EspacioService {
             throw new ReglaNegocioException("No se pueden registrar espacios en un piso inactivo");
         }
 
-        String codigo = request.codigo().trim();
-
-        if (espacioRepository.existsByEdificioIdAndCodigo(edificio.getId(), codigo)) {
-            throw new EspacioDuplicadoException(codigo);
-        }
-
         Espacio espacio = new Espacio();
         espacio.setEdificioId(edificio.getId());
         espacio.setPisoId(pisoId);
-        espacio.setCodigo(codigo);
         espacio.setNombre(request.nombre().trim());
         espacio.setTipo(request.tipo());
 
         Espacio guardado = espacioRepository.save(espacio);
-        log.info("Espacio {} creado en el piso {} con código {}",
-                guardado.getId(), pisoId, guardado.getCodigo());
-        return aRespuesta(guardado, true);
+        log.info("Espacio {} creado en el piso {}", guardado.getId(), pisoId);
+        return aRespuesta(guardado, piso, edificio);
     }
 
     @Transactional
@@ -86,8 +82,8 @@ public class EspacioService {
         List<UUID> rutasActivas = verificadorRutas.rutasActivasDeEspacio(id);
 
         if (!rutasActivas.isEmpty()) {
-            log.warn("No se inactivó el espacio {}: es origen de rutas activas {}", id, rutasActivas);
-            throw new ReglaNegocioException("El espacio es origen de rutas activas " + rutasActivas
+            log.warn("No se inactivó el espacio {}: es origen de rutas de legado activas {}", id, rutasActivas);
+            throw new ReglaNegocioException("El espacio es origen de rutas de legado activas " + rutasActivas
                     + ": deben bloquearse antes de inactivarlo");
         }
 
@@ -123,24 +119,21 @@ public class EspacioService {
     @Transactional(readOnly = true)
     public List<EspacioResponse> listarPorPiso(UUID pisoId, boolean incluirInactivos) {
         Piso piso = buscarPiso(pisoId);
-        boolean contenedoresActivos = piso.getEstado() == Estado.ACTIVO
-                && buscarEdificio(piso.getEdificioId()).getEstado() == Estado.ACTIVO;
+        Edificio edificio = edificioRepository.findById(piso.getEdificioId()).orElse(null);
 
         return filtrar(espacioRepository.findByPisoId(pisoId).stream()
-                .map(e -> aRespuesta(e, contenedoresActivos)), incluirInactivos);
+                .map(e -> aRespuesta(e, piso, edificio)), incluirInactivos);
     }
 
     @Transactional(readOnly = true)
     public List<EspacioResponse> listarPorEdificio(UUID edificioId, boolean incluirInactivos) {
-        boolean edificioActivo = buscarEdificio(edificioId).getEstado() == Estado.ACTIVO;
+        Edificio edificio = buscarEdificio(edificioId);
 
-        Set<UUID> pisosActivos = pisoRepository.findByEdificioIdOrderByNumeroAsc(edificioId).stream()
-                .filter(p -> p.getEstado() == Estado.ACTIVO)
-                .map(Piso::getId)
-                .collect(Collectors.toSet());
+        Map<UUID, Piso> pisos = pisoRepository.findByEdificioIdOrderByNumeroAsc(edificioId).stream()
+                .collect(Collectors.toMap(Piso::getId, Function.identity()));
 
         return filtrar(espacioRepository.findByEdificioId(edificioId).stream()
-                .map(e -> aRespuesta(e, edificioActivo && pisosActivos.contains(e.getPisoId()))),
+                .map(e -> aRespuesta(e, pisos.get(e.getPisoId()), edificio)),
                 incluirInactivos);
     }
 
@@ -169,27 +162,26 @@ public class EspacioService {
     }
 
     private EspacioResponse aRespuesta(Espacio e) {
-        boolean pisoActivo = pisoRepository.findById(e.getPisoId())
-                .map(p -> p.getEstado() == Estado.ACTIVO)
-                .orElse(false);
-
-        boolean edificioActivo = edificioRepository.findById(e.getEdificioId())
-                .map(ed -> ed.getEstado() == Estado.ACTIVO)
-                .orElse(false);
-
-        return aRespuesta(e, pisoActivo && edificioActivo);
+        return aRespuesta(e, pisoRepository.findById(e.getPisoId()).orElse(null),
+                edificioRepository.findById(e.getEdificioId()).orElse(null));
     }
 
-    private static EspacioResponse aRespuesta(Espacio e, boolean contenedoresActivos) {
+    private EspacioResponse aRespuesta(Espacio e, Piso piso, Edificio edificio) {
+        boolean disponible = e.getEstado() == Estado.ACTIVO
+                && piso != null && piso.getEstado() == Estado.ACTIVO
+                && edificio != null && edificio.getEstado() == Estado.ACTIVO;
+
         return new EspacioResponse(
                 e.getId(),
                 e.getEdificioId(),
+                edificio == null ? null : edificio.getNombre(),
                 e.getPisoId(),
-                e.getCodigo(),
+                piso == null ? null : piso.getNumero(),
                 e.getNombre(),
                 e.getTipo(),
                 e.getEstado(),
-                contenedoresActivos && e.getEstado() == Estado.ACTIVO
+                disponible,
+                imagenRepository.existsByTipoElementoAndElementoId(TipoElementoImagen.ESPACIO, e.getId())
         );
     }
 }

@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Edificios", description = "RF-01. Gestión de edificios del campus.")
+@Tag(name = "Edificios", description = "RF-MS02-01. Gestión de edificios del campus.")
 @RestController
 @RequestMapping("/api/v1/buildings")
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class EdificioController {
 
     @Operation(
             summary = "Crear edificio",
-            description = "Solo ADMIN. El código es único. El edificio queda activo.")
+            description = "Solo ADMIN. El campus es obligatorio y debe estar activo. El edificio queda activo.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PostMapping
     public ResponseEntity<EdificioResponse> crear(
@@ -39,7 +39,7 @@ public class EdificioController {
 
     @Operation(
             summary = "Modificar edificio",
-            description = "Solo ADMIN. Cambia nombre y descripción. El código no se puede modificar.")
+            description = "Solo ADMIN. Cambia nombre, descripción y campus.")
     @Permiso(Permisos.BUILDING_WRITE)
     @PutMapping("/{id}")
     public EdificioResponse modificar(

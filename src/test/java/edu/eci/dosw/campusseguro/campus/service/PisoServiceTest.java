@@ -7,12 +7,17 @@ import edu.eci.dosw.campusseguro.campus.dto.PisoResponse;
 import edu.eci.dosw.campusseguro.campus.entity.Edificio;
 import edu.eci.dosw.campusseguro.campus.entity.Estado;
 import edu.eci.dosw.campusseguro.campus.entity.Piso;
+import edu.eci.dosw.campusseguro.campus.entity.Escalera;
+import edu.eci.dosw.campusseguro.campus.entity.Salida;
+import edu.eci.dosw.campusseguro.campus.entity.Espacio;
+import edu.eci.dosw.campusseguro.campus.repository.EscaleraRepository;
 import edu.eci.dosw.campusseguro.campus.exception.EdificioNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoDuplicadoException;
 import edu.eci.dosw.campusseguro.campus.exception.PisoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.repository.EdificioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.EspacioRepository;
 import edu.eci.dosw.campusseguro.campus.repository.PisoRepository;
+import edu.eci.dosw.campusseguro.campus.repository.SalidaRepository;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,10 +44,18 @@ class PisoServiceTest {
 
     @Mock
     private PisoRepository pisoRepository;
+
     @Mock
     private EdificioRepository edificioRepository;
+
     @Mock
     private EspacioRepository espacioRepository;
+
+    @Mock
+    private EscaleraRepository escaleraRepository;
+
+    @Mock
+    private SalidaRepository salidaRepository;
 
     @InjectMocks
     private PisoService pisoService;
@@ -151,19 +164,33 @@ class PisoServiceTest {
     @Test
     void inactivar_sinEspaciosActivos_loDejaInactivo() {
         piso();
+
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+
+        when(escaleraRepository.findByPisos_IdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(List.of());
+
         guardarDevuelveLoMismo();
 
-        assertThat(pisoService.inactivar(PISO).estado()).isEqualTo(Estado.INACTIVO);
+        assertThat(pisoService.inactivar(PISO).estado())
+                .isEqualTo(Estado.INACTIVO);
     }
 
     @Test
-    void inactivar_conEspaciosActivos_seRechaza() {
+    void inactivar_conEspaciosActivos_seRechazaYListaLosNombres() {
         piso();
-        when(espacioRepository.existsByPisoIdAndEstado(PISO, Estado.ACTIVO)).thenReturn(true);
+
+        Espacio espacio = new Espacio();
+        espacio.setNombre("Salón 101");
+        espacio.setEstado(Estado.ACTIVO);
+
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of(espacio));
 
         assertThatThrownBy(() -> pisoService.inactivar(PISO))
                 .isInstanceOf(ReglaNegocioException.class)
-                .hasMessageContaining("espacios activos");
+                .hasMessageContaining("espacios activos")
+                .hasMessageContaining("Salón 101");
+
         verify(pisoRepository, never()).save(any());
     }
 
@@ -192,6 +219,24 @@ class PisoServiceTest {
         piso();
 
         assertThat(pisoService.obtener(PISO).numero()).isEqualTo(1);
+    }
+
+    @Test
+    void obtener_pisoConSalidaActiva_indicaQueTieneSalida() {
+        piso();
+        when(salidaRepository.existsByPisoIdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(true);
+
+        assertThat(pisoService.obtener(PISO).tieneSalida()).isTrue();
+    }
+
+    @Test
+    void obtener_pisoSinSalidaActiva_indicaQueNoTieneSalida() {
+        piso();
+        when(salidaRepository.existsByPisoIdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(false);
+
+        assertThat(pisoService.obtener(PISO).tieneSalida()).isFalse();
     }
 
     @Test
@@ -252,5 +297,58 @@ class PisoServiceTest {
 
         assertThat(pisoService.listarPorEdificio(EDIFICIO, true)).extracting(PisoResponse::id)
                 .containsExactly(PISO, uuid(3));
+    }
+
+    @Test
+    void inactivar_conEscaleraActiva_seRechaza() {
+        piso();
+
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+
+        Escalera escalera = new Escalera();
+        escalera.setCodigo("ESC-01");
+
+        when(escaleraRepository.findByPisos_IdAndEstado(PISO, Estado.ACTIVO))
+                .thenReturn(List.of(escalera));
+
+        assertThatThrownBy(() -> pisoService.inactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("escaleras activas")
+                .hasMessageContaining("ESC-01");
+
+        verify(pisoRepository, never()).save(any());
+    }
+
+    private static Salida salida(String nombre, Estado estado) {
+        Salida s = new Salida();
+        s.setPisoId(PISO);
+        s.setNombre(nombre);
+        s.setEstado(estado);
+        return s;
+    }
+
+    @Test
+    void inactivar_conSalidaActiva_seRechazaYListaLosNombres() {
+        piso();
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+        when(salidaRepository.findByPisoId(PISO))
+                .thenReturn(List.of(salida("Salida norte", Estado.ACTIVO), salida("Salida sur", Estado.INACTIVO)));
+
+        assertThatThrownBy(() -> pisoService.inactivar(PISO))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("salidas activas [Salida norte]")
+                .hasMessageNotContaining("Salida sur");
+
+        verify(pisoRepository, never()).save(any());
+    }
+
+    @Test
+    void inactivar_conSalidasYaInactivas_loDejaInactivo() {
+        piso();
+        when(espacioRepository.findByPisoId(PISO)).thenReturn(List.of());
+        when(salidaRepository.findByPisoId(PISO)).thenReturn(List.of(salida("G-S2", Estado.INACTIVO)));
+        when(pisoRepository.save(any(Piso.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(pisoService.inactivar(PISO).estado()).isEqualTo(Estado.INACTIVO);
     }
 }

@@ -8,11 +8,13 @@ import edu.eci.dosw.campusseguro.campus.entity.TipoEspacio;
 public record EspacioResponse(
         UUID id,
         UUID edificioId,
+        String edificioNombre,
         UUID pisoId,
-        String codigo,
+        Integer pisoNumero,
         String nombre,
         TipoEspacio tipo,
         Estado estado,
-        boolean disponible
+        boolean disponible,
+        boolean tieneFotografia
 ) {
 }

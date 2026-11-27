@@ -36,6 +36,32 @@ public class SecurityConfig {
                                 "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
 
+                        // Consulta pública de información mediante códigos QR.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers("/api/v1/public/**").denyAll()
+
+                        // Generación de códigos QR: permiso ms02:qr:manage del catálogo.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/spaces/*/qr",
+                                "/api/v1/exits/*/qr", "/api/v1/safe-zones/*/qr").hasAuthority(Permisos.QR_MANAGE)
+
+                        // Escaleras.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/stairs",
+                                "/api/v1/stairs/*").hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/stairs/*/status")
+                        .hasAuthority(Permisos.ROUTE_STATUS_WRITE)
+                        .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
+                        // Imágenes: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/images", "/api/v1/images/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/images", "/api/v1/images/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
+                        // Consulta pública de los QR (ADR-003, D7): solo lectura y sin sesión; cualquier otro método se rechaza.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers("/api/v1/public/**").denyAll()
+
                         // Rutas de evacuacion y su consulta
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/evacuation-routes",
                                 "/api/v1/spaces/*/evacuation-route").hasAuthority(Permisos.ROUTE_READ)
@@ -49,6 +75,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/floors/*/spaces", "/api/v1/buildings/*/spaces",
                                 "/api/v1/spaces/*").hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers("/api/v1/floors/*/spaces", "/api/v1/spaces/**")
+                        .hasAuthority(Permisos.SPACE_WRITE)
+
+                        // Escaleras: lectura general, administración para ADMIN y estado para COORDINADOR.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/stairs", "/api/v1/stairs/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/stairs/*/status")
+                        .hasAuthority(Permisos.ROUTE_STATUS_WRITE)
+                        .requestMatchers("/api/v1/buildings/*/stairs", "/api/v1/stairs/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
                         // Pisos (RF-02): van antes de /buildings/** para que su lectura no exija BUILDING_WRITE.
@@ -58,19 +92,44 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/buildings/*/floors", "/api/v1/floors/**")
                         .hasAuthority(Permisos.BUILDING_WRITE)
 
+                        // Ruta exterior guardada de una salida: es una consulta de rutas (ROUTE_READ) y va antes de /exits/**.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/exits/*/evacuation-route")
+                        .hasAuthority(Permisos.ROUTE_READ)
+
+                        // Salidas (ADR-003): van antes de /buildings/** para que su lectura no exija BUILDING_WRITE.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/buildings/*/exits", "/api/v1/exits/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/buildings/*/exits", "/api/v1/exits/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
+                        // Campus y zonas abiertas (ADR-003): lectura para cualquier rol, escritura solo ADMIN.
+                        // Van antes de /buildings/** y /safe-zones/** y no se solapan con ellos.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/campuses", "/api/v1/campuses/*",
+                                "/api/v1/campuses/*/open-zones", "/api/v1/open-zones/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/campuses", "/api/v1/campuses/**", "/api/v1/open-zones/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
                         // Edificios y zonas seguras: lectura para cualquier rol, escritura solo ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/v1/buildings", "/api/v1/buildings/*",
                                 "/api/v1/safe-zones", "/api/v1/safe-zones/*").hasAuthority(Permisos.CAMPUS_READ)
                         .requestMatchers("/api/v1/buildings/**").hasAuthority(Permisos.BUILDING_WRITE)
                         .requestMatchers("/api/v1/safe-zones/**").hasAuthority(Permisos.SAFE_ZONE_WRITE)
 
-                        // Recomendaciones preventivas: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        // Recomendaciones preventivas: consulta con ms02:preventive_info:read y escritura con
+                        // ms02:building:write, porque el catálogo no define un permiso de escritura propio.
                         .requestMatchers(HttpMethod.GET, "/api/v1/preventive-recommendations",
                                 "/api/v1/preventive-recommendations/**")
-                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .hasAuthority(Permisos.PREVENTIVE_INFO_READ)
                         .requestMatchers("/api/v1/preventive-recommendations",
                                 "/api/v1/preventive-recommendations/**")
-                        .hasAuthority(Permisos.PREVENTIVE_RECOMMENDATION_WRITE)
+                        .hasAuthority(Permisos.BUILDING_WRITE)
+
+                        // Imágenes: lectura para cualquier rol autorizado y escritura solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/images", "/api/v1/images/*")
+                        .hasAuthority(Permisos.CAMPUS_READ)
+                        .requestMatchers("/api/v1/images", "/api/v1/images/**")
+                        .hasAuthority(Permisos.BUILDING_WRITE)
 
                         // Cualquier otro endpoint exige al menos estar autenticado.
                         // Quien lo agregue debe declarar aqui su permiso.

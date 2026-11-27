@@ -21,7 +21,6 @@ public class EdificioGatewayImpl implements EdificioGateway {
         return edificioRepository.findById(id)
                 .map(e -> new EdificioInfo(
                         e.getId(),
-                        e.getCodigo(),
                         e.getNombre(),
                         e.getEstado() == Estado.ACTIVO));
     }

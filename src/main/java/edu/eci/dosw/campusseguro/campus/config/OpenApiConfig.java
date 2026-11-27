@@ -3,7 +3,6 @@ package edu.eci.dosw.campusseguro.campus.config;
 import edu.eci.dosw.campusseguro.campus.exception.ErrorResponse;
 import edu.eci.dosw.campusseguro.campus.security.HeaderAuthenticationFilter;
 import edu.eci.dosw.campusseguro.campus.security.Permiso;
-import edu.eci.dosw.campusseguro.campus.security.RolPermisos;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -11,6 +10,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.BinarySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -38,6 +38,7 @@ import java.util.List;
 public class OpenApiConfig {
 
     private static final String JSON = "application/json";
+    private static final String PNG = "image/png";
     private static final String PARAMETROS = "#/components/parameters/";
     private static final String RESPUESTAS = "#/components/responses/";
     private static final String CABECERA_CORRELATION = "#/components/headers/XCorrelationID";
@@ -52,16 +53,19 @@ public class OpenApiConfig {
                 .addParameters("XUserId", cabecera(HeaderAuthenticationFilter.USER_ID, true,
                         "Id del usuario autenticado. Lo pone el API Gateway.", "USR-1034"))
                 .addParameters("XUserRole", cabecera(HeaderAuthenticationFilter.USER_ROLE, true,
-                        "Roles del usuario autenticado separados por coma. Lo pone el API Gateway.",
+                        "Roles del usuario autenticado separados por coma. Es informativa: para autorizar se usa `X-User-Permission`.",
                         "ESTUDIANTE,BRIGADISTA"))
+                .addParameters("XUserPermission", cabecera(HeaderAuthenticationFilter.USER_PERMISSION, true,
+                        "Permisos efectivos del usuario separados por coma y sin espacios: la union de los permisos de todos sus roles. Lo pone el API Gateway y MS02 autoriza con esta cabecera (ver `x-permiso`).",
+                        "ms02:campus:read,ms02:route:read"))
                 .addParameters("XCorrelationId", cabecera(CorrelationIdFilter.HEADER, false,
                         "Identificador de trazabilidad de la petición (UUID v4).", CORRELATION_EJEMPLO))
                 .addResponses("BadRequest", error("Validación fallida: indica el campo y la regla.",
                         400, "VALIDACION", "Datos inválidos.",
                         List.of(new ErrorResponse.CampoError("nombre", "El nombre es obligatorio."))))
-                .addResponses("Unauthorized", error("Faltan las cabeceras de identidad (X-User-Id / X-User-Role).",
+                .addResponses("Unauthorized", error("Faltan las cabeceras de identidad (X-User-Id / X-User-Role / X-User-Permission).",
                         401, "NO_AUTENTICADO", "Faltan las cabeceras de identidad.", List.of()))
-                .addResponses("Forbidden", error("X-User-Role no incluye ningún rol de x-roles.",
+                .addResponses("Forbidden", error("X-User-Permission no incluye el permiso que exige la operación (x-permiso).",
                         403, "PROHIBIDO", "No tiene permiso para realizar esta acción.", List.of()))
                 .addResponses("NotFound", error("El recurso no existe.",
                         404, "NO_ENCONTRADO", "Edificio no encontrado.", List.of()))
@@ -74,10 +78,10 @@ public class OpenApiConfig {
                         .title("MS02 Campus y seguridad")
                         .version("v1")
                         .description("Edificios, pisos, espacios, zonas seguras y rutas de evacuación de CampusSeguro.\n\n"
-                                + "**Entradas de identidad:** los endpoints protegidos reciben `X-User-Id` y "
-                                + "`X-User-Role` (roles separados por coma), que pone el API Gateway; todos aceptan "
-                                + "`X-Correlation-ID`. Si faltan las de identidad, MS02 responde 401. "
-                                + "Cada operación declara su permiso en `x-permiso` y los roles que lo tienen en `x-roles`."))
+                                + "**Entradas de identidad:** los endpoints protegidos reciben `X-User-Id`, "
+                                + "`X-User-Role` y `X-User-Permission` (permisos separados por coma, sin espacios), que pone el API Gateway; "
+                                + "todos aceptan `X-Correlation-ID`. Si falta alguna, MS02 responde 401. "
+                                + "Cada operación declara el permiso que exige en `x-permiso`; MS02 autoriza con `X-User-Permission` y nunca por nombre de rol."))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Acceso externo (API Gateway)"),
                         new Server().url("http://localhost:8082").description("MS02 directo, solo desarrollo")))
@@ -90,7 +94,6 @@ public class OpenApiConfig {
             Permiso permiso = metodo.getMethodAnnotation(Permiso.class);
             if (permiso != null) {
                 operation.addExtension("x-permiso", permiso.value());
-                operation.addExtension("x-roles", RolPermisos.rolesCon(permiso.value()));
             }
             cabeceras(operation, permiso != null);
             respuestas(operation, metodo, permiso != null);
@@ -103,6 +106,7 @@ public class OpenApiConfig {
         if (protegido) {
             parametros.add(new Parameter().$ref(PARAMETROS + "XUserId"));
             parametros.add(new Parameter().$ref(PARAMETROS + "XUserRole"));
+            parametros.add(new Parameter().$ref(PARAMETROS + "XUserPermission"));
         }
         parametros.add(new Parameter().$ref(PARAMETROS + "XCorrelationId"));
         if (operation.getParameters() != null) {
@@ -116,7 +120,7 @@ public class OpenApiConfig {
         boolean crea = metodo.hasMethodAnnotation(PostMapping.class);
         respuestas.addApiResponse(crea ? "201" : "200", new ApiResponse()
                 .description(crea ? "Creado." : "OK.")
-                .content(json(esquemaDe(metodo))));
+                .content(contenidoExitoso(metodo)));
         if (tiene(metodo, PathVariable.class, RequestParam.class, RequestBody.class)) {
             respuestas.addApiResponse("400", new ApiResponse().$ref(RESPUESTAS + "BadRequest"));
         }
@@ -145,6 +149,14 @@ public class OpenApiConfig {
     private static boolean tiene(HandlerMethod metodo, Class<? extends java.lang.annotation.Annotation>... anotaciones) {
         return Arrays.stream(metodo.getMethodParameters())
                 .anyMatch(p -> Arrays.stream(anotaciones).anyMatch(p::hasParameterAnnotation));
+    }
+
+    private static Content contenidoExitoso(HandlerMethod metodo) {
+        ResolvableType tipo = ResolvableType.forMethodReturnType(metodo.getMethod());
+        if (ResponseEntity.class.equals(tipo.toClass()) && byte[].class.equals(tipo.getGeneric(0).toClass())) {
+            return new Content().addMediaType(PNG, new MediaType().schema(new BinarySchema()));
+        }
+        return json(esquemaDe(metodo));
     }
 
     private static Schema<?> esquemaDe(HandlerMethod metodo) {

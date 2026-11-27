@@ -1,8 +1,9 @@
 package edu.eci.dosw.campusseguro.campus.exception;
 
+import edu.eci.dosw.campusseguro.campus.ruta.exception.NavegacionNoDisponibleException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.RecursoNoEncontradoException;
 import edu.eci.dosw.campusseguro.campus.ruta.exception.ReglaNegocioException;
-import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaDuplicadaException;
+import edu.eci.dosw.campusseguro.campus.ruta.exception.RutaNoEncontradaException;
 import edu.eci.dosw.campusseguro.campus.config.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -36,16 +37,12 @@ public class ManejadorGlobalErrores {
             ZonaSeguraNoEncontradaException.class,
             PisoNoEncontradoException.class,
             EspacioNoEncontradoException.class,
+            CampusNoEncontradoException.class,
+            ZonaAbiertaNoEncontradaException.class,
+            SalidaNoEncontradaException.class,
             RecursoNoEncontradoException.class})
     public ResponseEntity<ErrorResponse> noEncontrado(RuntimeException e, HttpServletRequest request) {
         return respuesta(HttpStatus.NOT_FOUND, "NO_ENCONTRADO", e.getMessage(), List.of(), request);
-    }
-
-    @ExceptionHandler(CodigoDuplicadoException.class)
-    public ResponseEntity<ErrorResponse> codigoDuplicado(CodigoDuplicadoException e, HttpServletRequest request) {
-        List<ErrorResponse.CampoError> errores =
-                List.of(new ErrorResponse.CampoError("codigo", "Ya existe un edificio con ese código."));
-        return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
     }
 
     @ExceptionHandler(PisoDuplicadoException.class)
@@ -55,16 +52,18 @@ public class ManejadorGlobalErrores {
         return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
     }
 
-    @ExceptionHandler(EspacioDuplicadoException.class)
-    public ResponseEntity<ErrorResponse> espacioDuplicado(EspacioDuplicadoException e, HttpServletRequest request) {
-        List<ErrorResponse.CampoError> errores =
-                List.of(new ErrorResponse.CampoError("codigo", "Ya existe un espacio con ese código en el edificio."));
-        return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), errores, request);
+    @ExceptionHandler(RutaNoEncontradaException.class)
+    public ResponseEntity<ErrorResponse> rutaNoEncontrada(RutaNoEncontradaException e, HttpServletRequest request) {
+        return respuesta(HttpStatus.UNPROCESSABLE_ENTITY, "RUTA_NO_ENCONTRADA", e.getMessage(), List.of(), request);
     }
 
-    @ExceptionHandler(RutaDuplicadaException.class)
-    public ResponseEntity<ErrorResponse> rutaDuplicada(RutaDuplicadaException e, HttpServletRequest request) {
-        return respuesta(HttpStatus.CONFLICT, "CONFLICTO", e.getMessage(), List.of(), request);
+    // No se expone el detalle del proveedor al cliente; queda en el log.
+    @ExceptionHandler(NavegacionNoDisponibleException.class)
+    public ResponseEntity<ErrorResponse> navegacionNoDisponible(NavegacionNoDisponibleException e,
+                                                                HttpServletRequest request) {
+        log.warn("Servicio de navegación no disponible: {}", e.getMessage());
+        return respuesta(HttpStatus.SERVICE_UNAVAILABLE, "NAVEGACION_NO_DISPONIBLE",
+                "El servicio de navegación no está disponible. Intente de nuevo más tarde.", List.of(), request);
     }
 
     @ExceptionHandler(ReglaNegocioException.class)

@@ -1,0 +1,313 @@
+package edu.eci.dosw.campusseguro.campus.ruta.service;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import edu.eci.dosw.campusseguro.campus.ruta.domain.EstadoRuta;
+import edu.eci.dosw.campusseguro.campus.ruta.domain.RutaEvacuacion;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.GuiaEvacuacionResponse;
+import edu.eci.dosw.campusseguro.campus.ruta.dto.RutaConsultadaResponse;
+import edu.eci.dosw.campusseguro.campus.ruta.port.EdificioGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.EdificioGateway.EdificioInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.EscaleraGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.EscaleraGateway.EscaleraInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.EspacioGateway.EspacioInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.SalidaGateway.SalidaInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway;
+import edu.eci.dosw.campusseguro.campus.ruta.port.ZonaSeguraGateway.ZonaInfo;
+import edu.eci.dosw.campusseguro.campus.ruta.repository.RutaRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static edu.eci.dosw.campusseguro.campus.Ids.uuid;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
+
+// Guía completa desde un espacio: escalera + salida + ruta exterior (PR 5).
+@ExtendWith(MockitoExtension.class)
+class ConsultaRutaGuiaTest {
+
+    @Mock
+    private RutaRepository rutaRepository;
+    @Mock
+    private EdificioGateway edificioGateway;
+    @Mock
+    private EspacioGateway espacioGateway;
+    @Mock
+    private ZonaSeguraGateway zonaGateway;
+    @Mock
+    private SalidaGateway salidaGateway;
+    @Mock
+    private EscaleraGateway escaleraGateway;
+
+    private ConsultaRutaService service;
+
+    private final UUID edificioId = uuid(10);
+    private final UUID espacioId = uuid(11);
+    private final UUID zonaId = uuid(12);
+    private final UUID piso3 = uuid(23);
+    private final UUID piso1 = uuid(21);
+    private final UUID salidaId = uuid(30);
+
+    @BeforeEach
+    void setUp() {
+        service = new ConsultaRutaService(rutaRepository, edificioGateway, espacioGateway, zonaGateway,
+                null, salidaGateway, escaleraGateway);
+        EspacioInfo salon = new EspacioInfo(espacioId, edificioId, "Salón 301", true, null, piso3, 3);
+        when(edificioGateway.buscarPorId(edificioId))
+                .thenReturn(Optional.of(new EdificioInfo(edificioId, "Edificio A", true)));
+        when(espacioGateway.buscarPorId(espacioId)).thenReturn(Optional.of(salon));
+        lenient().when(zonaGateway.buscarPorId(zonaId))
+                .thenReturn(Optional.of(new ZonaInfo(zonaId, "Plazoleta", "Frente", true)));
+    }
+
+    private SalidaInfo salida(UUID id, UUID pisoId, boolean disponible) {
+        return new SalidaInfo(id, edificioId, pisoId, "Puerta " + id.getLeastSignificantBits(),
+                new BigDecimal("4.782710"), new BigDecimal("-74.042630"), disponible);
+    }
+
+    private RutaEvacuacion rutaExterior(UUID salida, double metros) {
+        RutaEvacuacion r = RutaEvacuacion.exterior(salida, zonaId, "Ruta exterior");
+        r.registrarCalculo(metros, metros / 1.4, "4.78,-74.04;4.79,-74.05", "1.0|1.0|Siga recto", Instant.EPOCH);
+        return r;
+    }
+
+    private RutaEvacuacion rutaExterior(UUID salida, double metros, EstadoRuta estado) {
+        RutaEvacuacion r = rutaExterior(salida, metros);
+        r.cambiarEstado(estado, "Mantenimiento programado");
+        return r;
+    }
+
+    private EscaleraInfo escalera(String codigo) {
+        return new EscaleraInfo(uuid(40), codigo, "Escalera " + codigo, edificioId, List.of(piso3, piso1));
+    }
+
+    @Test
+    void guia_conEscaleraDisponible_indicaEscaleraSalidaYRutaExterior() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"))));
+
+        RutaConsultadaResponse respuesta = service.consultarPorEspacio(espacioId);
+
+        GuiaEvacuacionResponse guia = respuesta.guia();
+        // El resumen de "evacuación" ahora se llena con la guía automática: ya no depende de una
+        // ruta manual espacio -> zona, que se dejó de crear.
+        assertThat(respuesta.tieneRuta()).isTrue();
+        assertThat(respuesta.zonaSeguraNombre()).isEqualTo("Plazoleta");
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.DISPONIBLE);
+        assertThat(respuesta.destinoActivo()).isTrue();
+        assertThat(respuesta.mensaje()).isNull();
+        assertThat(guia.edificioNombre()).isEqualTo("Edificio A");
+        assertThat(guia.pisoNumero()).isEqualTo(3);
+        assertThat(guia.requiereEscalera()).isTrue();
+        assertThat(guia.escaleras()).extracting("codigo").containsExactly("E-1");
+        assertThat(guia.salida().id()).isEqualTo(salidaId);
+        assertThat(guia.rutaExterior().distanciaMetros()).isEqualByComparingTo("280.00");
+        assertThat(guia.zonaSeguraNombre()).isEqualTo("Plazoleta");
+        assertThat(guia.indicacion()).contains("escalera Escalera E-1").contains("Plazoleta");
+        assertThat(guia.mensaje()).isNull();
+    }
+
+    @Test
+    void guia_conVariasEscaleras_recomiendaLaPrincipalYMencionaLaAlterna() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"), escalera("E-2"))));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.escaleras()).extracting("codigo").containsExactly("E-1", "E-2");
+        assertThat(guia.escaleras()).extracting("principal").containsExactly(true, false);
+        assertThat(guia.indicacion())
+                .contains("escalera Escalera E-1 (alterna: Escalera E-2)");
+    }
+
+    @Test
+    void guia_conEscalerasEncadenadas_indicaUnaPorTramoEnOrden() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-A")), List.of(escalera("E-B"))));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.requiereEscalera()).isTrue();
+        assertThat(guia.escaleras()).extracting("codigo").containsExactly("E-A", "E-B");
+        assertThat(guia.escaleras()).extracting("tramo").containsExactly(1, 2);
+        assertThat(guia.indicacion()).contains("escalera Escalera E-A, luego por la escalera Escalera E-B");
+    }
+
+    @Test
+    void guia_prefiereLaSalidaConMenosTramosAunqueElRecorridoExteriorSeaMasLargo() {
+        UUID salidaEnPiso1 = uuid(31);
+        when(salidaGateway.listarPorEdificio(edificioId))
+                .thenReturn(List.of(salida(salidaEnPiso1, piso1, true), salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any()))
+                .thenReturn(List.of(rutaExterior(salidaEnPiso1, 100), rutaExterior(salidaId, 400)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"))));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida().id()).isEqualTo(salidaId);
+        assertThat(guia.requiereEscalera()).isFalse();
+    }
+
+    @Test
+    void guia_siLaSalidaEstaEnElMismoPiso_noPideEscalera() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 100)));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.requiereEscalera()).isFalse();
+        assertThat(guia.escaleras()).isEmpty();
+        assertThat(guia.indicacion()).startsWith("Salga por");
+    }
+
+    @Test
+    void guia_sinEscalerasDisponibles_avisaYNoRecomiendaSalida() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 280)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1)).thenReturn(List.of());
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida()).isNull();
+        assertThat(guia.rutaExterior()).isNull();
+        assertThat(guia.mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_ESCALERA);
+    }
+
+    @Test
+    void guia_sinSalidaConRutaExterior_avisa() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of());
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida()).isNull();
+        assertThat(guia.mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_SALIDA);
+    }
+
+    @Test
+    void guia_ignoraSalidasNoDisponibles() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso3, false)));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida()).isNull();
+        assertThat(guia.mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_SALIDA);
+    }
+
+    @Test
+    void guia_conVariasSalidas_eligeLaDeRecorridoMasCorto() {
+        UUID otraSalida = uuid(31);
+        when(salidaGateway.listarPorEdificio(edificioId))
+                .thenReturn(List.of(salida(salidaId, piso3, true), salida(otraSalida, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any()))
+                .thenReturn(List.of(rutaExterior(salidaId, 500), rutaExterior(otraSalida, 150)));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida().id()).isEqualTo(otraSalida);
+        assertThat(guia.rutaExterior().distanciaMetros()).isEqualByComparingTo("150.00");
+    }
+
+    @Test
+    void guia_conRutaUnicaBloqueada_laRecomiendaConAviso() {
+        // Si la única ruta exterior hacia una zona activa está bloqueada, igual se recomienda (el
+        // usuario necesita saber por dónde sería) pero con el aviso correspondiente, en vez de decir
+        // que no hay ruta cuando en realidad sí existe una.
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any()))
+                .thenReturn(List.of(rutaExterior(salidaId, 100, EstadoRuta.BLOQUEADA)));
+
+        RutaConsultadaResponse respuesta = service.consultarPorEspacio(espacioId);
+
+        assertThat(respuesta.tieneRuta()).isTrue();
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.BLOQUEADA);
+        assertThat(respuesta.mensaje()).isEqualTo(ConsultaRutaService.MSG_BLOQUEADA);
+        assertThat(respuesta.guia().salida()).isNotNull();
+        assertThat(respuesta.guia().mensaje()).isEqualTo(ConsultaRutaService.MSG_BLOQUEADA);
+    }
+
+    @Test
+    void guia_conRutaUnicaRestringida_laRecomiendaConAviso() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any()))
+                .thenReturn(List.of(rutaExterior(salidaId, 100, EstadoRuta.RESTRINGIDA)));
+
+        RutaConsultadaResponse respuesta = service.consultarPorEspacio(espacioId);
+
+        assertThat(respuesta.tieneRuta()).isTrue();
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.RESTRINGIDA);
+        assertThat(respuesta.mensaje()).isEqualTo(ConsultaRutaService.MSG_RESTRINGIDA);
+    }
+
+    @Test
+    void guia_prefiereRutaDisponibleSobreBloqueadaParaLaMismaSalida() {
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(
+                rutaExterior(salidaId, 300, EstadoRuta.BLOQUEADA),
+                rutaExterior(salidaId, 450, EstadoRuta.DISPONIBLE)));
+
+        RutaConsultadaResponse respuesta = service.consultarPorEspacio(espacioId);
+
+        assertThat(respuesta.tieneRuta()).isTrue();
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.DISPONIBLE);
+        assertThat(respuesta.mensaje()).isNull();
+        assertThat(respuesta.guia().rutaExterior().distanciaMetros()).isEqualByComparingTo("450.00");
+    }
+
+    @Test
+    void guia_prefiereSalidaConRutaDisponibleSobreSalidaConRutaBloqueadaAunqueTengaMenosTramos() {
+        UUID salidaBloqueada = uuid(31);
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(
+                List.of(salida(salidaBloqueada, piso3, true), salida(salidaId, piso1, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(
+                rutaExterior(salidaBloqueada, 50, EstadoRuta.BLOQUEADA),
+                rutaExterior(salidaId, 400, EstadoRuta.DISPONIBLE)));
+        when(escaleraGateway.tramosEntre(edificioId, piso3, piso1))
+                .thenReturn(List.of(List.of(escalera("E-1"))));
+
+        RutaConsultadaResponse respuesta = service.consultarPorEspacio(espacioId);
+
+        assertThat(respuesta.estado()).isEqualTo(EstadoRuta.DISPONIBLE);
+        assertThat(respuesta.mensaje()).isNull();
+        assertThat(respuesta.guia().salida().id()).isEqualTo(salidaId);
+    }
+
+    @Test
+    void guia_conZonaDestinoInactiva_noLaRecomienda() {
+        when(zonaGateway.buscarPorId(zonaId))
+                .thenReturn(Optional.of(new ZonaInfo(zonaId, "Plazoleta", "Frente", false)));
+        when(salidaGateway.listarPorEdificio(edificioId)).thenReturn(List.of(salida(salidaId, piso3, true)));
+        when(rutaRepository.findBySalidaOrigenIdIn(any())).thenReturn(List.of(rutaExterior(salidaId, 100)));
+
+        GuiaEvacuacionResponse guia = service.consultarPorEspacio(espacioId).guia();
+
+        assertThat(guia.salida()).isNull();
+        assertThat(guia.mensaje()).isEqualTo(ConsultaRutaService.MSG_SIN_SALIDA);
+    }
+
+    @Test
+    void sinGatewaysDeGuia_laRespuestaNoTraeGuia() {
+        ConsultaRutaService sinGuia = new ConsultaRutaService(rutaRepository, edificioGateway, espacioGateway, zonaGateway);
+
+        assertThat(sinGuia.consultarPorEspacio(espacioId).guia()).isNull();
+    }
+}
